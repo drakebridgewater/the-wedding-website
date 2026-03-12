@@ -3,11 +3,9 @@ FROM python:3.12
 
 RUN apt-get update && apt-get install nginx --yes
 
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY deploy/prod-requirements.txt prod-requirements.txt
-RUN pip install --no-cache-dir -r prod-requirements.txt
+COPY requirements/base.txt requirements/base.txt
+COPY requirements/production.txt requirements/production.txt
+RUN pip install --no-cache-dir -r requirements/production.txt
 
 COPY deploy/nginx.conf /etc/nginx/sites-enabled/default
 
