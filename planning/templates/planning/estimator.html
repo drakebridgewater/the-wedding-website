@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block page_head %}
+{% vite_asset 'src/estimator/main.tsx' %}
+{% endblock %}
+
+{% block page_content %}
+<div id="estimator-root"></div>
+{% endblock %}

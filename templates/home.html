@@ -3,56 +3,25 @@
 {% block page_head %}
     <!-- Custom CSS -->
     <link href="{% static 'bigday/css/creative.css' %}" rel="stylesheet">
+    <style>
+        /* Hero header sits behind the fixed navbar; no body padding needed */
+        body { padding-top: 0; }
+        /* Center the hero text vertically so it isn't clipped by the fixed navbar */
+        @media (min-width: 768px) {
+            header .header-content { top: 50%; }
+        }
+    </style>
 {% endblock %}
 {% block page_content %}
-    <nav id="mainNav" class="navbar navbar-default navbar-fixed-top">
-        <div class="container-fluid">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand page-scroll" href="#page-top">{{ couple_name }}'s Big Day</a>
-            </div>
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <a class="page-scroll" href="#main-header">Home</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="#event">Event</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="#niagara">Niagara-on-the-Lake</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="#other-stuff">Everything Else</a>
-                    </li>
-                    <li>
-                        <a class="page-scroll" href="#contact">Contact</a>
-                    </li>
-                </ul>
-            </div>
-            <!-- /.navbar-collapse -->
-        </div>
-        <!-- /.container-fluid -->
-    </nav>
     {% block main %}
     <header id="main-header">
         <div class="header-content">
             <div class="header-content-inner">
-                <h1>We did it!!</h1>
-                {% comment %}
+                <h1>{{ wedding.hero_title }}</h1>
                 <hr>
-                <h2>It's wedding week!</h2>
                 <a href="#welcome" class="btn btn-info btn-xl page-scroll">Welcome</a>
-                <a href="#event" class="btn btn-primary btn-xl page-scroll">Friday</a>
-                <a href="#saturday-event" class="btn btn-success btn-xl page-scroll">Saturday</a>
-                {% endcomment %}
+                <a href="#event" class="btn btn-primary btn-xl page-scroll">The Event</a>
+                <a href="#story" class="btn btn-success btn-xl page-scroll">Our Story</a>
             </div>
         </div>
     </header>
@@ -63,21 +32,22 @@
                     <h2 class="section-heading">Welcome!</h2>
                     <hr>
                     <p>
-                        Hello friends and family! It's the week of the wedding!
+                        Hello friends and family! Welcome to the wedding website for {{ couple_name }}.
                     </p>
                     <p>
                         If you're looking for information about the event, look no further!
-                        Please see below for all the details regarding <a href="#event" class="page-scroll">Friday night's welcome party</a> and <a href="#saturday-event" class="page-scroll">Saturday's event</a>.
+                        Please see below for all the details regarding <a href="#event" class="page-scroll">the event</a> and <a href="#niagara" class="page-scroll">getting there</a>.
                     </p>
+                    {% if support_email %}
                     <p>
-                        To get added to the wedding whatsapp group first create an account and then send an
-                        email to <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
-                        Also, the current front-runner for the wedding hashtag (if you're into that sort of thing) is #getlukky.
+                        If you have any questions, feel free to reach out to us at
+                        <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
                     </p>
+                    {% endif %}
                     <p>
                         Looking forward to seeing everyone soon!
                     </p>
-                    <p class="pull-right">- Cory and Rowena</p>
+                    <p class="pull-right">- {{ couple_name }}</p>
                 </div>
             </div>
         </div>
@@ -103,7 +73,7 @@
                         <div class="portfolio-box-caption">
                             <div class="portfolio-box-caption-content">
                                 <div class="project-name">
-                                    Niagara-on-the-Lake
+                                    Getting There
                                 </div>
                             </div>
                         </div>
@@ -128,9 +98,6 @@
     <section id="niagara">
         {% include 'partials/niagara.html' %}
     </section>
-{% comment %}
-        {% include 'partials/wedding-party.html' %}
-{% endcomment %}
     <section id="other-stuff" class="bg-primary">
         {% include 'partials/misc.html' %}
     </section>
@@ -150,10 +117,12 @@
                     <hr class="primary">
                     <p>If you have any questions don't hesitate to reach out!</p>
                 </div>
+                {% if support_email %}
                 <div class="col-lg-8 col-lg-offset-2 text-center">
                     <i class="fa fa-envelope-o fa-3x wow bounceIn" data-wow-delay=".1s"></i>
                     <p><a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
                 </div>
+                {% endif %}
             </div>
         </div>
     </section>

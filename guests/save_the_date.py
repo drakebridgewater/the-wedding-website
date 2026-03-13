@@ -47,13 +47,6 @@ SAVE_THE_DATE_CONTEXT_MAP = {
             'main_image': 'plunge.jpg',
             'main_color': '#b4e6ff',
             'font_color': '#000000',
-        },
-        'dimagi': {
-            'title': 'Dimagi',
-            'header_filename': 'commcare.png',
-            'main_image': 'join-us.jpg',
-            'main_color': '#003d71',
-            'font_color': '#d6d6d4',
         }
     }
 
@@ -84,12 +77,8 @@ def get_template_id_from_party(party):
     if party.type == 'formal':
         # all formal guests get formal invites
         return random.choice(['lions-head', 'ski-trip'])
-    elif party.type == 'dimagi':
-        # all non-formal dimagis get dimagi invites
-        return 'dimagi'
     elif party.type == 'fun':
         all_options = list(SAVE_THE_DATE_CONTEXT_MAP.keys())
-        all_options.remove('dimagi')
         if party.category == 'ro':
             # don't send the canada invitation to ro's crowd
             all_options.remove('canada')

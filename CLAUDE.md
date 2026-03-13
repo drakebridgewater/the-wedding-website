@@ -63,6 +63,9 @@ Changes flow one way by default: Postgres → Sheets. Sheets data can optionally
 | **Seating Chart** | Drag-and-drop table/guest assignment interface |
 | **Day-of Schedule** | Timeline of events with time, location, responsible person, notes |
 
+Additional features needed:
+- Dietary restrictions/allergies 
+
 ## Google Drive Sync Strategy
 
 - Management command: `python manage.py sync_to_drive` — pushes all key data to Google Sheets

@@ -1,0 +1,102 @@
+{% load static %}
+<nav id="mainNav" class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and mobile toggle -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#main-navbar" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{% url 'home' %}">{{ couple_name }}'s Big Day</a>
+        </div>
+
+        <div class="collapse navbar-collapse" id="main-navbar">
+            <ul class="nav navbar-nav">
+
+                <li class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <a href="{% url 'home' %}">Home</a>
+                </li>
+
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                       role="button" aria-haspopup="true" aria-expanded="false">
+                        Wedding Info <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/#event">The Event</a></li>
+                        <li><a href="/#niagara">The Location</a></li>
+                        <li><a href="/#story">Our Story</a></li>
+                        <li><a href="/#contact">Contact</a></li>
+                    </ul>
+                </li>
+
+                {% if user.is_authenticated %}
+
+                <li class="dropdown {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                       role="button" aria-haspopup="true" aria-expanded="false">
+                        Planning <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="{% url 'planning:budget' %}">Budget</a></li>
+                        <li><a href="{% url 'planning:estimator' %}">Budget Estimator</a></li>
+                        <li><a href="{% url 'planning:todos' %}">To-Dos</a></li>
+                        <li class="disabled"><a href="#">Seating Chart</a></li>
+                        <li class="disabled"><a href="#">Day-of Schedule</a></li>
+                        <li class="disabled"><a href="#">Gifts</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                       role="button" aria-haspopup="true" aria-expanded="false">
+                        Vendors <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'vendors:venue' %}">Venue</a></li>
+                        <li><a href="{% url 'vendors:caterer' %}">Caterers</a></li>
+                        <li><a href="{% url 'vendors:cake' %}">Cake &amp; Bakery</a></li>
+                        <li><a href="{% url 'vendors:florist' %}">Florists</a></li>
+                        <li><a href="{% url 'vendors:entertainment' %}">Entertainment</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li class="disabled"><a href="#">Dresses</a></li>
+                        <li class="disabled"><a href="#">Makeup &amp; Hair</a></li>
+                    </ul>
+                </li>
+
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown"
+                       role="button" aria-haspopup="true" aria-expanded="false">
+                        Music <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li class="disabled"><a href="#">Playlist</a></li>
+                        <li class="disabled"><a href="#">Do-Not-Play</a></li>
+                    </ul>
+                </li>
+
+                {% endif %}
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                {% if user.is_authenticated %}
+                <li>
+                    <a href="/admin/"><i class="fa fa-cog"></i> Admin</a>
+                </li>
+                <li>
+                    <a href="{% url 'logout' %}"><i class="fa fa-sign-out"></i> Logout</a>
+                </li>
+                {% else %}
+                <li>
+                    <a href="{% url 'login' %}"><i class="fa fa-sign-in"></i> Login</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

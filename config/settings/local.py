@@ -13,6 +13,13 @@ DATABASES = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+DJANGO_VITE = {
+    'default': {
+        'dev_mode': True,
+        'dev_server_port': 5173,
+    }
+}
+
 # Override with your own details during local development
 # BRIDE_AND_GROOM = 'Your Names'
 # WEDDING_DATE = 'June 1st, 2025'

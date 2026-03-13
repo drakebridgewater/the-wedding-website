@@ -1,4 +1,4 @@
-{% load static %}
+{% load static django_vite %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,10 +25,14 @@
         <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
     {% include "partials/google-analytics.html" %}
+    <style>
+        body { padding-top: 70px; }
+    </style>
     {% block page_head %}
     {% endblock %}
 </head>
 <body id="page-top">
+{% include "partials/navbar.html" %}
 {% block page_content %}{% endblock %}
 {% include "partials/footer.html"  %}
     <!-- jQuery -->
@@ -46,5 +50,9 @@
     </script>
 {% block page_js %}
 {% endblock %}
+{% if user.is_authenticated %}
+<div id="quick-add-root"></div>
+{% vite_asset 'src/todos/quick-add-main.tsx' %}
+{% endif %}
 </body>
 </html>

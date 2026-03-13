@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block page_head %}
+{% vite_asset 'src/vendors/main.tsx' %}
+{% endblock %}
+
+{% block page_content %}
+<div id="vendors-root" data-vendor-type="{{ vendor_type }}"></div>
+{% endblock %}

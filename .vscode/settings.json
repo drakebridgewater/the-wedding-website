@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "Wedding",
+            "database": "${workspaceFolder:the-wedding-website}/db.sqlite3"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

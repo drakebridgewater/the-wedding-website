@@ -1,34 +1,51 @@
-<html>
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
-{% endif %}
-
-{% if next %}
-    {% if user.is_authenticated %}
-    <p>Your account doesn't have access to this page. To proceed,
-    please login with an account that has access.</p>
-    {% else %}
-    <p>Please login to see this page.</p>
-    {% endif %}
-{% endif %}
-
-<form method="post" action="{% url 'login' %}">
-{% csrf_token %}
-<table>
-<tr>
-    <td>{{ form.username.label_tag }}</td>
-    <td>{{ form.username }}</td>
-</tr>
-<tr>
-    <td>{{ form.password.label_tag }}</td>
-    <td>{{ form.password }}</td>
-</tr>
-</table>
-
-<input type="submit" value="login" />
-<input type="hidden" name="next" value="{{ next }}" />
-</form>
-
-{# Assumes you setup the password_reset view in your URLconf #}
-<p><a href="{% url 'password_reset' %}">Lost password?</a></p>
-</html>
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container">
+    <div class="row">
+        <div class="col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4">
+            <div class="panel panel-default" style="margin-top: 40px;">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Sign in</h3>
+                </div>
+                <div class="panel-body">
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Your username and password didn't match. Please try again.
+                    </div>
+                    {% endif %}
+                    {% if next %}
+                    <div class="alert alert-info">
+                        {% if user.is_authenticated %}
+                        Your account doesn't have access to this page.
+                        {% else %}
+                        Please log in to see this page.
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="{{ form.username.id_for_label }}">Username</label>
+                            <input type="text" name="{{ form.username.html_name }}"
+                                   id="{{ form.username.id_for_label }}"
+                                   class="form-control" autofocus required>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.password.id_for_label }}">Password</label>
+                            <input type="password" name="{{ form.password.html_name }}"
+                                   id="{{ form.password.id_for_label }}"
+                                   class="form-control" required>
+                        </div>
+                        <input type="hidden" name="next" value="{{ next }}">
+                        <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+                    </form>
+                    <hr>
+                    <p class="text-center">
+                        <a href="{% url 'password_reset' %}">Forgot your password?</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

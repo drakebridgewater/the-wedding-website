@@ -2,4 +2,35 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-# Create your models here.
+
+class WeddingSettings(models.Model):
+    """Singleton model — only one row (pk=1) should ever exist."""
+
+    couple_name = models.CharField(max_length=100, default='Drake & Shawna')
+    bride_name = models.CharField(max_length=100, default='Shawna Beckstead')
+    groom_name = models.CharField(max_length=100, default='Drake Bridgewater')
+    hero_title = models.CharField(max_length=200, default='The Bridgewaters!!')
+    wedding_date_display = models.CharField(
+        max_length=100, blank=True,
+        help_text='Human-readable date shown on the site, e.g. "June 14, 2026"',
+    )
+    wedding_location = models.CharField(max_length=200, blank=True)
+    support_email = models.EmailField(blank=True)
+    website_url = models.URLField(blank=True)
+    google_analytics_id = models.CharField(
+        max_length=50, blank=True,
+        help_text='Google Analytics tracking ID, e.g. UA-XXXXXXXX-1 or G-XXXXXXXXXX',
+    )
+
+    class Meta:
+        verbose_name = 'Wedding Settings'
+        verbose_name_plural = 'Wedding Settings'
+
+    def __str__(self):
+        return f'{self.couple_name} — Wedding Settings'
+
+    @classmethod
+    def get(cls):
+        """Return the singleton instance, creating it with defaults if needed."""
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

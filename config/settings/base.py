@@ -21,6 +21,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'djmoney',
+    'rest_framework',
+    'django_vite',
     'guests.apps.GuestsConfig',
     'wedding.apps.WeddingConfig',
     'planning.apps.PlanningConfig',
@@ -54,12 +57,16 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'wedding.context_processors.wedding_settings',
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -79,6 +86,24 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+}
+
+DJANGO_VITE = {
+    'default': {
+        'dev_mode': False,
+        'manifest_path': BASE_DIR / 'static' / 'dist' / '.vite' / 'manifest.json',
+        'static_url_prefix': 'dist',
+    }
+}
 
 # -------------------------
 # Wedding-specific settings
@@ -102,3 +127,54 @@ WEDDING_CC_LIST = []
 DEFAULT_WEDDING_FROM_EMAIL = f'{BRIDE_AND_GROOM} <{DEFAULT_WEDDING_EMAIL}>'
 DEFAULT_WEDDING_TEST_EMAIL = DEFAULT_WEDDING_FROM_EMAIL
 DEFAULT_WEDDING_REPLY_EMAIL = DEFAULT_WEDDING_EMAIL
+
+# -------------------------
+# TickTick integration
+# Set these in local.py or via environment variables.
+# Run `python manage.py ticktick_auth` once to complete OAuth setup.
+# -------------------------
+
+TICKTICK_CLIENT_ID = 'REDACTED_TICKTICK_CLIENT_ID'
+TICKTICK_CLIENT_SECRET = 'REDACTED_TICKTICK_CLIENT_SECRET'
+TICKTICK_USERNAME = 'drake.bridgewater@gmail.com'
+TICKTICK_PASSWORD = 'REDACTED_TICKTICK_PASSWORD'
+TICKTICK_PROJECT_NAME = 'Wedding'
+TICKTICK_TOKEN_PATH = str(BASE_DIR / '.token-oauth')
+# TickTick assignee IDs for the assignee filter. Run `ticktick_auth` to see
+# project tasks and find the value in the `assignee` field for each person.
+TICKTICK_DRAKE_ASSIGNEE = ''
+TICKTICK_SHAWNA_ASSIGNEE = ''
+
+# -------------------------
+# Logging
+# -------------------------
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # Full tracebacks for 500 errors
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # TickTick client + API views
+        'planning': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block page_head %}
+{% vite_asset 'src/todos/main.tsx' %}
+{% endblock %}
+
+{% block page_content %}
+<div id="todos-root"
+     data-drake-email="{{ drake_assignee }}"
+     data-shawna-email="{{ shawna_assignee }}"></div>
+{% endblock %}

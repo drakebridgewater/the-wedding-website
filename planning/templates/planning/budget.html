@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% load django_vite %}
+
+{% block page_head %}
+{% vite_asset 'src/budget/main.tsx' %}
+{% endblock %}
+
+{% block page_content %}
+<div id="budget-root"></div>
+{% endblock %}
