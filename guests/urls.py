@@ -1,10 +1,11 @@
+from django.contrib.auth.decorators import login_required
 from django.urls import re_path
 
 from guests.views import GuestListView, test_email, save_the_date_preview, save_the_date_random, export_guests, \
     invitation, invitation_email_preview, invitation_email_test, rsvp_confirm, dashboard
 
 urlpatterns = [
-    re_path(r'^guests/$', GuestListView.as_view(), name='guest-list'),
+    re_path(r'^guests/$', login_required(GuestListView.as_view()), name='guest-list'),
     re_path(r'^dashboard/$', dashboard, name='dashboard'),
     re_path(r'^guests/export$', export_guests, name='export-guest-list'),
     re_path(r'^invite/(?P<invite_id>[\w-]+)/$', invitation, name='invitation'),
