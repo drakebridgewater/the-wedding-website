@@ -16,6 +16,11 @@ def estimator_page(request):
 
 
 @login_required
+def seating_page(request):
+    return render(request, 'planning/seating.html')
+
+
+@login_required
 def todos_page(request):
     from .ticktick_client import get_config
     try:

@@ -21,4 +21,11 @@ urlpatterns = [
     path('api/todos/', api_views.todo_list, name='api-todos'),
     path('api/todos/create/', api_views.todo_create, name='api-todos-create'),
     path('api/todos/<str:task_id>/complete/', api_views.todo_complete, name='api-todo-complete'),
+    # Seating chart
+    path('seating/', views.seating_page, name='seating'),
+    path('api/seating/config/', api_views.seating_config, name='api-seating-config'),
+    path('api/seating/tables/', api_views.table_list, name='api-seating-table-list'),
+    path('api/seating/tables/<int:pk>/', api_views.table_detail, name='api-seating-table-detail'),
+    path('api/seating/guests/', api_views.guest_seating_list, name='api-seating-guests'),
+    path('api/seating/guests/<int:pk>/assign/', api_views.guest_assign, name='api-seating-guest-assign'),
 ]

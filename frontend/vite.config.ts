@@ -24,6 +24,7 @@ export default defineConfig({
         vendors: resolve(__dirname, 'src/vendors/main.tsx'),
         todos: resolve(__dirname, 'src/todos/main.tsx'),
         'todos-quick-add': resolve(__dirname, 'src/todos/quick-add-main.tsx'),
+        seating: resolve(__dirname, 'src/seating/main.tsx'),
       },
     },
   },

@@ -73,6 +73,12 @@ class Guest(models.Model):
     is_attending = models.BooleanField(default=None, null=True)
     meal = models.CharField(max_length=20, choices=MEALS, null=True, blank=True)
     is_child = models.BooleanField(default=False)
+    seating_table = models.ForeignKey(
+        'planning.SeatingTable',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='guests',
+    )
 
     @property
     def name(self):
