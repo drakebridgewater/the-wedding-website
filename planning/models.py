@@ -78,6 +78,10 @@ class SeatingConfig(models.Model):
     """Singleton model — stores venue grid dimensions."""
     grid_cols = models.PositiveIntegerField(default=20)
     grid_rows = models.PositiveIntegerField(default=15)
+    cell_size_ft = models.DecimalField(
+        max_digits=5, decimal_places=1, default=2.0,
+        help_text='Real-world size of one grid cell in feet.',
+    )
 
     class Meta:
         verbose_name = 'Seating Config'

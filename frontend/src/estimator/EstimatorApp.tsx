@@ -36,7 +36,12 @@ const TIERS = [
   },
 ]
 
-export function EstimatorApp() {
+interface EstimatorAppProps {
+  modal?: boolean
+  onImportSuccess?: () => void
+}
+
+export function EstimatorApp({ modal, onImportSuccess }: EstimatorAppProps = {}) {
   const [guestCount, setGuestCount] = useState<string>('100')
   const [tier, setTier] = useState<EstimateRequest['tier']>('standard')
   const estimate = useEstimate()
@@ -48,87 +53,96 @@ export function EstimatorApp() {
     estimate.mutate({ guest_count: count, tier })
   }
 
+  const content = (
+    <>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Calculator size={24} className="text-rose-600" />
+          Budget Estimator
+        </h1>
+        <p className="text-base text-gray-500 mt-1">
+          Get a quick estimate based on your guest count and service level.
+        </p>
+      </div>
+
+      {/* Form */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Guest count */}
+          <div>
+            <label className="block text-base font-medium text-gray-700 mb-2">
+              Number of Guests
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={2000}
+              value={guestCount}
+              onChange={(e) => setGuestCount(e.target.value)}
+              className="w-40 rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+
+          {/* Tier selector */}
+          <div>
+            <p className="block text-base font-medium text-gray-700 mb-3">Service Level</p>
+            <div className="flex gap-4">
+              {TIERS.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setTier(t.value)}
+                  className={`flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all ${t.color} ${tier === t.value ? t.active : 'opacity-70 hover:opacity-100'}`}
+                >
+                  <p className="font-semibold text-base">{t.label}</p>
+                  <p className="text-sm mt-0.5 opacity-75">{t.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={estimate.isPending}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-md bg-rose-600 text-white text-base font-medium hover:bg-rose-700 disabled:opacity-50 transition-colors"
+          >
+            {estimate.isPending ? (
+              <><Loader2 size={16} className="animate-spin" /> Calculating…</>
+            ) : (
+              <><Calculator size={16} /> Calculate Estimate</>
+            )}
+          </button>
+        </form>
+      </div>
+
+      {/* Error */}
+      {estimate.isError && (
+        <div className="flex items-center gap-2 text-red-600 mb-6">
+          <AlertCircle size={18} />
+          <span className="text-base">Something went wrong. Please try again.</span>
+        </div>
+      )}
+
+      {/* Results */}
+      {estimate.data && (
+        <EstimateResults
+          result={estimate.data}
+          guestCount={parseInt(guestCount, 10)}
+          tier={tier}
+          onImportSuccess={onImportSuccess}
+        />
+      )}
+    </>
+  )
+
+  if (modal) {
+    return <div className="px-6 py-6">{content}</div>
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Calculator size={24} className="text-rose-600" />
-            Budget Estimator
-          </h1>
-          <p className="text-base text-gray-500 mt-1">
-            Get a quick estimate based on your guest count and service level.
-          </p>
-        </div>
-
-        {/* Form */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Guest count */}
-            <div>
-              <label className="block text-base font-medium text-gray-700 mb-2">
-                Number of Guests
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={2000}
-                value={guestCount}
-                onChange={(e) => setGuestCount(e.target.value)}
-                className="w-40 rounded-md border border-gray-300 px-3 py-2 text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
-              />
-            </div>
-
-            {/* Tier selector */}
-            <div>
-              <p className="block text-base font-medium text-gray-700 mb-3">Service Level</p>
-              <div className="flex gap-4">
-                {TIERS.map((t) => (
-                  <button
-                    key={t.value}
-                    type="button"
-                    onClick={() => setTier(t.value)}
-                    className={`flex-1 rounded-xl border-2 px-4 py-3 text-left transition-all ${t.color} ${tier === t.value ? t.active : 'opacity-70 hover:opacity-100'}`}
-                  >
-                    <p className="font-semibold text-base">{t.label}</p>
-                    <p className="text-sm mt-0.5 opacity-75">{t.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={estimate.isPending}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-md bg-rose-600 text-white text-base font-medium hover:bg-rose-700 disabled:opacity-50 transition-colors"
-            >
-              {estimate.isPending ? (
-                <><Loader2 size={16} className="animate-spin" /> Calculating…</>
-              ) : (
-                <><Calculator size={16} /> Calculate Estimate</>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Error */}
-        {estimate.isError && (
-          <div className="flex items-center gap-2 text-red-600 mb-6">
-            <AlertCircle size={18} />
-            <span className="text-base">Something went wrong. Please try again.</span>
-          </div>
-        )}
-
-        {/* Results */}
-        {estimate.data && (
-          <EstimateResults
-            result={estimate.data}
-            guestCount={parseInt(guestCount, 10)}
-            tier={tier}
-          />
-        )}
-      </div>
+      <div className="max-w-4xl mx-auto">{content}</div>
     </div>
   )
 }
@@ -137,16 +151,18 @@ function EstimateResults({
   result,
   guestCount,
   tier,
+  onImportSuccess,
 }: {
   result: EstimateResult
   guestCount: number
   tier: EstimateRequest['tier']
+  onImportSuccess?: () => void
 }) {
   const sorted = [...result.breakdown].sort((a, b) => b.amount - a.amount)
   const importMutation = useImportEstimate()
 
   function handleImport() {
-    importMutation.mutate({ guest_count: guestCount, tier })
+    importMutation.mutate({ guest_count: guestCount, tier }, { onSuccess: onImportSuccess })
   }
 
   return (

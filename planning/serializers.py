@@ -112,7 +112,7 @@ class BudgetLineItemSerializer(serializers.ModelSerializer):
 class SeatingConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = SeatingConfig
-        fields = ['grid_cols', 'grid_rows']
+        fields = ['grid_cols', 'grid_rows', 'cell_size_ft']
 
 
 class GuestSeatingSerializer(serializers.ModelSerializer):

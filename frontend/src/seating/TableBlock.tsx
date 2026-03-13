@@ -43,6 +43,8 @@ export function TableBlock({ table, isOver }: Props) {
   }
 
   const isRound = table.shape === 'round'
+  // font-size scales inversely with --view-scale (set on the canvas by SeatingGrid)
+  const textStyle = { fontSize: 'clamp(8px, calc(11px / var(--view-scale, 1)), 32px)' }
 
   function setRef(el: HTMLElement | null) {
     setDropRef(el)
@@ -50,7 +52,7 @@ export function TableBlock({ table, isOver }: Props) {
   }
 
   return (
-    <div style={style} className="relative">
+    <div style={style} className="table-block relative">
       <div
         ref={setRef}
         onClick={() => !isDragging && setPopupOpen((v) => !v)}
@@ -63,10 +65,16 @@ export function TableBlock({ table, isOver }: Props) {
         {...listeners}
         {...attributes}
       >
-        <span className="text-xs font-semibold text-gray-800 leading-tight text-center px-1 truncate w-full text-center">
+        <span
+          className="font-semibold text-gray-800 leading-tight text-center px-1 truncate w-full"
+          style={textStyle}
+        >
           {table.name}
         </span>
-        <span className={`text-xs font-medium ${isFull ? 'text-amber-600' : 'text-rose-500'}`}>
+        <span
+          className={`font-medium ${isFull ? 'text-amber-600' : 'text-rose-500'}`}
+          style={textStyle}
+        >
           {table.assigned_count}/{table.capacity}
         </span>
       </div>

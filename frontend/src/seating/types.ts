@@ -1,6 +1,7 @@
 export interface SeatingConfig {
   grid_cols: number
   grid_rows: number
+  cell_size_ft: number
 }
 
 export interface GuestSeating {

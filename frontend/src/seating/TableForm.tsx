@@ -1,7 +1,8 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { TableFormData } from './types'
+import { useSeatingConfig } from './api'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -22,7 +23,10 @@ interface Props {
 }
 
 export function TableForm({ initialValues, onSubmit, onCancel, submitLabel = 'Add Table' }: Props) {
-  const { register, handleSubmit, formState: { errors } } = useForm<TableFormData>({
+  const { data: config } = useSeatingConfig()
+  const cellFt = config?.cell_size_ft ?? 2
+
+  const { register, handleSubmit, control, formState: { errors } } = useForm<TableFormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       name: '',
@@ -36,6 +40,10 @@ export function TableForm({ initialValues, onSubmit, onCancel, submitLabel = 'Ad
       ...initialValues,
     },
   })
+
+  const [w, h] = useWatch({ control, name: ['grid_width', 'grid_height'] })
+  const wFt = Math.round((w || 0) * cellFt * 10) / 10
+  const hFt = Math.round((h || 0) * cellFt * 10) / 10
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
@@ -89,6 +97,7 @@ export function TableForm({ initialValues, onSubmit, onCancel, submitLabel = 'Ad
           />
         </div>
       </div>
+      <p className="text-xs text-gray-400">{w}×{h} cells = {wFt} ft × {hFt} ft</p>
 
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
