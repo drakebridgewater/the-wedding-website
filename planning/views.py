@@ -21,6 +21,11 @@ def seating_page(request):
 
 
 @login_required
+def schedule_page(request):
+    return render(request, 'planning/schedule.html')
+
+
+@login_required
 def todos_page(request):
     from .ticktick_client import get_config
     try:

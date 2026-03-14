@@ -28,4 +28,11 @@ urlpatterns = [
     path('api/seating/tables/<int:pk>/', api_views.table_detail, name='api-seating-table-detail'),
     path('api/seating/guests/', api_views.guest_seating_list, name='api-seating-guests'),
     path('api/seating/guests/<int:pk>/assign/', api_views.guest_assign, name='api-seating-guest-assign'),
+    # Day-of schedule
+    path('schedule/', views.schedule_page, name='schedule'),
+    path('api/schedule/members/', api_views.schedule_members, name='api-schedule-members'),
+    path('api/schedule/days/', api_views.schedule_days, name='api-schedule-days'),
+    path('api/schedule/days/<int:pk>/', api_views.schedule_day_detail, name='api-schedule-day-detail'),
+    path('api/schedule/days/<int:day_pk>/events/', api_views.schedule_events, name='api-schedule-events'),
+    path('api/schedule/events/<int:pk>/', api_views.schedule_event_detail, name='api-schedule-event-detail'),
 ]

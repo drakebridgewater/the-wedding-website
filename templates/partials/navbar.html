@@ -43,6 +43,7 @@
                     <ul class="dropdown-menu">
                         <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
                         <li><a href="{% url 'guest-list' %}">Guest List</a></li>
+                        <li><a href="{% url 'invitations' %}">Invitations</a></li>
                         <li><a href="{% url 'export-guest-list' %}">Export CSV</a></li>
                         <li role="separator" class="divider"></li>
                         <li class="dropdown-header">Emails</li>
@@ -61,7 +62,7 @@
                         <li><a href="{% url 'planning:estimator' %}">Budget Estimator</a></li>
                         <li><a href="{% url 'planning:todos' %}">To-Dos</a></li>
                         <li><a href="{% url 'planning:seating' %}">Seating Chart</a></li>
-                        <li class="disabled"><a href="#">Day-of Schedule</a></li>
+                        <li><a href="{% url 'planning:schedule' %}">Day-of Schedule</a></li>
                         <li class="disabled"><a href="#">Gifts</a></li>
                     </ul>
                 </li>

@@ -3,11 +3,13 @@ from collections import namedtuple
 import random
 from datetime import datetime
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 from guests import csv_import
 from guests.invitation import get_invitation_context, INVITATION_TEMPLATE, guess_party_by_invite_id_or_404, \
@@ -159,3 +161,25 @@ def test_email(request, template_id):
 def _base64_encode(filepath):
     with open(filepath, "rb") as image_file:
         return base64.b64encode(image_file.read())
+
+
+@login_required
+def invitations_list(request):
+    parties = Party.objects.filter(is_invited=True).prefetch_related('guest_set').order_by('category', 'name')
+    site_base = request.build_absolute_uri('/').rstrip('/')
+    return render(request, 'guests/invitations.html', {
+        'parties': parties,
+        'site_base': site_base,
+        'couple_name': settings.BRIDE_AND_GROOM,
+    })
+
+
+@login_required
+@require_POST
+def send_party_invitation(request, party_pk):
+    party = get_object_or_404(Party, pk=party_pk, is_invited=True)
+    send_invitation_email(party)
+    party.invitation_sent = datetime.utcnow()
+    party.save()
+    messages.success(request, f'Invitation sent to {party.name}.')
+    return redirect('invitations')

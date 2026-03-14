@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block page_content %}
+<div class="container" id="main">
+  <div class="page-header">
+    <h1>Invitations</h1>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Summary counts -->
+  <div class="row" style="margin-bottom: 20px;">
+    <div class="col-xs-6 col-sm-3">
+      <div class="panel panel-default text-center">
+        <div class="panel-body">
+          <h3 style="margin:0;">{{ parties|length }}</h3>
+          <small class="text-muted">Total Invited</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-6 col-sm-3">
+      <div class="panel panel-default text-center">
+        <div class="panel-body">
+          <h3 style="margin:0;" class="text-danger">
+            {{ parties|length }}<!-- overridden below by JS count -->
+          </h3>
+          <small class="text-muted">Not Sent</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-6 col-sm-3">
+      <div class="panel panel-default text-center">
+        <div class="panel-body">
+          <h3 style="margin:0;" class="text-info" id="count-opened">—</h3>
+          <small class="text-muted">Opened</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-6 col-sm-3">
+      <div class="panel panel-default text-center">
+        <div class="panel-body">
+          <h3 style="margin:0;" class="text-success" id="count-responded">—</h3>
+          <small class="text-muted">Responded</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <table class="table table-striped table-hover" id="invitations-table">
+    <thead>
+      <tr>
+        <th>Party</th>
+        <th>Guests</th>
+        <th>Status</th>
+        <th>RSVP Link</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for party in parties %}
+      {% with rsvp_url=site_base|add:"/invite/"|add:party.invitation_id|add:"/" %}
+      <tr>
+        <td>
+          <strong>{{ party.name }}</strong>
+          {% if party.category %}<br><small class="text-muted">{{ party.category }}</small>{% endif %}
+        </td>
+        <td>
+          {% for guest in party.ordered_guests %}
+            {{ guest.first_name }} {{ guest.last_name }}{% if not forloop.last %}<br>{% endif %}
+          {% endfor %}
+        </td>
+        <td>
+          {% if party.is_attending is not None %}
+            {% if party.is_attending %}
+              <span class="label label-success">Attending</span>
+            {% else %}
+              <span class="label label-default">Declined</span>
+            {% endif %}
+          {% elif party.invitation_opened %}
+            <span class="label label-warning">Opened</span>
+          {% elif party.invitation_sent %}
+            <span class="label label-info">Sent</span>
+          {% else %}
+            <span class="label label-danger">Not Sent</span>
+          {% endif %}
+        </td>
+        <td style="min-width: 280px;">
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control rsvp-url-input" readonly
+                   value="{{ rsvp_url }}"
+                   onclick="this.select()">
+            <span class="input-group-btn">
+              <button class="btn btn-default copy-btn" type="button" data-url="{{ rsvp_url }}">
+                Copy
+              </button>
+            </span>
+          </div>
+        </td>
+        <td style="white-space: nowrap;">
+          <a href="{% url 'invitation-email' party.invitation_id %}"
+             target="_blank"
+             class="btn btn-xs btn-default">
+            Preview
+          </a>
+          <form method="post" action="{% url 'send-invitation' party.pk %}"
+                style="display:inline;"
+                onsubmit="return confirmSend('{{ party.name|escapejs }}', {{ party.invitation_sent|yesno:'true,false' }})">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-xs btn-primary">
+              {% if party.invitation_sent %}Resend{% else %}Send{% endif %}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endwith %}
+    {% empty %}
+      <tr>
+        <td colspan="5" class="text-center text-muted" style="padding: 30px;">
+          No invited parties yet. Add guests via the
+          <a href="/admin/guests/party/">admin</a>.
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% block page_js %}
+<script>
+(function () {
+  // Copy-to-clipboard
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var url = this.dataset.url;
+      var self = this;
+      navigator.clipboard.writeText(url).then(function () {
+        var orig = self.textContent;
+        self.textContent = 'Copied!';
+        self.classList.add('btn-success');
+        self.classList.remove('btn-default');
+        setTimeout(function () {
+          self.textContent = orig;
+          self.classList.remove('btn-success');
+          self.classList.add('btn-default');
+        }, 2000);
+      });
+    });
+  });
+
+  // Confirm before resending
+  window.confirmSend = function (name, alreadySent) {
+    if (alreadySent) {
+      return confirm('Resend invitation to ' + name + '?');
+    }
+    return confirm('Send invitation to ' + name + '?');
+  };
+})();
+</script>
+{% endblock %}
+{% endblock %}

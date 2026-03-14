@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
-from .models import BudgetLineItem, SeatingConfig, SeatingTable, TickTickSettings
+from .models import BudgetLineItem, SeatingConfig, SeatingTable, TickTickSettings, WeddingPartyMember, ScheduleDay, ScheduleEvent
 
 
 @admin.register(BudgetLineItem)
@@ -114,3 +114,36 @@ class SeatingConfigAdmin(admin.ModelAdmin):
         return HttpResponseRedirect(
             reverse('admin:planning_seatingconfig_change', args=[obj.pk])
         )
+
+
+@admin.register(WeddingPartyMember)
+class WeddingPartyMemberAdmin(admin.ModelAdmin):
+    list_display = ('name', 'role', 'color', 'order')
+    list_editable = ('order',)
+    list_filter = ('role',)
+    search_fields = ('name',)
+    ordering = ('order', 'name')
+
+
+class ScheduleEventInline(admin.TabularInline):
+    model = ScheduleEvent
+    extra = 1
+    fields = ('start_time', 'duration_minutes', 'name', 'location', 'category', 'attendees')
+    filter_horizontal = ('attendees',)
+
+
+@admin.register(ScheduleDay)
+class ScheduleDayAdmin(admin.ModelAdmin):
+    list_display = ('label', 'date', 'order')
+    list_editable = ('order',)
+    ordering = ('order', 'date')
+    inlines = [ScheduleEventInline]
+
+
+@admin.register(ScheduleEvent)
+class ScheduleEventAdmin(admin.ModelAdmin):
+    list_display = ('name', 'day', 'start_time', 'duration_minutes', 'category', 'location')
+    list_filter = ('day', 'category')
+    search_fields = ('name', 'location', 'notes')
+    filter_horizontal = ('attendees',)
+    ordering = ('day', 'start_time')
