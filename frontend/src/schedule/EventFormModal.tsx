@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
-import type { EventCategory, EventFormData, ScheduleEvent, WeddingPartyMember } from './types'
+import type { EventCategory, EventFormData, ScheduleEvent, WeddingPartyGroup, WeddingPartyMember } from './types'
 import { CATEGORY_LABELS } from './types'
 
 interface Props {
   dayId: number
   members: WeddingPartyMember[]
+  groups?: WeddingPartyGroup[]
   initialTime?: string     // "HH:MM"
   event?: ScheduleEvent    // present when editing
   onSave: (data: EventFormData) => void
@@ -25,7 +26,7 @@ function formatDuration(mins: number): string {
 // Group members by role for display
 const ROLE_ORDER = ['bride', 'groom', 'maid_of_honor', 'best_man', 'bridesmaid', 'groomsman', 'other']
 
-export function EventFormModal({ dayId, members, initialTime, event, onSave, onDelete, onClose }: Props) {
+export function EventFormModal({ dayId, members, groups = [], initialTime, event, onSave, onDelete, onClose }: Props) {
   const [name, setName] = useState(event?.name ?? '')
   const [startTime, setStartTime] = useState(
     event ? event.start_time.slice(0, 5) : (initialTime ?? '09:00')
@@ -49,6 +50,20 @@ export function EventFormModal({ dayId, members, initialTime, event, onSave, onD
     setSelectedIds((prev) => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleGroup(group: WeddingPartyGroup) {
+    const ids = group.members.map((m) => m.id)
+    const allSelected = ids.every((id) => selectedIds.has(id))
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (allSelected) {
+        ids.forEach((id) => next.delete(id))
+      } else {
+        ids.forEach((id) => next.add(id))
+      }
       return next
     })
   }
@@ -160,6 +175,31 @@ export function EventFormModal({ dayId, members, initialTime, event, onSave, onD
           {members.length > 0 && (
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Who's attending</label>
+
+              {/* Group quick-select */}
+              {groups.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3 pb-3 border-b border-gray-100">
+                  {groups.map((g) => {
+                    const allSelected = g.members.length > 0 && g.members.every((m) => selectedIds.has(m.id))
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => toggleGroup(g)}
+                        className="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors"
+                        style={allSelected
+                          ? { backgroundColor: g.color, borderColor: g.color, color: '#fff' }
+                          : { borderColor: g.color, color: g.color, backgroundColor: `${g.color}15` }
+                        }
+                        title={g.description || g.name}
+                      >
+                        {g.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
               <div className="space-y-3">
                 {Object.entries(grouped).map(([role, group]) => (
                   <div key={role}>

@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 from rest_framework import serializers
 
 from guests.models import Guest
-from .models import BudgetLineItem, Expense, SeatingConfig, SeatingTable, WeddingPartyMember, ScheduleDay, ScheduleEvent
+from .models import BudgetLineItem, Expense, SeatingConfig, SeatingTable, WeddingPartyMember, WeddingPartyGroup, ScheduleDay, ScheduleEvent
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
@@ -114,7 +114,15 @@ class WeddingPartyMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WeddingPartyMember
-        fields = ['id', 'name', 'role', 'role_display', 'color', 'order']
+        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'order']
+
+
+class WeddingPartyGroupSerializer(serializers.ModelSerializer):
+    members = WeddingPartyMemberSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = WeddingPartyGroup
+        fields = ['id', 'name', 'description', 'color', 'order', 'members']
 
 
 class ScheduleEventSerializer(serializers.ModelSerializer):

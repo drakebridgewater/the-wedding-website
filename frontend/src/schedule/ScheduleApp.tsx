@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Toaster, toast } from 'sonner'
-import { useDays, useMembers, useCreateEvent, useUpdateEvent, useDeleteEvent } from './api'
+import { useDays, useMembers, useGroups, useCreateEvent, useUpdateEvent, useDeleteEvent } from './api'
 import { DayTabs } from './DayTabs'
 import { Timeline } from './Timeline'
 import { EventFormModal } from './EventFormModal'
@@ -9,6 +9,7 @@ import type { EventFormData, ScheduleEvent } from './types'
 export function ScheduleApp() {
   const { data: days = [], isLoading: daysLoading } = useDays()
   const { data: members = [] } = useMembers()
+  const { data: groups = [] } = useGroups()
 
   const [selectedDayId, setSelectedDayId] = useState<number | null>(null)
   const [modalTime, setModalTime] = useState<string | undefined>()
@@ -130,6 +131,7 @@ export function ScheduleApp() {
         <EventFormModal
           dayId={activeDayId}
           members={members}
+          groups={groups}
           initialTime={modalTime}
           event={editingEvent}
           onSave={handleSave}

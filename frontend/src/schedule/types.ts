@@ -22,7 +22,18 @@ export interface WeddingPartyMember {
   role: MemberRole
   role_display: string
   color: string
+  email: string
+  phone: string
   order: number
+}
+
+export interface WeddingPartyGroup {
+  id: number
+  name: string
+  description: string
+  color: string
+  order: number
+  members: WeddingPartyMember[]
 }
 
 export interface ScheduleEvent {
@@ -68,12 +79,13 @@ export const CATEGORY_LABELS: Record<EventCategory, string> = {
   other: 'Other',
 }
 
+// Edit these hex values to customize the category colors throughout the timeline.
 export const CATEGORY_COLORS: Record<EventCategory, string> = {
-  getting_ready: '#a78bfa',
-  ceremony:      '#f472b6',
-  photos:        '#34d399',
-  reception:     '#60a5fa',
-  travel:        '#fbbf24',
-  meal:          '#fb923c',
-  other:         '#94a3b8',
+  getting_ready: '#7c3aed',  // violet
+  ceremony:      '#db2777',  // pink
+  photos:        '#059669',  // emerald
+  reception:     '#2563eb',  // blue
+  travel:        '#d97706',  // amber
+  meal:          '#ea580c',  // orange
+  other:         '#475569',  // slate
 }

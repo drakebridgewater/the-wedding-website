@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+<div class="container" style="padding-top: 30px; padding-bottom: 60px;">
+
+  <div class="row">
+    <div class="col-md-12">
+      <h2>Wedding Party Groups
+        <a href="{% url 'admin:planning_weddingpartygroup_changelist' %}"
+           class="btn btn-default btn-sm" style="margin-left: 12px;">
+          <span class="glyphicon glyphicon-cog"></span> Manage in Admin
+        </a>
+      </h2>
+      <p class="text-muted">Groups let you quickly select attendees for schedule events and send emails to specific parties.</p>
+    </div>
+  </div>
+
+  {% if messages %}
+  <div class="row" style="margin-top: 10px;">
+    <div class="col-md-12">
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if groups %}
+  <div class="row" style="margin-top: 20px;">
+    {% for group in groups %}
+    <div class="col-md-6" style="margin-bottom: 24px;">
+      <div class="panel panel-default" style="border-top: 4px solid {{ group.color }};">
+        <div class="panel-heading" style="background: #fff;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+                         background: {{ group.color }}; flex-shrink: 0;"></span>
+            <h4 class="panel-title" style="margin: 0; font-weight: 600;">{{ group.name }}</h4>
+            <span class="badge" style="background: {{ group.color }};">{{ group.members.count }}</span>
+          </div>
+          {% if group.description %}
+          <p class="text-muted" style="margin: 6px 0 0; font-size: 13px;">{{ group.description }}</p>
+          {% endif %}
+        </div>
+
+        <div class="panel-body" style="padding-bottom: 8px;">
+          <!-- Member pills -->
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
+            {% for member in group.members.all %}
+            <span class="label" style="background-color: {{ member.color }}; font-size: 12px;
+                                        padding: 4px 10px; border-radius: 20px; font-weight: 500;">
+              {{ member.name }}
+              {% if member.email %}<span style="opacity: 0.75; font-size: 10px; margin-left: 4px;">✉</span>{% endif %}
+            </span>
+            {% empty %}
+            <span class="text-muted" style="font-size: 13px; font-style: italic;">No members yet</span>
+            {% endfor %}
+          </div>
+
+          <!-- Email form -->
+          {% with email_count=group.members.all|length %}
+          <div>
+            <button class="btn btn-xs btn-default" type="button"
+                    data-toggle="collapse"
+                    data-target="#email-form-{{ group.pk }}"
+                    style="margin-bottom: 8px;">
+              <span class="glyphicon glyphicon-envelope"></span>
+              Send email to {{ group.name }}
+            </button>
+
+            <div class="collapse" id="email-form-{{ group.pk }}">
+              <form method="post" action="{% url 'planning:send-group-email' group.pk %}">
+                {% csrf_token %}
+                <div class="form-group" style="margin-bottom: 8px;">
+                  <input type="text" name="subject" class="form-control input-sm"
+                         placeholder="Subject" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 8px;">
+                  <textarea name="body" class="form-control input-sm" rows="4"
+                            placeholder="Message…" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-sm btn-primary">
+                  <span class="glyphicon glyphicon-send"></span> Send
+                </button>
+                <span class="text-muted" style="font-size: 12px; margin-left: 8px;">
+                  {% with count=group.members.all %}
+                  {% with emails=group.members.filter %}
+                  Sends to members with email addresses on file.
+                  {% endwith %}{% endwith %}
+                </span>
+              </form>
+            </div>
+          </div>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="row" style="margin-top: 40px;">
+    <div class="col-md-6 col-md-offset-3 text-center">
+      <p class="text-muted" style="font-size: 15px;">No groups yet.</p>
+      <a href="{% url 'admin:planning_weddingpartygroup_add' %}" class="btn btn-primary">
+        <span class="glyphicon glyphicon-plus"></span> Create a Group
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

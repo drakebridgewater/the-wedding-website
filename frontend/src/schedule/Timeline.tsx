@@ -1,13 +1,19 @@
 import { useRef } from 'react'
 import type { ScheduleEvent } from './types'
-import { EventBlock } from './EventBlock'
+import { EventBranch, HOUR_PX, BAR_W, STEM_BASE, COLUMN_W } from './EventBranch'
 
-export const HOUR_PX = 80
-const START_HOUR = 6   // 6 AM
-const END_HOUR = 24    // midnight
+const START_HOUR = 6
+const END_HOUR = 24
+const SPINE_X = 100       // x position of the spine
+const MIN_PX = HOUR_PX / 60
 
-function snapTo15(mins: number): number {
-  return Math.round(mins / 15) * 15
+function parseTime(t: string): number {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
+
+function snapTo15(totalMins: number): number {
+  return Math.round(totalMins / 15) * 15
 }
 
 function minsToTimeStr(totalMins: number): string {
@@ -16,67 +22,38 @@ function minsToTimeStr(totalMins: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-function parseTime(t: string): number {
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
-}
-
-function eventsOverlap(a: ScheduleEvent, b: ScheduleEvent): boolean {
-  const aStart = parseTime(a.start_time)
-  const aEnd = aStart + a.duration_minutes
-  const bStart = parseTime(b.start_time)
-  const bEnd = bStart + b.duration_minutes
-  return aStart < bEnd && aEnd > bStart
-}
-
-// Assign column indices to events so overlapping ones appear side-by-side
-function assignColumns(events: ScheduleEvent[]): Map<number, { column: number; total: number }> {
-  const sorted = [...events].sort((a, b) => parseTime(a.start_time) - parseTime(b.start_time))
-  const result = new Map<number, { column: number; total: number }>()
-
-  // Group overlapping events into clusters
-  const clusters: ScheduleEvent[][] = []
-  for (const ev of sorted) {
-    let placed = false
-    for (const cluster of clusters) {
-      if (cluster.some((c) => eventsOverlap(c, ev))) {
-        cluster.push(ev)
-        placed = true
-        break
-      }
-    }
-    if (!placed) clusters.push([ev])
-  }
-
-  for (const cluster of clusters) {
-    // Assign columns greedily
-    const cols: number[] = []
-    const colEnd: number[] = []
-    for (const ev of cluster) {
-      const evStart = parseTime(ev.start_time)
-      let col = cols.find((_, i) => colEnd[i] <= evStart) ?? -1
-      if (col === -1) {
-        col = cols.length
-        cols.push(col)
-        colEnd.push(0)
-      }
-      colEnd[col] = evStart + ev.duration_minutes
-      result.set(ev.id, { column: col, total: 0 })
-    }
-    const total = cols.length
-    for (const ev of cluster) {
-      const r = result.get(ev.id)!
-      result.set(ev.id, { ...r, total })
-    }
-  }
-
-  return result
-}
-
-function formatHour(h: number): string {
+function formatHourLabel(h: number): string {
   if (h === 0 || h === 24) return '12 AM'
   if (h === 12) return '12 PM'
   return h < 12 ? `${h} AM` : `${h - 12} PM`
+}
+
+/**
+ * Assign each event to a horizontal column so overlapping events spread
+ * rightward instead of being pushed down. Non-overlapping events reuse
+ * column 0. Returns a map of event id → column index (0-based).
+ */
+function computeEventColumns(events: ScheduleEvent[]): Map<number, number> {
+  const sorted = [...events].sort(
+    (a, b) => parseTime(a.start_time) - parseTime(b.start_time),
+  )
+  const result = new Map<number, number>()
+  const columnEnd: number[] = []  // end time (mins) of the last event in each column
+
+  for (const ev of sorted) {
+    const start = parseTime(ev.start_time)
+    const end = start + ev.duration_minutes
+    let col = columnEnd.findIndex((endMins) => start >= endMins)
+    if (col === -1) {
+      col = columnEnd.length
+      columnEnd.push(end)
+    } else {
+      columnEnd[col] = end
+    }
+    result.set(ev.id, col)
+  }
+
+  return result
 }
 
 interface Props {
@@ -88,15 +65,18 @@ interface Props {
 export function Timeline({ events, onTimeClick, onEventClick }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i)
-  const totalHeight = hours.length * HOUR_PX
+  const naturalHeight = hours.length * HOUR_PX
 
-  const columnMap = assignColumns(events)
+  const eventColumns = computeEventColumns(events)
 
-  function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    // Don't trigger if clicking on an event block
-    if ((e.target as HTMLElement).closest('[data-event-block]')) return
+  const maxColumn = events.length > 0 ? Math.max(...Array.from(eventColumns.values())) : 0
+  const minWidth = SPINE_X + BAR_W + STEM_BASE + (maxColumn + 1) * COLUMN_W + 280
+
+  function handleSpineClick(e: React.MouseEvent<HTMLDivElement>) {
+    if ((e.target as HTMLElement).closest('[data-event]')) return
     const rect = containerRef.current!.getBoundingClientRect()
-    const y = e.clientY - rect.top + containerRef.current!.scrollTop
+    const scrollTop = containerRef.current!.scrollTop
+    const y = e.clientY - rect.top + scrollTop
     const minsFromStart = (y / HOUR_PX) * 60
     const snapped = snapTo15(minsFromStart + START_HOUR * 60)
     const clamped = Math.max(START_HOUR * 60, Math.min((END_HOUR - 1) * 60, snapped))
@@ -106,57 +86,88 @@ export function Timeline({ events, onTimeClick, onEventClick }: Props) {
   return (
     <div
       ref={containerRef}
-      className="relative overflow-y-auto"
-      style={{ height: 'calc(100vh - 180px)' }}
+      className="relative overflow-y-auto select-none"
+      style={{ height: 'calc(100vh - 200px)' }}
     >
-      <div
-        className="relative"
-        style={{ height: totalHeight, minWidth: 600 }}
-        onClick={handleClick}
-      >
-        {/* Hour rows */}
+      <div className="relative" style={{ height: naturalHeight + 80, minWidth }}>
+
+        {/* Hour labels */}
         {hours.map((h) => (
           <div
             key={h}
-            className="absolute left-0 right-0 border-t border-gray-200"
-            style={{ top: (h - START_HOUR) * HOUR_PX, height: HOUR_PX }}
+            className="absolute flex items-center"
+            style={{ top: (h - START_HOUR) * HOUR_PX - 9, left: 0, width: SPINE_X - 12 }}
           >
-            <span className="absolute -top-2.5 left-1 text-xs text-gray-400 select-none w-12 text-right">
-              {formatHour(h)}
+            <span className="text-xs text-gray-400 ml-auto leading-none">
+              {formatHourLabel(h)}
             </span>
-            {/* 30-min tick */}
-            <div
-              className="absolute left-0 right-0 border-t border-gray-100"
-              style={{ top: HOUR_PX / 2 }}
-            />
           </div>
         ))}
 
-        {/* Bottom border */}
-        <div
-          className="absolute left-0 right-0 border-t border-gray-200"
-          style={{ top: totalHeight }}
-        />
+        {/* Hour tick marks on the spine */}
+        {hours.map((h) => (
+          <div
+            key={`tick-${h}`}
+            className="absolute bg-gray-300"
+            style={{
+              left: SPINE_X - 6,
+              top: (h - START_HOUR) * HOUR_PX,
+              width: 14,
+              height: 1,
+            }}
+          />
+        ))}
 
-        {/* Events layer — offset past hour labels */}
-        <div className="absolute inset-0" style={{ left: 60 }} data-event-block>
-          {events.map((ev) => {
-            const layout = columnMap.get(ev.id) ?? { column: 0, total: 1 }
-            return (
-              <EventBlock
-                key={ev.id}
-                event={ev}
-                column={layout.column}
-                totalColumns={layout.total}
-                dayStartHour={START_HOUR}
-                onClick={onEventClick}
-              />
-            )
-          })}
+        {/* Half-hour subtle ticks */}
+        {hours.map((h) => (
+          <div
+            key={`half-${h}`}
+            className="absolute bg-gray-200"
+            style={{
+              left: SPINE_X - 3,
+              top: (h - START_HOUR) * HOUR_PX + HOUR_PX / 2,
+              width: 8,
+              height: 1,
+            }}
+          />
+        ))}
+
+        {/* Spine — full-height clickable strip */}
+        <div
+          className="absolute top-0 cursor-crosshair"
+          style={{ left: SPINE_X - 10, width: 22, height: naturalHeight + 80 }}
+          onClick={handleSpineClick}
+        >
+          <div
+            className="absolute top-0 bottom-0 bg-gray-300 rounded-full"
+            style={{ left: 10, width: 2 }}
+          />
         </div>
 
-        {/* Invisible click target for adding events (left of events layer) */}
-        <div className="absolute inset-0" style={{ right: 'auto', width: 60 }} />
+        {/* Events */}
+        {events.map((ev) => {
+          const dotY = (parseTime(ev.start_time) - START_HOUR * 60) * MIN_PX
+          const columnIndex = eventColumns.get(ev.id) ?? 0
+          return (
+            <EventBranch
+              key={ev.id}
+              event={ev}
+              dotY={dotY}
+              spineX={SPINE_X}
+              columnIndex={columnIndex}
+              onClick={() => onEventClick(ev)}
+            />
+          )
+        })}
+
+        {events.length === 0 && (
+          <div
+            className="absolute text-xs text-gray-400 italic pointer-events-none"
+            style={{ left: SPINE_X + 24, top: 2 * HOUR_PX - 6 }}
+          >
+            ← Click the line to add an event
+          </div>
+        )}
       </div>
     </div>
   )

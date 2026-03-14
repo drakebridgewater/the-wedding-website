@@ -1,16 +1,13 @@
+{% load static %}
 <header id="second-header" class="secondary"></header>
 <section id="proposal">
     <div class="container">
         <div class="col-lg-12">
             <h2 class="section-heading text-center">The Proposal</h2>
             <hr class="primary">
-            <div class="panel panel-warning">
-                <div class="panel-heading">
-                    <strong>TO BE POPULATED</strong> — Share the proposal story here
-                </div>
-                <div class="panel-body text-muted">
-                    How did {{ wedding.groom_name }} pop the question? Add the details in the admin panel under <em>Wedding Settings</em>.
-                </div>
+            <div class="clearfix">
+                <img src="{% static 'bigday/images/DrakeShawnaEthan-HouseBuy.jpg' %}" class="img-responsive pull-left" style="max-width: 300px; margin-right: 20px; margin-bottom: 10px;" alt="The Proposal">
+                Upon receiving the keys to our home right where our future dining room table would go Drake went down on a knee to start the rest of our lives together. She said yes!
             </div>
         </div>
     </div>

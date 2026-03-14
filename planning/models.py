@@ -141,6 +141,8 @@ class WeddingPartyMember(models.Model):
         max_length=7, default='#6366f1',
         help_text='Hex color used to identify this person in the schedule UI.',
     )
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=20, blank=True)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -148,6 +150,20 @@ class WeddingPartyMember(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_role_display()})"
+
+
+class WeddingPartyGroup(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=7, default='#6366f1')
+    members = models.ManyToManyField(WeddingPartyMember, blank=True, related_name='groups')
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
 
 
 class ScheduleDay(models.Model):

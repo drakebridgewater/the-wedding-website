@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
-from .models import BudgetLineItem, SeatingConfig, SeatingTable, TickTickSettings, WeddingPartyMember, ScheduleDay, ScheduleEvent
+from .models import BudgetLineItem, SeatingConfig, SeatingTable, TickTickSettings, WeddingPartyMember, WeddingPartyGroup, ScheduleDay, ScheduleEvent
 
 
 @admin.register(BudgetLineItem)
@@ -118,14 +118,26 @@ class SeatingConfigAdmin(admin.ModelAdmin):
 
 @admin.register(WeddingPartyMember)
 class WeddingPartyMemberAdmin(admin.ModelAdmin):
-    list_display = ('name', 'role', 'color', 'order')
+    list_display = ('name', 'role', 'color', 'email', 'order')
     list_editable = ('order',)
     list_filter = ('role',)
-    search_fields = ('name',)
+    search_fields = ('name', 'email')
     ordering = ('order', 'name')
 
 
-class ScheduleEventInline(admin.TabularInline):
+@admin.register(WeddingPartyGroup)
+class WeddingPartyGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'member_count', 'color', 'order')
+    list_editable = ('order',)
+    filter_horizontal = ('members',)
+    ordering = ('order', 'name')
+
+    def member_count(self, obj):
+        return obj.members.count()
+    member_count.short_description = 'Members'
+
+
+class ScheduleEventInline(admin.StackedInline):
     model = ScheduleEvent
     extra = 1
     fields = ('start_time', 'duration_minutes', 'name', 'location', 'category', 'attendees')

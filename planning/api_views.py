@@ -6,11 +6,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from guests.models import Guest
-from .models import BudgetLineItem, Expense, SeatingConfig, SeatingTable, WeddingPartyMember, ScheduleDay, ScheduleEvent
+from .models import BudgetLineItem, Expense, SeatingConfig, SeatingTable, WeddingPartyMember, WeddingPartyGroup, ScheduleDay, ScheduleEvent
 from .serializers import (
     BudgetLineItemSerializer, ExpenseSerializer,
     GuestSeatingSerializer, SeatingConfigSerializer, SeatingTableSerializer,
-    WeddingPartyMemberSerializer, ScheduleDaySerializer, ScheduleEventSerializer,
+    WeddingPartyMemberSerializer, WeddingPartyGroupSerializer, ScheduleDaySerializer, ScheduleEventSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -448,6 +448,13 @@ def guest_assign(request, pk):
 def schedule_members(request):
     members = WeddingPartyMember.objects.all()
     return Response(WeddingPartyMemberSerializer(members, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def schedule_groups(_request):
+    groups = WeddingPartyGroup.objects.prefetch_related('members').all()
+    return Response(WeddingPartyGroupSerializer(groups, many=True).data)
 
 
 # --------------------------------------------------------------------------- #

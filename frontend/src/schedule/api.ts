@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { EventFormData, ScheduleDay, ScheduleEvent, WeddingPartyMember } from './types'
+import type { EventFormData, ScheduleDay, ScheduleEvent, WeddingPartyGroup, WeddingPartyMember } from './types'
 
 function getCsrf(): string {
   return (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? ''
@@ -22,13 +22,21 @@ async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
 
 const QK = {
   members: ['schedule', 'members'] as const,
-  days: ['schedule', 'days'] as const,
+  groups:  ['schedule', 'groups']  as const,
+  days:    ['schedule', 'days']    as const,
 }
 
 export function useMembers() {
   return useQuery<WeddingPartyMember[]>({
     queryKey: QK.members,
     queryFn: () => apiFetch('/planning/api/schedule/members/'),
+  })
+}
+
+export function useGroups() {
+  return useQuery<WeddingPartyGroup[]>({
+    queryKey: QK.groups,
+    queryFn: () => apiFetch('/planning/api/schedule/groups/'),
   })
 }
 
