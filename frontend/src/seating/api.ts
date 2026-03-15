@@ -29,7 +29,7 @@ const QK = {
 export function useSeatingConfig() {
   return useQuery<SeatingConfig>({
     queryKey: QK.config,
-    queryFn: () => apiFetch('/planning/api/seating/config/'),
+    queryFn: () => apiFetch('/seating/api/config/'),
   })
 }
 
@@ -37,7 +37,7 @@ export function useUpdateConfig() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: Partial<SeatingConfig>) =>
-      apiFetch<SeatingConfig>('/planning/api/seating/config/', {
+      apiFetch<SeatingConfig>('/seating/api/config/', {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
@@ -48,7 +48,7 @@ export function useUpdateConfig() {
 export function useTables() {
   return useQuery<SeatingTable[]>({
     queryKey: QK.tables,
-    queryFn: () => apiFetch('/planning/api/seating/tables/'),
+    queryFn: () => apiFetch('/seating/api/tables/'),
   })
 }
 
@@ -56,7 +56,7 @@ export function useCreateTable() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: TableFormData) =>
-      apiFetch<SeatingTable>('/planning/api/seating/tables/', {
+      apiFetch<SeatingTable>('/seating/api/tables/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -68,7 +68,7 @@ export function useUpdateTable() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<SeatingTable> }) =>
-      apiFetch<SeatingTable>(`/planning/api/seating/tables/${id}/`, {
+      apiFetch<SeatingTable>(`/seating/api/tables/${id}/`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
@@ -91,7 +91,7 @@ export function useDeleteTable() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) =>
-      apiFetch(`/planning/api/seating/tables/${id}/`, { method: 'DELETE' }),
+      apiFetch(`/seating/api/tables/${id}/`, { method: 'DELETE' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.tables })
       qc.invalidateQueries({ queryKey: QK.guests })
@@ -102,7 +102,7 @@ export function useDeleteTable() {
 export function useGuests() {
   return useQuery<GuestSeating[]>({
     queryKey: QK.guests,
-    queryFn: () => apiFetch('/planning/api/seating/guests/'),
+    queryFn: () => apiFetch('/seating/api/guests/'),
   })
 }
 
@@ -110,7 +110,7 @@ export function useAssignGuest() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ guestId, tableId }: { guestId: number; tableId: number | null }) =>
-      apiFetch<GuestSeating>(`/planning/api/seating/guests/${guestId}/assign/`, {
+      apiFetch<GuestSeating>(`/seating/api/guests/${guestId}/assign/`, {
         method: 'PATCH',
         body: JSON.stringify({ table_id: tableId }),
       }),

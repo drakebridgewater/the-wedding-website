@@ -72,14 +72,14 @@ async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
 export function useItems() {
   return useQuery<BudgetItem[]>({
     queryKey: ['budget-items'],
-    queryFn: () => apiFetch('/planning/api/budget/items/'),
+    queryFn: () => apiFetch('/budget/api/items/'),
   })
 }
 
 export function useSummary() {
   return useQuery<BudgetSummary>({
     queryKey: ['budget-summary'],
-    queryFn: () => apiFetch('/planning/api/budget/summary/'),
+    queryFn: () => apiFetch('/budget/api/summary/'),
   })
 }
 
@@ -92,7 +92,7 @@ export function useCreateItem() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: ItemFormData) =>
-      apiFetch<BudgetItem>('/planning/api/budget/items/', {
+      apiFetch<BudgetItem>('/budget/api/items/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -104,7 +104,7 @@ export function useUpdateItem() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<ItemFormData> }) =>
-      apiFetch<BudgetItem>(`/planning/api/budget/items/${id}/`, {
+      apiFetch<BudgetItem>(`/budget/api/items/${id}/`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
@@ -116,7 +116,7 @@ export function useDeleteItem() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) =>
-      apiFetch<void>(`/planning/api/budget/items/${id}/`, { method: 'DELETE' }),
+      apiFetch<void>(`/budget/api/items/${id}/`, { method: 'DELETE' }),
     onSuccess: () => invalidateAll(qc),
   })
 }
@@ -125,7 +125,7 @@ export function useCreateExpense() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ itemId, data }: { itemId: number; data: ExpenseFormData }) =>
-      apiFetch<BudgetItem>(`/planning/api/budget/items/${itemId}/expenses/`, {
+      apiFetch<BudgetItem>(`/budget/api/items/${itemId}/expenses/`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -137,7 +137,7 @@ export function useDeleteExpense() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (expenseId: number) =>
-      apiFetch<BudgetItem>(`/planning/api/budget/expenses/${expenseId}/`, {
+      apiFetch<BudgetItem>(`/budget/api/expenses/${expenseId}/`, {
         method: 'DELETE',
       }),
     onSuccess: () => invalidateAll(qc),

@@ -29,21 +29,21 @@ const QK = {
 export function useMembers() {
   return useQuery<WeddingPartyMember[]>({
     queryKey: QK.members,
-    queryFn: () => apiFetch('/planning/api/schedule/members/'),
+    queryFn: () => apiFetch('/schedule/api/members/'),
   })
 }
 
 export function useGroups() {
   return useQuery<WeddingPartyGroup[]>({
     queryKey: QK.groups,
-    queryFn: () => apiFetch('/planning/api/schedule/groups/'),
+    queryFn: () => apiFetch('/schedule/api/groups/'),
   })
 }
 
 export function useDays() {
   return useQuery<ScheduleDay[]>({
     queryKey: QK.days,
-    queryFn: () => apiFetch('/planning/api/schedule/days/'),
+    queryFn: () => apiFetch('/schedule/api/days/'),
   })
 }
 
@@ -51,7 +51,7 @@ export function useCreateEvent() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: EventFormData) =>
-      apiFetch<ScheduleEvent>(`/planning/api/schedule/days/${data.day}/events/`, {
+      apiFetch<ScheduleEvent>(`/schedule/api/days/${data.day}/events/`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -63,7 +63,7 @@ export function useUpdateEvent() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<EventFormData> }) =>
-      apiFetch<ScheduleEvent>(`/planning/api/schedule/events/${id}/`, {
+      apiFetch<ScheduleEvent>(`/schedule/api/events/${id}/`, {
         method: 'PATCH',
         body: JSON.stringify(data),
       }),
@@ -75,7 +75,7 @@ export function useDeleteEvent() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) =>
-      apiFetch(`/planning/api/schedule/events/${id}/`, { method: 'DELETE' }),
+      apiFetch(`/schedule/api/events/${id}/`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.days }),
   })
 }

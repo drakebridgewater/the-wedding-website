@@ -23,7 +23,7 @@ function getCsrf(): string {
 export function useEstimate() {
   return useMutation<EstimateResult, Error, EstimateRequest>({
     mutationFn: async (data) => {
-      const res = await fetch('/planning/api/budget/estimate/', {
+      const res = await fetch('/budget/api/estimate/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ export interface ImportResult {
 export function useImportEstimate() {
   return useMutation<ImportResult, Error, EstimateRequest>({
     mutationFn: async (data) => {
-      const res = await fetch('/planning/api/budget/import-estimate/', {
+      const res = await fetch('/budget/api/import-estimate/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -30,7 +30,7 @@ export function useTodos(filters: TodoFilters) {
   })
   return useQuery<TickTickTask[]>({
     queryKey: ['todos', filters],
-    queryFn: () => apiFetch(`/planning/api/todos/?${params}`),
+    queryFn: () => apiFetch(`/todos/api/?${params}`),
     staleTime: 30_000,  // treat fresh for 30s to avoid hammering TickTick
   })
 }
@@ -39,7 +39,7 @@ export function useCreateTodo() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateTaskData) =>
-      apiFetch<TickTickTask>('/planning/api/todos/create/', {
+      apiFetch<TickTickTask>('/todos/api/create/', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -51,7 +51,7 @@ export function useCompleteTodo() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (taskId: string) =>
-      apiFetch<unknown>(`/planning/api/todos/${taskId}/complete/`, { method: 'POST' }),
+      apiFetch<unknown>(`/todos/api/${taskId}/complete/`, { method: 'POST' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['todos'] }),
     // Optimistic: remove from the active list instantly
     onMutate: async (taskId) => {
