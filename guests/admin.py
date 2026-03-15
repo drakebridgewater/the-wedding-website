@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django import forms
-from .models import Guest, Party
+from .models import Guest, Party, WeddingPartyMember, WeddingPartyGroup
 
 
 class GuestForm(forms.ModelForm):
@@ -32,6 +32,27 @@ class GuestAdmin(admin.ModelAdmin):
     form = GuestForm
     list_display = ('first_name', 'last_name', 'party', 'email', 'is_attending', 'is_child', 'meal')
     list_filter = ('is_attending', 'is_child', 'meal', 'party__is_invited', 'party__category', 'party__rehearsal_dinner')
+
+
+@admin.register(WeddingPartyMember)
+class WeddingPartyMemberAdmin(admin.ModelAdmin):
+    list_display = ('name', 'role', 'color', 'email', 'order')
+    list_editable = ('order',)
+    list_filter = ('role',)
+    search_fields = ('name', 'email')
+    ordering = ('order', 'name')
+
+
+@admin.register(WeddingPartyGroup)
+class WeddingPartyGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'member_count', 'color', 'order')
+    list_editable = ('order',)
+    filter_horizontal = ('members',)
+    ordering = ('order', 'name')
+
+    def member_count(self, obj):
+        return obj.members.count()
+    member_count.short_description = 'Members'
 
 
 admin.site.register(Party, PartyAdmin)

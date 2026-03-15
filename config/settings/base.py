@@ -26,7 +26,10 @@ INSTALLED_APPS = [
     'django_vite',
     'guests.apps.GuestsConfig',
     'wedding.apps.WeddingConfig',
-    'planning.apps.PlanningConfig',
+    'budget.apps.BudgetConfig',
+    'seating.apps.SeatingConfig',
+    'schedule.apps.ScheduleConfig',
+    'todos.apps.TodosConfig',
     'vendors.apps.VendorsConfig',
     'music.apps.MusicConfig',
     'drive_sync.apps.DriveSyncConfig',
@@ -171,7 +174,7 @@ LOGGING = {
             'propagate': False,
         },
         # TickTick client + API views
-        'planning': {
+        'todos': {
             'handlers': ['console'],
             'level': 'DEBUG',
             'propagate': False,

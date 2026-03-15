@@ -74,7 +74,7 @@ class Guest(models.Model):
     meal = models.CharField(max_length=20, choices=MEALS, null=True, blank=True)
     is_child = models.BooleanField(default=False)
     seating_table = models.ForeignKey(
-        'planning.SeatingTable',
+        'seating.SeatingTable',
         null=True, blank=True,
         on_delete=models.SET_NULL,
         related_name='guests',
@@ -91,3 +91,45 @@ class Guest(models.Model):
 
     def __str__(self):
         return 'Guest: {} {}'.format(self.first_name, self.last_name)
+
+
+class WeddingPartyMember(models.Model):
+    ROLES = [
+        ('bride', 'Bride'),
+        ('groom', 'Groom'),
+        ('maid_of_honor', 'Maid of Honor'),
+        ('best_man', 'Best Man'),
+        ('bridesmaid', 'Bridesmaid'),
+        ('groomsman', 'Groomsman'),
+        ('other', 'Other'),
+    ]
+
+    name = models.CharField(max_length=100)
+    role = models.CharField(max_length=20, choices=ROLES)
+    color = models.CharField(
+        max_length=7, default='#6366f1',
+        help_text='Hex color used to identify this person in the schedule UI.',
+    )
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_role_display()})"
+
+
+class WeddingPartyGroup(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=7, default='#6366f1')
+    members = models.ManyToManyField(WeddingPartyMember, blank=True, related_name='groups')
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name

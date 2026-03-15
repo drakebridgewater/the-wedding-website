@@ -7,7 +7,10 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('', include('wedding.urls')),
     path('', include('guests.urls')),
-    path('planning/', include('planning.urls', namespace='planning')),
+    path('budget/', include('budget.urls', namespace='budget')),
+    path('seating/', include('seating.urls', namespace='seating')),
+    path('schedule/', include('schedule.urls', namespace='schedule')),
+    path('todos/', include('todos.urls', namespace='todos')),
     path('vendors/', include('vendors.urls', namespace='vendors')),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
