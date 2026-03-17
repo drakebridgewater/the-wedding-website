@@ -1,19 +1,27 @@
 {% load static %}
-<div class="relative h-48 sm:h-64"
-     style="background-image: url('{% static 'bigday/images/chapmans-peak-view.jpg' %}'); background-size: cover; background-position: center;">
-  <div class="absolute inset-0 bg-black/30"></div>
+
+<!-- Photo divider -->
+<div class="relative h-64 sm:h-80 overflow-hidden border-t border-stone-100">
+  <img src="{% static 'bigday/images/chapmans-peak-view.jpg' %}"
+       class="absolute inset-0 w-full h-full object-cover"
+       alt="Scenic view">
+  <div class="absolute inset-0 bg-black/20"></div>
 </div>
 
-<section id="proposal" class="py-16 px-4">
-  <div class="max-w-4xl mx-auto">
-    <h2 class="text-3xl font-light text-center text-stone-800 mb-3">The Proposal</h2>
-    <hr class="border-stone-300 w-16 mx-auto mb-8">
-    <div class="flex flex-col sm:flex-row gap-6 items-start">
+<section id="proposal" class="py-20 px-4 bg-white border-b border-stone-100">
+  <div class="max-w-3xl mx-auto">
+    <h2 class="font-script text-5xl text-stone-700 text-center mb-4">The Proposal</h2>
+    <div class="w-12 h-px bg-stone-300 mx-auto mb-12"></div>
+
+    <div class="flex flex-col sm:flex-row gap-8 items-start">
       <img src="{% static 'bigday/images/DrakeShawnaEthan-HouseBuy.jpg' %}"
-           class="w-full sm:w-64 rounded-xl shadow-md object-cover shrink-0" alt="The Proposal">
-      <p class="text-stone-700 text-lg leading-relaxed">
-        Upon receiving the keys to our home right where our future dining room table would go Drake went down on a knee to start the rest of our lives together. She said yes!
-      </p>
+           class="w-full sm:w-56 rounded-2xl shadow-md object-cover shrink-0" alt="The Proposal">
+      <div>
+        <p class="font-display text-stone-600 text-xl leading-relaxed italic">
+          "Upon receiving the keys to our home right where our future dining room table would go, Drake went down on a knee to start the rest of our lives together."
+        </p>
+        <p class="mt-4 text-stone-400 text-sm">She said yes!</p>
+      </div>
     </div>
   </div>
 </section>

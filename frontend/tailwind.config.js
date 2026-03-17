@@ -7,6 +7,10 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        'script': ['Great Vibes', 'cursive'],
+        'display': ['Cormorant Garamond', 'Georgia', 'serif'],
+      },
       colors: {
         rose: {
           50: '#fff1f2',
