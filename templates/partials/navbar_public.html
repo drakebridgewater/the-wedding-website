@@ -8,146 +8,73 @@
         {{ couple_name }}
       </a>
 
-      <!-- Desktop nav -->
-      <div class="hidden md:flex items-center gap-1 text-sm">
-        <a href="/#event" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">The Event</a>
-        <a href="/#niagara" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">Location</a>
-        <a href="/#story" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">Our Story</a>
-        <a href="/#questions" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">Q&amp;A</a>
-        <a href="/#contact" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">Contact</a>
-        {% if registry_url %}
-        <a href="{{ registry_url }}" target="_blank" rel="noopener"
-           class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">
-          Registry ↗
-        </a>
-        {% endif %}
-        {% if weddingshare_url %}
-        <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
-           class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">
-          Photos ↗
-        </a>
-        {% endif %}
-
-        <!-- Tools dropdown (authenticated only) -->
-        {% if user.is_authenticated %}
-        <div class="relative" id="tools-menu">
-          <button id="tools-btn"
-                  class="flex items-center gap-1 px-3 py-2 rounded hover:bg-stone-100 text-stone-600 hover:text-stone-800 transition-colors"
-                  aria-haspopup="true" aria-expanded="false">
-            Tools
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-          <div id="tools-dropdown"
-               class="hidden absolute right-0 mt-1 w-52 bg-white border border-stone-200 rounded-xl shadow-lg py-1 z-50">
-
-            <p class="px-3 pt-2 pb-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">Guests</p>
-            <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Dashboard</a>
-            <a href="{% url 'guest-list' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Guest List</a>
-            <a href="{% url 'invitations' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Invitations</a>
-
-            <hr class="my-1 border-stone-100">
-            <p class="px-3 pt-1 pb-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">Planning</p>
-            <a href="{% url 'budget:budget' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Budget</a>
-            <a href="{% url 'todos:todos' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">To-Dos</a>
-            <a href="{% url 'seating:seating' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Seating Chart</a>
-            <a href="{% url 'schedule:schedule' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Day-of Schedule</a>
-            <a href="{% url 'music:music' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Music</a>
-
-            <hr class="my-1 border-stone-100">
-            <p class="px-3 pt-1 pb-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">Vendors</p>
-            <a href="{% url 'vendors:venue' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Venue</a>
-            <a href="{% url 'vendors:caterer' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Caterers</a>
-            <a href="{% url 'vendors:cake' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Cake &amp; Bakery</a>
-            <a href="{% url 'vendors:florist' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Florists</a>
-            <a href="{% url 'vendors:entertainment' %}" class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Entertainment</a>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Desktop right auth -->
-      <div class="hidden md:flex items-center gap-2 text-sm">
-        {% if user.is_authenticated %}
-        <a href="/admin/" class="px-3 py-1.5 rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors">
-          Admin
-        </a>
-        <a href="{% url 'logout' %}" class="px-3 py-1.5 rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors">
-          Logout
-        </a>
-        {% else %}
-        <a href="{% url 'login' %}" class="px-3 py-1.5 rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors">
-          Login
-        </a>
-        {% endif %}
-      </div>
-
-      <!-- Mobile hamburger -->
-      <button id="mobile-menu-btn" aria-label="Open menu" aria-expanded="false"
-              class="md:hidden p-2 rounded text-stone-600 hover:bg-stone-100 transition-colors">
-        <svg id="hamburger-icon" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <!-- Single menu button -->
+      <button id="menu-btn" aria-label="Open menu" aria-expanded="false"
+              class="p-2 rounded text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors">
+        <svg id="hamburger-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
-        <svg id="close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg id="close-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </button>
+
     </div>
   </div>
 
-  <!-- Mobile menu -->
-  <div id="mobile-menu" class="hidden md:hidden border-t border-stone-200 bg-white max-h-[80vh] overflow-y-auto">
-    <div class="px-4 py-3 space-y-1 text-sm">
-      <a href="/#event" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">The Event</a>
-      <a href="/#niagara" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">Location</a>
-      <a href="/#story" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">Our Story</a>
-      <a href="/#questions" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">Q&amp;A</a>
-      <a href="/#contact" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">Contact</a>
-      {% if registry_url %}
-      <a href="{{ registry_url }}" target="_blank" rel="noopener"
-         class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">
-        Registry ↗
-      </a>
-      {% endif %}
-      {% if weddingshare_url %}
-      <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
-         class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">
-        Photos ↗
-      </a>
+  <!-- Nav panel (hidden by default) -->
+  <div id="nav-panel" class="hidden border-t border-stone-100 bg-white shadow-lg max-h-[80vh] overflow-y-auto">
+    <div class="max-w-6xl mx-auto px-6 py-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+
+      <!-- Our Wedding -->
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Our Wedding</p>
+        <a href="/#event"    class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">The Event</a>
+        <a href="/#niagara"  class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Location</a>
+        <a href="/#story"    class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Our Story</a>
+        <a href="/#contact"  class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Contact</a>
+        <a href="/#questions" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Q&amp;A</a>
+      </div>
+
+      <!-- Day Of -->
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Day Of</p>
+        <a href="{% url 'schedule:program' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Wedding Program</a>
+        {% if registry_url %}
+        <a href="{{ registry_url }}" target="_blank" rel="noopener"
+           class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Registry ↗</a>
+        {% endif %}
+        {% if weddingshare_url %}
+        <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
+           class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Photos ↗</a>
+        {% endif %}
+      </div>
+
+      <!-- Planning (authenticated only) -->
+      {% if user.is_authenticated %}
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Planning</p>
+        <a href="{% url 'dashboard' %}"     class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Dashboard</a>
+        <a href="{% url 'guest-list' %}"    class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Guest List</a>
+        <a href="{% url 'invitations' %}"   class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Invitations</a>
+        <a href="{% url 'budget:budget' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Budget</a>
+        <a href="{% url 'todos:todos' %}"   class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">To-Dos</a>
+        <a href="{% url 'seating:seating' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Seating Chart</a>
+        <a href="{% url 'schedule:schedule' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Day-of Schedule</a>
+        <a href="{% url 'music:music' %}"   class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Music</a>
+      </div>
       {% endif %}
 
+    </div>
+
+    <!-- Auth row -->
+    <div class="border-t border-stone-100 px-6 py-3 flex items-center gap-3 max-w-6xl mx-auto">
       {% if user.is_authenticated %}
-      <div class="pt-2 border-t border-stone-100">
-        <p class="px-3 py-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">Guests</p>
-        <a href="{% url 'dashboard' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Dashboard</a>
-        <a href="{% url 'guest-list' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Guest List</a>
-        <a href="{% url 'invitations' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Invitations</a>
-      </div>
-      <div class="pt-2 border-t border-stone-100">
-        <p class="px-3 py-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">Planning</p>
-        <a href="{% url 'budget:budget' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Budget</a>
-        <a href="{% url 'todos:todos' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">To-Dos</a>
-        <a href="{% url 'seating:seating' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Seating Chart</a>
-        <a href="{% url 'schedule:schedule' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Day-of Schedule</a>
-        <a href="{% url 'music:music' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Music</a>
-      </div>
-      <div class="pt-2 border-t border-stone-100">
-        <p class="px-3 py-1 text-xs font-semibold text-stone-400 uppercase tracking-wider">Vendors</p>
-        <a href="{% url 'vendors:venue' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Venue</a>
-        <a href="{% url 'vendors:caterer' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Caterers</a>
-        <a href="{% url 'vendors:cake' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Cake &amp; Bakery</a>
-        <a href="{% url 'vendors:florist' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Florists</a>
-        <a href="{% url 'vendors:entertainment' %}" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-stone-50 transition-colors">Entertainment</a>
-      </div>
-      <div class="pt-2 border-t border-stone-100">
-        <a href="/admin/" class="block px-3 py-2.5 rounded text-stone-600 hover:bg-stone-50 transition-colors">Admin</a>
-        <a href="{% url 'logout' %}" class="block px-3 py-2.5 rounded text-stone-600 hover:bg-stone-50 transition-colors">Logout</a>
-      </div>
+      <a href="/admin/" class="text-xs text-stone-500 hover:text-stone-700 transition-colors">Admin</a>
+      <span class="text-stone-200">|</span>
+      <a href="{% url 'logout' %}" class="text-xs text-stone-500 hover:text-stone-700 transition-colors">Logout</a>
       {% else %}
-      <div class="pt-2 border-t border-stone-100">
-        <a href="{% url 'login' %}" class="block px-3 py-2.5 rounded text-stone-600 hover:bg-stone-50 transition-colors">Login</a>
-      </div>
+      <a href="{% url 'login' %}" class="text-xs text-stone-500 hover:text-stone-700 transition-colors">Login</a>
       {% endif %}
     </div>
   </div>
@@ -155,39 +82,36 @@
 
 <script>
 (function() {
-  // Mobile hamburger toggle
-  var btn = document.getElementById('mobile-menu-btn');
-  var menu = document.getElementById('mobile-menu');
+  var btn = document.getElementById('menu-btn');
+  var panel = document.getElementById('nav-panel');
   var hamburger = document.getElementById('hamburger-icon');
   var closeIcon = document.getElementById('close-icon');
+
   btn.addEventListener('click', function() {
-    var open = menu.classList.toggle('hidden');
+    var open = panel.classList.toggle('hidden');
     btn.setAttribute('aria-expanded', String(!open));
     hamburger.classList.toggle('hidden', !open);
     closeIcon.classList.toggle('hidden', open);
   });
-  menu.querySelectorAll('a').forEach(function(link) {
+
+  // Close when clicking a link
+  panel.querySelectorAll('a').forEach(function(link) {
     link.addEventListener('click', function() {
-      menu.classList.add('hidden');
+      panel.classList.add('hidden');
       btn.setAttribute('aria-expanded', 'false');
       hamburger.classList.remove('hidden');
       closeIcon.classList.add('hidden');
     });
   });
 
-  // Tools dropdown toggle
-  var toolsBtn = document.getElementById('tools-btn');
-  var toolsDropdown = document.getElementById('tools-dropdown');
-  if (toolsBtn && toolsDropdown) {
-    toolsBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var open = toolsDropdown.classList.toggle('hidden');
-      toolsBtn.setAttribute('aria-expanded', String(!open));
-    });
-    document.addEventListener('click', function() {
-      toolsDropdown.classList.add('hidden');
-      toolsBtn.setAttribute('aria-expanded', 'false');
-    });
-  }
+  // Close on outside click
+  document.addEventListener('click', function(e) {
+    if (!btn.contains(e.target) && !panel.contains(e.target)) {
+      panel.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+      hamburger.classList.remove('hidden');
+      closeIcon.classList.add('hidden');
+    }
+  });
 })();
 </script>

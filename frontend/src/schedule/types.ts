@@ -45,6 +45,7 @@ export interface ScheduleEvent {
   location: string
   category: EventCategory
   notes: string
+  is_public: boolean
   attendees: WeddingPartyMember[]
   attendee_ids: number[]
   conflicts: number[]  // member IDs that are double-booked
@@ -66,6 +67,7 @@ export interface EventFormData {
   location: string
   category: EventCategory
   notes: string
+  is_public: boolean
   attendee_ids: number[]
 }
 

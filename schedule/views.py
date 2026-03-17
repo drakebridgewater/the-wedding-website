@@ -6,11 +6,24 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from guests.models import WeddingPartyGroup
+from .models import ScheduleDay
 
 
 @login_required
 def schedule_page(request):
     return render(request, 'schedule/schedule.html')
+
+
+def public_schedule(request):
+    days = ScheduleDay.objects.prefetch_related(
+        'events__attendees'
+    ).order_by('order', 'date')
+    public_days = []
+    for day in days:
+        events = day.events.filter(is_public=True).order_by('start_time')
+        if events.exists():
+            public_days.append({'day': day, 'events': list(events)})
+    return render(request, 'schedule/public_schedule.html', {'public_days': public_days})
 
 
 @login_required

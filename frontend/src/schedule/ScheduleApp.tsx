@@ -111,7 +111,7 @@ export function ScheduleApp() {
         <h2 className="text-lg font-semibold text-stone-800 mb-2">No schedule days yet</h2>
         <p className="text-sm text-stone-500">
           Add schedule days in the{' '}
-          <a href="/admin/planning/scheduleday/add/" className="text-rose-600 underline">
+          <a href="/admin/schedule/scheduleday/add/" className="text-rose-600 underline">
             Django admin
           </a>{' '}
           to get started.

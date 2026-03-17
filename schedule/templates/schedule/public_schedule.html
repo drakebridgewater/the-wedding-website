@@ -1,0 +1,116 @@
+{% extends "base_public.html" %}
+{% load static %}
+
+{% block page_head %}
+<style>
+  /* Alternating timeline layout */
+  .timeline-item:nth-child(odd)  .tl-content { margin-left: calc(50% + 2.5rem); text-align: left; }
+  .timeline-item:nth-child(even) .tl-content { margin-right: calc(50% + 2.5rem); text-align: right; }
+  .timeline-item:nth-child(odd)  .tl-dot { left: 50%; transform: translateX(-50%); }
+  .timeline-item:nth-child(even) .tl-dot { left: 50%; transform: translateX(-50%); }
+
+  @media (max-width: 640px) {
+    .timeline-item:nth-child(odd)  .tl-content,
+    .timeline-item:nth-child(even) .tl-content {
+      margin-left: 3rem;
+      margin-right: 0;
+      text-align: left;
+    }
+    .timeline-item .tl-dot { left: 0; transform: none; }
+    .tl-spine { left: 0.75rem; }
+  }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="pt-20 pb-24 px-4">
+
+  <!-- Header -->
+  <div class="text-center mb-16">
+    <h1 class="font-script text-6xl text-stone-800 mb-3">Our Wedding Program</h1>
+    <div class="w-12 h-px bg-stone-300 mx-auto mb-4"></div>
+    <p class="text-stone-500 text-sm tracking-wide">We can't wait to celebrate with you</p>
+  </div>
+
+  {% if public_days %}
+    {% for entry in public_days %}
+    <!-- Day heading (only shown if multiple days) -->
+    {% if public_days|length > 1 %}
+    <div class="text-center mb-10">
+      <p class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-1">
+        {{ entry.day.date|date:"l, F j, Y" }}
+      </p>
+      <h2 class="font-display text-3xl text-stone-700">{{ entry.day.label }}</h2>
+      <div class="w-8 h-px bg-stone-300 mx-auto mt-3"></div>
+    </div>
+    {% endif %}
+
+    <!-- Timeline -->
+    <div class="relative max-w-3xl mx-auto">
+
+      <!-- Vertical spine -->
+      <div class="tl-spine absolute top-0 bottom-0 w-px bg-stone-200 sm:left-1/2"></div>
+
+      {% for event in entry.events %}
+      <div class="timeline-item relative pb-10 sm:pb-12">
+
+        <!-- Dot on spine -->
+        <div class="tl-dot absolute top-1 w-3 h-3 rounded-full bg-white border-2 z-10
+                    {% if event.category == 'ceremony' %}border-rose-400
+                    {% elif event.category == 'getting_ready' %}border-violet-400
+                    {% elif event.category == 'photos' %}border-emerald-400
+                    {% elif event.category == 'reception' %}border-blue-400
+                    {% elif event.category == 'travel' %}border-amber-400
+                    {% elif event.category == 'meal' %}border-orange-400
+                    {% else %}border-stone-400{% endif %}">
+        </div>
+
+        <!-- Content card -->
+        <div class="tl-content">
+          <div class="inline-block bg-white rounded-2xl border border-stone-100 shadow-sm px-5 py-4 max-w-xs sm:max-w-sm">
+
+            <!-- Category label -->
+            <p class="text-[10px] font-bold uppercase tracking-widest mb-1
+                      {% if event.category == 'ceremony' %}text-rose-400
+                      {% elif event.category == 'getting_ready' %}text-violet-400
+                      {% elif event.category == 'photos' %}text-emerald-500
+                      {% elif event.category == 'reception' %}text-blue-500
+                      {% elif event.category == 'travel' %}text-amber-500
+                      {% elif event.category == 'meal' %}text-orange-500
+                      {% else %}text-stone-400{% endif %}">
+              {{ event.get_category_display }}
+            </p>
+
+            <!-- Event name -->
+            <h3 class="font-display text-xl text-stone-800 leading-snug mb-1">
+              {{ event.name }}
+            </h3>
+
+            <!-- Time -->
+            <p class="text-xs text-stone-400 tracking-wide">
+              {{ event.start_time|time:"g:i A" }}
+              {% if event.location %}&nbsp;·&nbsp;{{ event.location }}{% endif %}
+            </p>
+
+            {% if event.notes %}
+            <p class="text-xs text-stone-500 mt-2 leading-relaxed italic">{{ event.notes }}</p>
+            {% endif %}
+
+          </div>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="text-center py-20 text-stone-400">
+    <p class="font-display text-2xl mb-2">Program coming soon</p>
+    <p class="text-sm">Check back closer to the wedding date.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ app_name = 'schedule'
 
 urlpatterns = [
     path('', views.schedule_page, name='schedule'),
+    path('program/', views.public_schedule, name='program'),
     path('groups/', views.groups_page, name='groups'),
     path('groups/<int:pk>/email/', views.send_group_email, name='send-group-email'),
     path('api/members/', api_views.schedule_members, name='api-members'),

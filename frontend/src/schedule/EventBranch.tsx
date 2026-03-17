@@ -1,4 +1,4 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Globe } from 'lucide-react'
 import type { ScheduleEvent } from './types'
 import { CATEGORY_COLORS, CATEGORY_LABELS } from './types'
 
@@ -28,6 +28,7 @@ interface Props {
 export function EventBranch({ event, dotY, spineX, columnIndex, onClick }: Props) {
   const color = CATEGORY_COLORS[event.category]
   const hasConflict = event.conflicts.length > 0
+  const isPublic = event.is_public
   const barHeight = Math.max(event.duration_minutes * (HOUR_PX / 60), 6)
 
   const barLeft    = spineX + columnIndex * BAR_W
@@ -95,9 +96,10 @@ export function EventBranch({ event, dotY, spineX, columnIndex, onClick }: Props
           style={{ backgroundColor: color }}
         />
 
-        {hasConflict && (
-          <AlertTriangle size={11} className="absolute top-2.5 right-2.5 text-amber-500" />
-        )}
+        <div className="absolute top-2.5 right-2.5 flex gap-1">
+          {isPublic && <Globe size={11} className="text-emerald-500" title="On public program" />}
+          {hasConflict && <AlertTriangle size={11} className="text-amber-500" />}
+        </div>
 
         <div className="pl-3 pr-4">
           <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color }}>

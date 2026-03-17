@@ -17,7 +17,7 @@ class ScheduleEventSerializer(serializers.ModelSerializer):
         model = ScheduleEvent
         fields = [
             'id', 'day', 'start_time', 'duration_minutes',
-            'name', 'location', 'category', 'notes',
+            'name', 'location', 'category', 'notes', 'is_public',
             'attendees', 'attendee_ids', 'conflicts',
         ]
         read_only_fields = ['id', 'attendees', 'conflicts']

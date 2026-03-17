@@ -34,6 +34,10 @@ class ScheduleEvent(models.Model):
     location = models.CharField(max_length=200, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORIES, default='other')
     notes = models.TextField(blank=True)
+    is_public = models.BooleanField(
+        default=False,
+        help_text='Show this event on the public wedding program page',
+    )
     attendees = models.ManyToManyField(
         'guests.WeddingPartyMember', blank=True, related_name='events'
     )
