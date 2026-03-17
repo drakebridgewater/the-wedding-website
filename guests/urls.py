@@ -1,11 +1,25 @@
 from django.contrib.auth.decorators import login_required
-from django.urls import re_path
+from django.urls import path, re_path
 
+from guests import api_views
 from guests.views import GuestListView, test_email, save_the_date_preview, save_the_date_random, export_guests, \
     invitation, invitation_email_preview, invitation_email_test, rsvp_confirm, dashboard, \
-    invitations_list, send_party_invitation
+    invitations_list, send_party_invitation, manage_page
 
 urlpatterns = [
+    # Guest management React app
+    path('guests/manage/', manage_page, name='manage'),
+
+    # REST API
+    path('guests/api/members/', api_views.members, name='api-members'),
+    path('guests/api/members/<int:pk>/', api_views.member_detail, name='api-member-detail'),
+    path('guests/api/groups/', api_views.groups, name='api-groups'),
+    path('guests/api/groups/<int:pk>/', api_views.group_detail, name='api-group-detail'),
+    path('guests/api/parties/', api_views.parties, name='api-parties'),
+    path('guests/api/parties/<int:pk>/', api_views.party_detail, name='api-party-detail'),
+    path('guests/api/parties/<int:party_pk>/guests/', api_views.party_guests, name='api-party-guests'),
+    path('guests/api/guests/<int:pk>/', api_views.guest_detail, name='api-guest-detail'),
+
     re_path(r'^guests/$', login_required(GuestListView.as_view()), name='guest-list'),
     re_path(r'^dashboard/$', dashboard, name='dashboard'),
     re_path(r'^guests/export$', export_guests, name='export-guest-list'),

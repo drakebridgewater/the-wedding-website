@@ -183,3 +183,8 @@ def send_party_invitation(request, party_pk):
     party.save()
     messages.success(request, f'Invitation sent to {party.name}.')
     return redirect('invitations')
+
+
+@login_required
+def manage_page(request):
+    return render(request, 'guests/manage.html')

@@ -27,6 +27,7 @@ export default defineConfig({
         seating: resolve(__dirname, 'src/seating/main.tsx'),
         schedule: resolve(__dirname, 'src/schedule/main.tsx'),
         music: resolve(__dirname, 'src/music/main.tsx'),
+        guests: resolve(__dirname, 'src/guests/main.tsx'),
         public: resolve(__dirname, 'src/public/main.ts'),
       },
     },

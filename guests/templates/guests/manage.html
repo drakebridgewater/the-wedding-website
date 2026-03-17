@@ -1,0 +1,12 @@
+{% extends "base_public.html" %}
+{% load django_vite %}
+
+{% block page_content %}
+<div class="pt-14">
+  <div id="guests-root"></div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+{% vite_asset 'src/guests/main.tsx' %}
+{% endblock %}

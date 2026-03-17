@@ -11,6 +11,7 @@ static/
 guests/static/save-the-date/images/archive/
 .DS_Store
 .venv/
+.env
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # compiled output
