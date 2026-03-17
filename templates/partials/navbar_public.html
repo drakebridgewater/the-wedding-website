@@ -15,6 +15,12 @@
         <a href="/#story" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">Our Story</a>
         <a href="/#questions" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">Q&amp;A</a>
         <a href="/#contact" class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">Contact</a>
+        {% if registry_url %}
+        <a href="{{ registry_url }}" target="_blank" rel="noopener"
+           class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">
+          Registry ↗
+        </a>
+        {% endif %}
         {% if weddingshare_url %}
         <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
            class="px-3 py-2 rounded hover:bg-rose-50 text-stone-700 hover:text-rose-700 transition-colors">
@@ -98,6 +104,12 @@
       <a href="/#story" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">Our Story</a>
       <a href="/#questions" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">Q&amp;A</a>
       <a href="/#contact" class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">Contact</a>
+      {% if registry_url %}
+      <a href="{{ registry_url }}" target="_blank" rel="noopener"
+         class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">
+        Registry ↗
+      </a>
+      {% endif %}
       {% if weddingshare_url %}
       <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
          class="block px-3 py-2.5 rounded text-stone-700 hover:bg-rose-50 hover:text-rose-700 transition-colors">

@@ -4,7 +4,7 @@ import { EventBranch, HOUR_PX, BAR_W, STEM_BASE, COLUMN_W } from './EventBranch'
 
 const START_HOUR = 6
 const END_HOUR = 24
-const SPINE_X = 100       // x position of the spine
+const SPINE_X = 108      // x position of the spine
 const MIN_PX = HOUR_PX / 60
 
 function parseTime(t: string): number {
@@ -28,17 +28,12 @@ function formatHourLabel(h: number): string {
   return h < 12 ? `${h} AM` : `${h - 12} PM`
 }
 
-/**
- * Assign each event to a horizontal column so overlapping events spread
- * rightward instead of being pushed down. Non-overlapping events reuse
- * column 0. Returns a map of event id → column index (0-based).
- */
 function computeEventColumns(events: ScheduleEvent[]): Map<number, number> {
   const sorted = [...events].sort(
     (a, b) => parseTime(a.start_time) - parseTime(b.start_time),
   )
   const result = new Map<number, number>()
-  const columnEnd: number[] = []  // end time (mins) of the last event in each column
+  const columnEnd: number[] = []
 
   for (const ev of sorted) {
     const start = parseTime(ev.start_time)
@@ -68,9 +63,8 @@ export function Timeline({ events, onTimeClick, onEventClick }: Props) {
   const naturalHeight = hours.length * HOUR_PX
 
   const eventColumns = computeEventColumns(events)
-
   const maxColumn = events.length > 0 ? Math.max(...Array.from(eventColumns.values())) : 0
-  const minWidth = SPINE_X + BAR_W + STEM_BASE + (maxColumn + 1) * COLUMN_W + 280
+  const minWidth = SPINE_X + BAR_W + STEM_BASE + (maxColumn + 1) * COLUMN_W + 40
 
   function handleSpineClick(e: React.MouseEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest('[data-event]')) return
@@ -86,61 +80,62 @@ export function Timeline({ events, onTimeClick, onEventClick }: Props) {
   return (
     <div
       ref={containerRef}
-      className="relative overflow-y-auto select-none"
-      style={{ height: 'calc(100vh - 200px)' }}
+      className="relative overflow-y-auto select-none rounded-xl border border-stone-100 bg-white"
+      style={{ height: 'calc(100vh - 220px)' }}
     >
-      <div className="relative" style={{ height: naturalHeight + 80, minWidth }}>
+      <div className="relative" style={{ height: naturalHeight + 40, minWidth }}>
+
+        {/* Horizontal hour grid lines (full-width) */}
+        {hours.map((h) => (
+          <div
+            key={`grid-${h}`}
+            className="absolute left-0 right-0"
+            style={{
+              top: (h - START_HOUR) * HOUR_PX,
+              height: 1,
+              backgroundColor: h % 2 === 0 ? '#e7e5e4' : '#f5f4f3',
+              zIndex: 1,
+            }}
+          />
+        ))}
+
+        {/* Half-hour subtle lines */}
+        {hours.map((h) => (
+          <div
+            key={`half-${h}`}
+            className="absolute right-0"
+            style={{
+              left: SPINE_X,
+              top: (h - START_HOUR) * HOUR_PX + HOUR_PX / 2,
+              height: 1,
+              backgroundColor: '#f0efee',
+              zIndex: 1,
+            }}
+          />
+        ))}
 
         {/* Hour labels */}
         {hours.map((h) => (
           <div
             key={h}
             className="absolute flex items-center"
-            style={{ top: (h - START_HOUR) * HOUR_PX - 9, left: 0, width: SPINE_X - 12 }}
+            style={{ top: (h - START_HOUR) * HOUR_PX - 9, left: 0, width: SPINE_X - 10 }}
           >
-            <span className="text-xs text-gray-400 ml-auto leading-none">
+            <span className="text-[11px] text-stone-400 ml-auto leading-none font-medium tracking-wide">
               {formatHourLabel(h)}
             </span>
           </div>
         ))}
 
-        {/* Hour tick marks on the spine */}
-        {hours.map((h) => (
-          <div
-            key={`tick-${h}`}
-            className="absolute bg-gray-300"
-            style={{
-              left: SPINE_X - 6,
-              top: (h - START_HOUR) * HOUR_PX,
-              width: 14,
-              height: 1,
-            }}
-          />
-        ))}
-
-        {/* Half-hour subtle ticks */}
-        {hours.map((h) => (
-          <div
-            key={`half-${h}`}
-            className="absolute bg-gray-200"
-            style={{
-              left: SPINE_X - 3,
-              top: (h - START_HOUR) * HOUR_PX + HOUR_PX / 2,
-              width: 8,
-              height: 1,
-            }}
-          />
-        ))}
-
         {/* Spine — full-height clickable strip */}
         <div
           className="absolute top-0 cursor-crosshair"
-          style={{ left: SPINE_X - 10, width: 22, height: naturalHeight + 80 }}
+          style={{ left: SPINE_X - 10, width: 22, height: naturalHeight + 40, zIndex: 5 }}
           onClick={handleSpineClick}
         >
           <div
-            className="absolute top-0 bottom-0 bg-gray-300 rounded-full"
-            style={{ left: 10, width: 2 }}
+            className="absolute top-0 bottom-0 rounded-full"
+            style={{ left: 10, width: 2, backgroundColor: '#d6d3d1' }}
           />
         </div>
 
@@ -162,10 +157,10 @@ export function Timeline({ events, onTimeClick, onEventClick }: Props) {
 
         {events.length === 0 && (
           <div
-            className="absolute text-xs text-gray-400 italic pointer-events-none"
-            style={{ left: SPINE_X + 24, top: 2 * HOUR_PX - 6 }}
+            className="absolute text-xs text-stone-400 italic pointer-events-none"
+            style={{ left: SPINE_X + 20, top: 2 * HOUR_PX - 6 }}
           >
-            ← Click the line to add an event
+            ← Click the timeline to add an event
           </div>
         )}
       </div>

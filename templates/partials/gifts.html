@@ -1,13 +1,47 @@
 <div class="max-w-3xl mx-auto">
-  <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Gifts</h2>
+  <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Gift Registry</h2>
   <div class="w-12 h-px bg-stone-300 mx-auto mb-12"></div>
 
-  <div class="rounded-2xl border border-stone-200 overflow-hidden">
-    <div class="px-6 py-4 border-b border-stone-100 bg-white">
-      <h3 class="font-display text-xl text-stone-700">Gift Registry</h3>
-    </div>
-    <div class="px-6 py-5 text-stone-400 text-sm italic bg-amber-50">
-      Registry links, preferred charities, or gift guidance coming soon.
+  {% if registry_url %}
+  <div class="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm">
+    <div class="flex flex-col sm:flex-row">
+
+      <!-- Icon / brand side -->
+      <div class="sm:w-40 bg-stone-50 border-b sm:border-b-0 sm:border-r border-stone-100 flex flex-col items-center justify-center py-8 px-6">
+        <svg class="w-10 h-10 text-stone-400 mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 1 0 9.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1 1 14.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/>
+        </svg>
+        <span class="text-xs text-stone-400 text-center leading-tight">Things to Get Me</span>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 px-6 py-6 flex flex-col justify-between gap-4">
+        <div>
+          <h3 class="font-display text-xl text-stone-700 mb-2">Our Wish List</h3>
+          <p class="text-stone-500 text-sm leading-relaxed">
+            We've created a registry on ThingsToGetMe — a universal wish list where you can view
+            and reserve gifts from any store. Your generosity and presence mean the world to us.
+          </p>
+        </div>
+        <div>
+          <a href="{{ registry_url }}" target="_blank" rel="noopener"
+             class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-sm transition-colors">
+            View Registry ↗
+          </a>
+        </div>
+      </div>
     </div>
   </div>
+
+  {% else %}
+  <div class="rounded-2xl border border-stone-200 overflow-hidden">
+    <div class="px-6 py-4 border-b border-stone-100 bg-white">
+      <h3 class="font-display text-xl text-stone-700">Our Wish List</h3>
+    </div>
+    <div class="px-6 py-5 text-stone-400 text-sm italic bg-amber-50">
+      Registry coming soon — set <code>REGISTRY_URL</code> in your environment to your ThingsToGetMe list URL.
+    </div>
+  </div>
+  {% endif %}
 </div>

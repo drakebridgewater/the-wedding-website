@@ -130,6 +130,10 @@ WEDDING_CC_LIST = []
 # Override in production settings or .env to your public-facing URL
 WEDDINGSHARE_URL = 'http://10.0.0.10:5123'
 
+# ThingsToGetMe gift registry URL (e.g. https://www.thingstogetme.com/your-name-wedding)
+# Set to your specific registry URL in production settings or .env
+REGISTRY_URL = 'https://www.thingstogetme.com/2201028ac00f5'
+
 # Derived email settings — override the base addresses above, not these
 DEFAULT_WEDDING_FROM_EMAIL = f'{BRIDE_AND_GROOM} <{DEFAULT_WEDDING_EMAIL}>'
 DEFAULT_WEDDING_TEST_EMAIL = DEFAULT_WEDDING_FROM_EMAIL

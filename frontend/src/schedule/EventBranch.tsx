@@ -1,13 +1,13 @@
 import { AlertTriangle } from 'lucide-react'
 import type { ScheduleEvent } from './types'
-import { CATEGORY_COLORS } from './types'
+import { CATEGORY_COLORS, CATEGORY_LABELS } from './types'
 
 export const HOUR_PX = 80     // vertical px per hour (shared with Timeline)
 
 // ─── Layout constants ────────────────────────────────────────────────────────
-export const BAR_W = 8        // width of each column's duration bar on the spine
-export const STEM_BASE = 16   // gap between the rightmost bar and the first bubble column
-export const COLUMN_W = 175   // horizontal spacing between bubble columns
+export const BAR_W    = 4     // width of each column's duration bar on the spine
+export const STEM_BASE = 20   // gap from spine to first bubble column
+export const COLUMN_W  = 220  // horizontal spacing between bubble columns
 // ─────────────────────────────────────────────────────────────────────────────
 
 function formatTime(t: string): string {
@@ -19,98 +19,106 @@ function formatTime(t: string): string {
 
 interface Props {
   event: ScheduleEvent
-  dotY: number        // y coordinate of the event's start time on the spine
+  dotY: number
   spineX: number
-  columnIndex: number // 0 = no overlap; 1, 2 ... = shifted right to avoid overlap
+  columnIndex: number
   onClick: () => void
 }
 
 export function EventBranch({ event, dotY, spineX, columnIndex, onClick }: Props) {
   const color = CATEGORY_COLORS[event.category]
   const hasConflict = event.conflicts.length > 0
+  const barHeight = Math.max(event.duration_minutes * (HOUR_PX / 60), 6)
 
-  const barHeight = Math.max(event.duration_minutes * (HOUR_PX / 60), 4)
-
-  // Each column's bar sits immediately to the right of the previous one.
-  // Column 0 starts flush with the spine; columns 1, 2 … march right.
-  const barLeft   = spineX + columnIndex * BAR_W
-  const stemStart = barLeft + BAR_W
-
-  // Bubble columns start after a fixed gap beyond the first bar.
+  const barLeft    = spineX + columnIndex * BAR_W
+  const stemStart  = spineX + BAR_W * (columnIndex + 1)
   const bubbleLeft = spineX + BAR_W + STEM_BASE + columnIndex * COLUMN_W
-  const stemWidth  = bubbleLeft - stemStart   // always ≥ STEM_BASE for column 0
+  const stemWidth  = bubbleLeft - stemStart
 
   return (
     <>
-      {/* ── Duration bar on the spine (side-by-side per column) ── */}
+      {/* Duration bar on the spine */}
       <div
-        className="absolute"
+        className="absolute rounded-sm"
         style={{
           left: barLeft,
           top: dotY,
-          width: BAR_W - 1,   // 1 px gap so adjacent bars are visually distinct
+          width: BAR_W - 1,
           height: barHeight,
           backgroundColor: color,
+          opacity: 0.85,
           zIndex: 8,
         }}
       />
 
-      {/* ── Horizontal stem: right edge of bar → left edge of bubble ── */}
+      {/* Circle dot at event start */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          left: barLeft - 2,
+          top: dotY - 3,
+          width: 8,
+          height: 8,
+          backgroundColor: color,
+          border: '2px solid white',
+          boxShadow: '0 0 0 1px ' + color + '40',
+          zIndex: 10,
+        }}
+      />
+
+      {/* Thin horizontal connector */}
       <div
         className="absolute"
         style={{
           left: stemStart,
-          top: dotY - 1,
+          top: dotY,
           width: stemWidth,
-          height: 2,
+          height: 1,
           backgroundColor: color,
-          opacity: 0.4,
+          opacity: 0.15,
           zIndex: 6,
         }}
       />
 
-      {/* ── Bubble card with category color tint ── */}
+      {/* Clean white event card */}
       <div
         data-event
-        className="absolute cursor-pointer rounded-2xl border shadow-sm
-                   hover:shadow-md transition-shadow px-3 py-2 min-w-[160px] max-w-[260px]"
-        style={{
-          left: bubbleLeft,
-          top: dotY,
-          backgroundColor: `${color}18`,
-          borderColor: `${color}55`,
-          zIndex: 20,
-        }}
+        className="absolute cursor-pointer rounded-xl bg-white border border-stone-200 shadow-sm
+                   hover:shadow-md hover:border-stone-300 transition-all px-3 py-2.5
+                   min-w-[170px] max-w-[250px]"
+        style={{ left: bubbleLeft, top: dotY, zIndex: 20 }}
         onClick={onClick}
       >
-        {/* Bold category accent bar */}
+        {/* Left color bar */}
         <div
-          className="absolute left-0 top-3 bottom-3 w-1.5 rounded-full"
+          className="absolute left-0 top-2 bottom-2 w-1 rounded-full"
           style={{ backgroundColor: color }}
         />
 
-        <div className="pl-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-[11px] leading-none mb-0.5 font-medium" style={{ color }}>
-                {formatTime(event.start_time)}
-                {event.location && <span className="ml-1 opacity-75">· {event.location}</span>}
-              </p>
-              <p className="text-sm font-semibold text-gray-800 leading-tight truncate">
-                {event.name}
-              </p>
-            </div>
-            {hasConflict && (
-              <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
-            )}
-          </div>
+        {hasConflict && (
+          <AlertTriangle size={11} className="absolute top-2.5 right-2.5 text-amber-500" />
+        )}
+
+        <div className="pl-3 pr-4">
+          <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color }}>
+            {CATEGORY_LABELS[event.category]}
+          </p>
+
+          <p className="text-[13px] font-semibold text-stone-800 leading-tight truncate mb-0.5">
+            {event.name}
+          </p>
+
+          <p className="text-[11px] text-stone-400 leading-none">
+            {formatTime(event.start_time)}
+            {event.location && <span className="ml-1">· {event.location}</span>}
+          </p>
 
           {event.attendees.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
+            <div className="flex flex-wrap gap-1 mt-2">
               {event.attendees.map((a) => (
                 <span
                   key={a.id}
-                  className="inline-block px-1.5 py-0.5 rounded-full text-[10px] font-medium text-white"
+                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-semibold text-white"
                   style={{ backgroundColor: a.color }}
                   title={event.conflicts.includes(a.id) ? `${a.name} is double-booked` : a.name}
                 >
