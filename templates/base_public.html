@@ -1,0 +1,33 @@
+{% load static django_vite %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <title>{{ couple_name }}'s Big Day</title>
+
+  <link rel="shortcut icon" href="{% static 'favicon.ico' %}">
+  <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}" type="text/css">
+
+  {% vite_asset 'src/public/main.ts' %}
+  {% include "partials/google-analytics.html" %}
+  {% block page_head %}{% endblock %}
+</head>
+<body class="bg-white text-stone-800 pt-14">
+
+{% include "partials/navbar_public.html" %}
+
+{% block page_content %}{% endblock %}
+
+{% include "partials/footer.html" %}
+
+{% block page_js %}{% endblock %}
+
+{% if user.is_authenticated %}
+<div id="quick-add-root"></div>
+{% vite_asset 'src/todos/quick-add-main.tsx' %}
+{% endif %}
+
+</body>
+</html>

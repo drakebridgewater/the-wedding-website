@@ -1,99 +1,81 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 
 {% block page_content %}
-<div class="container" style="padding-top: 30px; padding-bottom: 60px;">
+<div class="max-w-6xl mx-auto px-4 py-8">
 
-  <div class="row">
-    <div class="col-md-12">
-      <h2>Wedding Party Groups
-        <a href="{% url 'admin:planning_weddingpartygroup_changelist' %}"
-           class="btn btn-default btn-sm" style="margin-left: 12px;">
-          <span class="glyphicon glyphicon-cog"></span> Manage in Admin
-        </a>
-      </h2>
-      <p class="text-muted">Groups let you quickly select attendees for schedule events and send emails to specific parties.</p>
-    </div>
+  <div class="flex items-center gap-3 mb-2">
+    <h1 class="text-2xl font-semibold text-stone-800">Wedding Party Groups</h1>
+    <a href="{% url 'admin:planning_weddingpartygroup_changelist' %}"
+       class="px-2.5 py-1 text-xs rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors">
+      Manage in Admin
+    </a>
   </div>
+  <p class="text-sm text-stone-500 mb-6">Groups let you quickly select attendees for schedule events and send emails to specific parties.</p>
 
   {% if messages %}
-  <div class="row" style="margin-top: 10px;">
-    <div class="col-md-12">
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        {{ message }}
-      </div>
-      {% endfor %}
+    {% for message in messages %}
+    <div class="mb-4 px-4 py-3 rounded-lg border text-sm
+                {% if 'success' in message.tags %}bg-green-50 border-green-200 text-green-800
+                {% elif 'error' in message.tags %}bg-red-50 border-red-200 text-red-800
+                {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+      {{ message }}
     </div>
-  </div>
+    {% endfor %}
   {% endif %}
 
   {% if groups %}
-  <div class="row" style="margin-top: 20px;">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     {% for group in groups %}
-    <div class="col-md-6" style="margin-bottom: 24px;">
-      <div class="panel panel-default" style="border-top: 4px solid {{ group.color }};">
-        <div class="panel-heading" style="background: #fff;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="display: inline-block; width: 14px; height: 14px; border-radius: 50%;
-                         background: {{ group.color }}; flex-shrink: 0;"></span>
-            <h4 class="panel-title" style="margin: 0; font-weight: 600;">{{ group.name }}</h4>
-            <span class="badge" style="background: {{ group.color }};">{{ group.members.count }}</span>
-          </div>
-          {% if group.description %}
-          <p class="text-muted" style="margin: 6px 0 0; font-size: 13px;">{{ group.description }}</p>
-          {% endif %}
+    <div class="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm"
+         style="border-top: 4px solid {{ group.color }};">
+      <div class="px-5 py-4">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-3 h-3 rounded-full flex-shrink-0" style="background: {{ group.color }};"></span>
+          <h2 class="text-base font-semibold text-stone-800">{{ group.name }}</h2>
+          <span class="ml-auto text-xs font-medium px-2 py-0.5 rounded-full text-white"
+                style="background: {{ group.color }};">{{ group.members.count }}</span>
+        </div>
+        {% if group.description %}
+        <p class="text-sm text-stone-500 mb-3">{{ group.description }}</p>
+        {% endif %}
+
+        <!-- Member pills -->
+        <div class="flex flex-wrap gap-1.5 mb-4">
+          {% for member in group.members.all %}
+          <span class="text-xs font-medium px-2.5 py-1 rounded-full text-white"
+                style="background-color: {{ member.color }};">
+            {{ member.name }}{% if member.email %} ✉{% endif %}
+          </span>
+          {% empty %}
+          <span class="text-sm text-stone-400 italic">No members yet</span>
+          {% endfor %}
         </div>
 
-        <div class="panel-body" style="padding-bottom: 8px;">
-          <!-- Member pills -->
-          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;">
-            {% for member in group.members.all %}
-            <span class="label" style="background-color: {{ member.color }}; font-size: 12px;
-                                        padding: 4px 10px; border-radius: 20px; font-weight: 500;">
-              {{ member.name }}
-              {% if member.email %}<span style="opacity: 0.75; font-size: 10px; margin-left: 4px;">✉</span>{% endif %}
-            </span>
-            {% empty %}
-            <span class="text-muted" style="font-size: 13px; font-style: italic;">No members yet</span>
-            {% endfor %}
-          </div>
-
-          <!-- Email form -->
-          {% with email_count=group.members.all|length %}
-          <div>
-            <button class="btn btn-xs btn-default" type="button"
-                    data-toggle="collapse"
-                    data-target="#email-form-{{ group.pk }}"
-                    style="margin-bottom: 8px;">
-              <span class="glyphicon glyphicon-envelope"></span>
-              Send email to {{ group.name }}
-            </button>
-
-            <div class="collapse" id="email-form-{{ group.pk }}">
-              <form method="post" action="{% url 'planning:send-group-email' group.pk %}">
-                {% csrf_token %}
-                <div class="form-group" style="margin-bottom: 8px;">
-                  <input type="text" name="subject" class="form-control input-sm"
-                         placeholder="Subject" required>
-                </div>
-                <div class="form-group" style="margin-bottom: 8px;">
-                  <textarea name="body" class="form-control input-sm" rows="4"
-                            placeholder="Message…" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-sm btn-primary">
-                  <span class="glyphicon glyphicon-send"></span> Send
+        <!-- Email toggle -->
+        <div>
+          <button type="button"
+                  onclick="this.nextElementSibling.classList.toggle('hidden')"
+                  class="text-xs px-3 py-1.5 rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors mb-2">
+            ✉ Send email to {{ group.name }}
+          </button>
+          <div class="hidden">
+            <form method="post" action="{% url 'planning:send-group-email' group.pk %}" class="space-y-2">
+              {% csrf_token %}
+              <input type="text" name="subject"
+                     class="w-full text-sm px-3 py-2 border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
+                     placeholder="Subject" required>
+              <textarea name="body" rows="3"
+                        class="w-full text-sm px-3 py-2 border border-stone-200 rounded focus:outline-none focus:ring-2 focus:ring-rose-300"
+                        placeholder="Message…" required></textarea>
+              <div class="flex items-center gap-3">
+                <button type="submit"
+                        class="px-3 py-1.5 text-sm rounded bg-rose-600 hover:bg-rose-700 text-white transition-colors">
+                  Send
                 </button>
-                <span class="text-muted" style="font-size: 12px; margin-left: 8px;">
-                  {% with count=group.members.all %}
-                  {% with emails=group.members.filter %}
-                  Sends to members with email addresses on file.
-                  {% endwith %}{% endwith %}
-                </span>
-              </form>
-            </div>
+                <span class="text-xs text-stone-400">Sends to members with email addresses on file.</span>
+              </div>
+            </form>
           </div>
-          {% endwith %}
         </div>
       </div>
     </div>
@@ -101,13 +83,12 @@
   </div>
 
   {% else %}
-  <div class="row" style="margin-top: 40px;">
-    <div class="col-md-6 col-md-offset-3 text-center">
-      <p class="text-muted" style="font-size: 15px;">No groups yet.</p>
-      <a href="{% url 'admin:planning_weddingpartygroup_add' %}" class="btn btn-primary">
-        <span class="glyphicon glyphicon-plus"></span> Create a Group
-      </a>
-    </div>
+  <div class="text-center py-20">
+    <p class="text-stone-400 mb-4">No groups yet.</p>
+    <a href="{% url 'admin:planning_weddingpartygroup_add' %}"
+       class="px-4 py-2 rounded bg-rose-600 hover:bg-rose-700 text-white text-sm transition-colors">
+      + Create a Group
+    </a>
   </div>
   {% endif %}
 

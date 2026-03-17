@@ -3,6 +3,20 @@ from __future__ import unicode_literals
 from django.db import models
 
 
+class Question(models.Model):
+    name = models.CharField(max_length=100, blank=True, help_text="Guest's name (optional)")
+    question_text = models.TextField()
+    answer = models.TextField(blank=True)
+    is_approved = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.name or 'Anonymous'}: {self.question_text[:60]}"
+
+
 class WeddingSettings(models.Model):
     """Singleton model — only one row (pk=1) should ever exist."""
 

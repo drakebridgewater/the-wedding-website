@@ -26,6 +26,8 @@ export default defineConfig({
         'todos-quick-add': resolve(__dirname, 'src/todos/quick-add-main.tsx'),
         seating: resolve(__dirname, 'src/seating/main.tsx'),
         schedule: resolve(__dirname, 'src/schedule/main.tsx'),
+        music: resolve(__dirname, 'src/music/main.tsx'),
+        public: resolve(__dirname, 'src/public/main.ts'),
       },
     },
   },

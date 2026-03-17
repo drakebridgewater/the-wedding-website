@@ -230,3 +230,41 @@ def serialize_task(task: dict) -> dict:
         'modified_time': task.get('modifiedTime'),
         'project_id': task.get('projectId'),
     }
+
+
+def sync_tasks_to_db(project_id: str) -> dict:
+    """Pull all tasks from TickTick and upsert them into the local Task table.
+
+    Returns a dict with counts: {'updated': N, 'created': N, 'total': N}.
+    """
+    from todos.models import Task
+
+    tasks = get_tasks(project_id)
+    created_count = 0
+    updated_count = 0
+
+    for task in tasks:
+        defaults = {
+            'project_id': task.get('projectId', ''),
+            'title': task.get('title', ''),
+            'content': task.get('content', ''),
+            'status': task.get('status', 0),
+            'priority': task.get('priority', 0),
+            'due_date': task.get('dueDate') or '',
+            'start_date': task.get('startDate') or '',
+            'assignee': task.get('assignee') or '',
+            'tags': task.get('tags') or [],
+            'created_time': task.get('createdTime') or '',
+            'modified_time': task.get('modifiedTime') or '',
+        }
+        _, created = Task.objects.update_or_create(
+            ticktick_id=task['id'],
+            defaults=defaults,
+        )
+        if created:
+            created_count += 1
+        else:
+            updated_count += 1
+
+    logger.info('TickTick sync: %d created, %d updated', created_count, updated_count)
+    return {'created': created_count, 'updated': updated_count, 'total': len(tasks)}

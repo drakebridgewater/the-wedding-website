@@ -1,14 +1,19 @@
 {% load static %}
-<header id="second-header" class="secondary"></header>
-<section id="proposal">
-    <div class="container">
-        <div class="col-lg-12">
-            <h2 class="section-heading text-center">The Proposal</h2>
-            <hr class="primary">
-            <div class="clearfix">
-                <img src="{% static 'bigday/images/DrakeShawnaEthan-HouseBuy.jpg' %}" class="img-responsive pull-left" style="max-width: 300px; margin-right: 20px; margin-bottom: 10px;" alt="The Proposal">
-                Upon receiving the keys to our home right where our future dining room table would go Drake went down on a knee to start the rest of our lives together. She said yes!
-            </div>
-        </div>
+<div class="relative h-48 sm:h-64"
+     style="background-image: url('{% static 'bigday/images/chapmans-peak-view.jpg' %}'); background-size: cover; background-position: center;">
+  <div class="absolute inset-0 bg-black/30"></div>
+</div>
+
+<section id="proposal" class="py-16 px-4">
+  <div class="max-w-4xl mx-auto">
+    <h2 class="text-3xl font-light text-center text-stone-800 mb-3">The Proposal</h2>
+    <hr class="border-stone-300 w-16 mx-auto mb-8">
+    <div class="flex flex-col sm:flex-row gap-6 items-start">
+      <img src="{% static 'bigday/images/DrakeShawnaEthan-HouseBuy.jpg' %}"
+           class="w-full sm:w-64 rounded-xl shadow-md object-cover shrink-0" alt="The Proposal">
+      <p class="text-stone-700 text-lg leading-relaxed">
+        Upon receiving the keys to our home right where our future dining room table would go Drake went down on a knee to start the rest of our lives together. She said yes!
+      </p>
     </div>
+  </div>
 </section>

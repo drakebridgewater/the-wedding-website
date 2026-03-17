@@ -22,6 +22,15 @@ async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
   return res.json()
 }
 
+export function useSyncTodos() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ created: number; updated: number; total: number }>('/todos/api/sync/', { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['todos'] }),
+  })
+}
+
 export function useTodos(filters: TodoFilters) {
   const params = new URLSearchParams({
     status: filters.status,

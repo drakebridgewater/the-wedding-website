@@ -1,51 +1,57 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
+
 {% block page_content %}
-<div class="container">
-    <div class="row">
-        <div class="col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4">
-            <div class="panel panel-default" style="margin-top: 40px;">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Sign in</h3>
-                </div>
-                <div class="panel-body">
-                    {% if form.errors %}
-                    <div class="alert alert-danger">
-                        Your username and password didn't match. Please try again.
-                    </div>
-                    {% endif %}
-                    {% if next %}
-                    <div class="alert alert-info">
-                        {% if user.is_authenticated %}
-                        Your account doesn't have access to this page.
-                        {% else %}
-                        Please log in to see this page.
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                    <form method="post" action="{% url 'login' %}">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="{{ form.username.id_for_label }}">Username</label>
-                            <input type="text" name="{{ form.username.html_name }}"
-                                   id="{{ form.username.id_for_label }}"
-                                   class="form-control" autofocus required>
-                        </div>
-                        <div class="form-group">
-                            <label for="{{ form.password.id_for_label }}">Password</label>
-                            <input type="password" name="{{ form.password.html_name }}"
-                                   id="{{ form.password.id_for_label }}"
-                                   class="form-control" required>
-                        </div>
-                        <input type="hidden" name="next" value="{{ next }}">
-                        <button type="submit" class="btn btn-primary btn-block">Sign in</button>
-                    </form>
-                    <hr>
-                    <p class="text-center">
-                        <a href="{% url 'password_reset' %}">Forgot your password?</a>
-                    </p>
-                </div>
-            </div>
+<div class="min-h-screen py-20 px-4 bg-stone-50 flex items-center justify-center">
+  <div class="w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+      <h2 class="text-2xl font-light text-stone-800 text-center mb-6">Sign in</h2>
+
+      {% if form.errors %}
+      <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        Your username and password didn't match. Please try again.
+      </div>
+      {% endif %}
+
+      {% if next %}
+      <div class="mb-4 px-4 py-3 bg-sky-50 border border-sky-200 rounded-lg text-sky-800 text-sm">
+        {% if user.is_authenticated %}
+        Your account doesn't have access to this page.
+        {% else %}
+        Please log in to see this page.
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <div class="mb-4">
+          <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-stone-700 mb-1">Username</label>
+          <input type="text" name="{{ form.username.html_name }}"
+                 id="{{ form.username.id_for_label }}"
+                 autocomplete="username"
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base"
+                 autofocus required>
         </div>
+        <div class="mb-6">
+          <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-stone-700 mb-1">Password</label>
+          <input type="password" name="{{ form.password.html_name }}"
+                 id="{{ form.password.id_for_label }}"
+                 autocomplete="current-password"
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base"
+                 required>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit"
+                class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-medium rounded-xl transition-colors text-base">
+          Sign in
+        </button>
+      </form>
+
+      <hr class="my-5 border-stone-200">
+      <p class="text-center text-sm">
+        <a href="{% url 'password_reset' %}" class="text-stone-500 hover:text-rose-600 transition-colors">Forgot your password?</a>
+      </p>
     </div>
+  </div>
 </div>
 {% endblock %}

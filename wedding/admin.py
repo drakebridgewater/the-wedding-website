@@ -2,7 +2,16 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
-from .models import WeddingSettings
+from .models import Question, WeddingSettings
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ['name', 'question_text', 'is_approved', 'created_at']
+    list_filter = ['is_approved']
+    list_editable = ['is_approved']
+    search_fields = ['name', 'question_text', 'answer']
+    readonly_fields = ['created_at']
 
 
 @admin.register(WeddingSettings)

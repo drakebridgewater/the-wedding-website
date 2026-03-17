@@ -1,8 +1,20 @@
-<h1>Guests</h1>
-<ul>
-{% for guest in object_list %}
-    <li>{{ guest.name }}</li>
-{% empty %}
-    <li>No guests yet.</li>
-{% endfor %}
-</ul>
+<div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-stone-100">
+        <th class="pb-2 text-left font-medium text-stone-500">Party</th>
+        <th class="pb-2 text-left font-medium text-stone-500">Name</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-stone-50">
+    {% for guest in guest_list %}
+      <tr>
+        <td class="py-1.5 text-stone-500">{{ guest.party.name }}</td>
+        <td class="py-1.5 text-stone-800">{{ guest.first_name }} {{ guest.last_name }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="2" class="py-3 text-stone-400 text-center">None.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>

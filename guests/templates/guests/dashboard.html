@@ -1,124 +1,146 @@
-{% extends 'base.html' %}
+{% extends 'base_public.html' %}
 {% block page_content %}
-    <div class="container" id="main">
-        <h1>Dashboard</h1>
-        <table class="table table-striped">
-            <tr>
-                <td>Guests Attending / Possible</td>
-                <td>{{ guests }} / {{ possible_guests }}</td>
-            </tr>
-            <tr>
-                <td>Pending Invitations</td>
-                <td>{{ pending_invites }} ({{ pending_guests }} guests)</td>
-            </tr>
-            <tr>
-                <td>Unopened Invitations</td>
-                <td>{{ unopened_invite_count }}<span class="text-muted"> / {{ total_invites }}</span></td>
-            </tr>
-            <tr>
-                <td>Not Coming</td>
-                <td>{{ not_coming_guests }}</td>
-            </tr>
-            </tbody>
-        </table>
-        <div class="row">
-            <div class="col-lg-6">
-                <h1>Guests by category</h1>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            {% for category in category_breakdown %}
-                            <th>{{ category.party__category }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            {% for category in category_breakdown %}
-                            <td>{{ category.count }}</td>
-                            {% endfor %}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-lg-6">
-                <h1>Meal choices</h1>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            {% for meal in meal_breakdown %}
-                            <th>{{ meal.meal }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            {% for meal in meal_breakdown %}
-                            <td>{{ meal.count }}</td>
-                            {% endfor %}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-lg-6">
-                <h1>Attending guests</h1>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Party</th>
-                            <th>Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for person in guestlist %}
-                        <tr>
-                            <td>{{ person.party.name }}</td>
-                            <td>{{ person.first_name }} {{ person.last_name }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-lg-6">
-                <h1>Unavailable guests</h1>
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Party</th>
-                            <th>Name</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for person in notcoming %}
-                        <tr>
-                            <td>{{ person.party.name }}</td>
-                            <td>{{ person.first_name }} {{ person.last_name }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-6">
-                <h1>Unopened Invitations</h1>
-                {% with party_list=parties_with_unopen_invites %}
-                    {% include "guests/partials/party_list.html" %}
-                {% endwith %}
-            </div>
-            <div class="col-lg-6">
-                <h1>Open Unresponded Invitations</h1>
-                {% with parties_with_open_unresponded_invites as party_list %}
-                    {% include "guests/partials/party_list.html" %}
-                {% endwith %}
-            </div>
-        </div>
-        <div class="col-lg-6">
-                <h1>Attending Guests Without Meals</h1>
-                {% with guest_list=guests_without_meals %}
-                    {% include "guests/partials/guest_list.html" %}
-                {% endwith %}
-            </div>
-        </div>
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-semibold text-stone-800 mb-6">Dashboard</h1>
+
+  <!-- Summary stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-stone-800">{{ guests }} <span class="text-base font-normal text-stone-400">/ {{ possible_guests }}</span></p>
+      <p class="text-sm text-stone-500 mt-1">Attending / Possible</p>
     </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-stone-800">{{ pending_invites }}</p>
+      <p class="text-sm text-stone-500 mt-1">Pending Invitations</p>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-stone-800">{{ unopened_invite_count }} <span class="text-base font-normal text-stone-400">/ {{ total_invites }}</span></p>
+      <p class="text-sm text-stone-500 mt-1">Unopened</p>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-stone-800">{{ not_coming_guests }}</p>
+      <p class="text-sm text-stone-500 mt-1">Not Coming</p>
+    </div>
+  </div>
+
+  <!-- Guests by category + Meal choices -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+      <h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3">Guests by Category</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-stone-100">
+              {% for category in category_breakdown %}
+              <th class="pb-2 text-left font-medium text-stone-500">{{ category.party__category }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {% for category in category_breakdown %}
+              <td class="pt-2 text-stone-800 font-semibold">{{ category.count }}</td>
+              {% endfor %}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+      <h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3">Meal Choices</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-stone-100">
+              {% for meal in meal_breakdown %}
+              <th class="pb-2 text-left font-medium text-stone-500">{{ meal.meal }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {% for meal in meal_breakdown %}
+              <td class="pt-2 text-stone-800 font-semibold">{{ meal.count }}</td>
+              {% endfor %}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attending + Not Coming -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+      <h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3">Attending Guests</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-stone-100">
+              <th class="pb-2 text-left font-medium text-stone-500">Party</th>
+              <th class="pb-2 text-left font-medium text-stone-500">Name</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-50">
+            {% for person in guestlist %}
+            <tr>
+              <td class="py-1.5 text-stone-500">{{ person.party.name }}</td>
+              <td class="py-1.5 text-stone-800">{{ person.first_name }} {{ person.last_name }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="py-3 text-stone-400 text-center">No confirmed guests yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+      <h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3">Not Attending</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-stone-100">
+              <th class="pb-2 text-left font-medium text-stone-500">Party</th>
+              <th class="pb-2 text-left font-medium text-stone-500">Name</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-50">
+            {% for person in notcoming %}
+            <tr>
+              <td class="py-1.5 text-stone-500">{{ person.party.name }}</td>
+              <td class="py-1.5 text-stone-800">{{ person.first_name }} {{ person.last_name }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="2" class="py-3 text-stone-400 text-center">None declined yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unopened + Unresponded party lists -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+      <h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3">Unopened Invitations</h2>
+      {% with party_list=parties_with_unopen_invites %}
+        {% include "guests/partials/party_list.html" %}
+      {% endwith %}
+    </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+      <h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3">Opened — No Response</h2>
+      {% with parties_with_open_unresponded_invites as party_list %}
+        {% include "guests/partials/party_list.html" %}
+      {% endwith %}
+    </div>
+  </div>
+
+  <!-- Guests without meals -->
+  <div class="bg-white border border-stone-200 rounded-xl p-5 shadow-sm">
+    <h2 class="text-sm font-semibold text-stone-500 uppercase tracking-wider mb-3">Attending Guests Without Meals</h2>
+    {% with guest_list=guests_without_meals %}
+      {% include "guests/partials/guest_list.html" %}
+    {% endwith %}
+  </div>
+</div>
 {% endblock %}

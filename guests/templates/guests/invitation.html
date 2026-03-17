@@ -1,94 +1,111 @@
-{% extends 'base.html' %}
+{% extends 'base_public.html' %}
 {% load static %}
-{% block page_head %}
-    <link href="{% static 'bigday/css/invitation.css' %}" rel="stylesheet" xmlns="http://www.w3.org/1999/html">
-{% endblock %}
+
 {% block page_content %}
-    <div class="container" id="invitation-body">
-        <section class="col-md-6 text-center">
-            <div id="invitation-details">
-            <h2>Zue and Luk Wedding</h2>
-            <p class="lead">
-                {% %}<br>
-                Ravine Vineyard<br>
-                Niagara-on-the-Lake, ON, Canada
-            </p>
-            </div>
-        </section>
-        <section class="col-md-6">
-        <form data-toggle="validator" id="invitation-details" class="form-horizontal" method="post">
-            <h2 id="rsvp-header" class="text-center">RSVP</h2>
-            <div class="clearfix"></div>
-            {% csrf_token %}
-            {% for guest in party.ordered_guests.all %}
-            <div class="form-group" data-is-child="{{ guest.is_child }}">
-                {% with 'attending-'|add:guest.unique_id as attending_label %}
-                <label for="{{ attending_label }}" class="col-sm-3 control-label">{{ guest.name }}</label>
-                <label class="radio-inline">
-                    <input class="attending-radio" type="radio" name="{{ attending_label }}" value="yes" {% if guest.is_attending %}checked="checked"{% endif %} required> will attend
-                </label>
-                <label class="radio-inline">
-                    <input class="attending-radio" type="radio" name="{{ attending_label }}" value="no" {% if guest.is_attending == False %}checked="checked"{% endif %} required> will not attend
-                </label>
-                {% endwith %}
-            </div>
-            {% if not guest.is_child %}
-            <div class="form-group">
-                {% with 'meal-'|add:guest.unique_id as meal_label %}
-                <label for="{{ meal_label }}" class="col-sm-3 control-label">... and will eat</label>
-                {% for meal_id, meal_name in meals %}
-                <label class="radio-inline">
-                    <input type="radio" name="{{ meal_label }}" id="{{ meal_label }}-yes" value="{{ meal_id }}" {% if guest.meal == meal_id %}checked="checked"{% endif %} {% if guest.is_attending == False %}disabled{% endif %} required> {{ meal_name }}
-                </label>
-                {% endfor %}
-                {% endwith %}
-            </div>
-            {% endif %}
-            {% endfor %}
-            <div class="form-group col-sm-12">
-                <input type="text" name="comments" class="form-control" placeholder="Questions/comments/well wishes" >
-            </div>
-            <div class="form-group">
-                <div class="text-center">
-                    <input type="submit" class="btn btn-primary" value="Submit Response" />
-                </div>
-            </div>
-        </form>
-        </section>
+<div class="min-h-screen py-12 px-4 bg-stone-50">
+  <div class="max-w-xl mx-auto">
+
+    <!-- Wedding details header -->
+    <div class="text-center mb-10">
+      <h1 class="text-3xl font-light text-stone-800 mb-3">{{ wedding.couple_name }}</h1>
+      <p class="text-stone-500">
+        {{ wedding.wedding_date_display }}<br>
+        {{ wedding.wedding_location }}
+      </p>
     </div>
+
+    <!-- RSVP form card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 sm:p-8">
+      <h2 class="text-2xl font-light text-stone-800 text-center mb-6">RSVP</h2>
+
+      <form id="rsvp-form" method="post">
+        {% csrf_token %}
+
+        {% for guest in party.ordered_guests.all %}
+        <div class="mb-6 pb-6 {% if not forloop.last %}border-b border-stone-100{% endif %}"
+             data-is-child="{{ guest.is_child }}">
+
+          <!-- Attendance -->
+          <p class="font-medium text-stone-800 mb-3">{{ guest.name }}</p>
+          <div class="flex flex-col sm:flex-row gap-3 mb-4">
+            {% with 'attending-'|add:guest.unique_id as attending_label %}
+            <label class="flex items-center gap-3 cursor-pointer flex-1 border border-stone-200 rounded-xl px-4 py-3 hover:border-rose-300 hover:bg-rose-50 transition-colors has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50">
+              <input class="attending-radio w-4 h-4 accent-rose-600" type="radio"
+                     name="{{ attending_label }}" value="yes"
+                     {% if guest.is_attending %}checked{% endif %} required>
+              <span class="text-stone-700">Will attend</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer flex-1 border border-stone-200 rounded-xl px-4 py-3 hover:border-stone-400 hover:bg-stone-50 transition-colors has-[:checked]:border-stone-500 has-[:checked]:bg-stone-100">
+              <input class="attending-radio w-4 h-4 accent-stone-600" type="radio"
+                     name="{{ attending_label }}" value="no"
+                     {% if guest.is_attending == False %}checked{% endif %} required>
+              <span class="text-stone-700">Will not attend</span>
+            </label>
+            {% endwith %}
+          </div>
+
+          <!-- Meal selection (adults only) -->
+          {% if not guest.is_child %}
+          <div class="meal-group {% if guest.is_attending == False %}opacity-40 pointer-events-none{% endif %}">
+            <p class="text-sm text-stone-600 mb-2">… and will eat</p>
+            <div class="flex flex-wrap gap-3">
+              {% with 'meal-'|add:guest.unique_id as meal_label %}
+              {% for meal_id, meal_name in meals %}
+              <label class="flex items-center gap-2 cursor-pointer border border-stone-200 rounded-xl px-4 py-2.5 hover:border-rose-300 hover:bg-rose-50 transition-colors has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50">
+                <input class="w-4 h-4 accent-rose-600" type="radio"
+                       name="{{ meal_label }}" id="{{ meal_label }}-{{ meal_id }}"
+                       value="{{ meal_id }}"
+                       {% if guest.meal == meal_id %}checked{% endif %}
+                       {% if guest.is_attending == False %}disabled{% endif %}
+                       required>
+                <span class="text-stone-700 text-sm">{{ meal_name }}</span>
+              </label>
+              {% endfor %}
+              {% endwith %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Comments -->
+        <div class="mb-6">
+          <label for="rsvp-comments" class="block text-sm font-medium text-stone-700 mb-1">Questions / comments / well wishes</label>
+          <input type="text" id="rsvp-comments" name="comments"
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base"
+                 placeholder="Optional">
+        </div>
+
+        <button type="submit"
+                class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-medium rounded-xl transition-colors text-base">
+          Submit Response
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
 {% endblock %}
+
 {% block page_js %}
-    <script src="{% static 'validator.js' %}"></script>
-    <script>
-    $(function () {
-        // enable/disable meal choices based on attendance
-        $("input.attending-radio").change(function (e) {
-            var target = $(e.target);
-            if (target.closest('.form-group').data('is-child') === "True") {
-                // don't attempt to update meals for children, who don't have them.
-                return;
-            }
-            var value = target.attr('value');
-            var mealButtonContainer = target.closest('.form-group').next('.form-group');
-            var mealButtons = mealButtonContainer.find('[type=radio]');
-            if (value === 'yes') {
-                mealButtonContainer.removeClass('text-muted');
-                mealButtons.each(function (index, button) {
-                    button.disabled = false;
-                    button.required = true;
-                });
-            } else if (value === "no") {
-                mealButtonContainer.addClass('text-muted');
-                mealButtons.each(function (index, button) {
-                    button.checked = false;
-                    button.disabled = true;
-                    button.required = false;
-                });
-            }
-            // reload validation
-            $(document.forms[0]).validator('destroy');
-            $(document.forms[0]).validator();
-        });
+<script>
+(function () {
+  document.querySelectorAll('.attending-radio').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      var group = this.closest('[data-is-child]');
+      if (group.dataset.isChild === 'True') return;
+      var mealGroup = group.querySelector('.meal-group');
+      if (!mealGroup) return;
+      var isAttending = this.value === 'yes';
+      mealGroup.classList.toggle('opacity-40', !isAttending);
+      mealGroup.classList.toggle('pointer-events-none', !isAttending);
+      mealGroup.querySelectorAll('[type=radio]').forEach(function (btn) {
+        btn.disabled = !isAttending;
+        btn.required = isAttending;
+        if (!isAttending) btn.checked = false;
+      });
     });
-    </script>
+  });
+})();
+</script>
 {% endblock %}

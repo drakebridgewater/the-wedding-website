@@ -126,6 +126,10 @@ DEFAULT_WEDDING_EMAIL = 'happilyeverafter@example.com'
 # List of addresses to CC on every outgoing email
 WEDDING_CC_LIST = []
 
+# URL for the self-hosted WeddingShare photo-sharing app
+# Override in production settings or .env to your public-facing URL
+WEDDINGSHARE_URL = 'http://10.0.0.10:5123'
+
 # Derived email settings — override the base addresses above, not these
 DEFAULT_WEDDING_FROM_EMAIL = f'{BRIDE_AND_GROOM} <{DEFAULT_WEDDING_EMAIL}>'
 DEFAULT_WEDDING_TEST_EMAIL = DEFAULT_WEDDING_FROM_EMAIL

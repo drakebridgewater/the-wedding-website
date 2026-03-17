@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { Toaster } from 'sonner'
-import { useTodos } from './api'
+import { useTodos, useSyncTodos } from './api'
 import { TodoCard } from './TodoCard'
 import { TodoFilters } from './TodoFilters'
 import { CreateTaskModal } from './CreateTaskModal'
@@ -20,7 +20,11 @@ export function TodosApp({ drakeEmail, shawnaEmail }: Props) {
   })
   const [modalOpen, setModalOpen] = useState(false)
 
+  const sync = useSyncTodos()
   const { data: tasks, isLoading, isError, error } = useTodos(filters)
+
+  // Sync with TickTick on page load
+  useEffect(() => { sync.mutate() }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -28,7 +32,17 @@ export function TodosApp({ drakeEmail, shawnaEmail }: Props) {
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Wedding To-Dos</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900">Wedding To-Dos</h1>
+          <button
+            onClick={() => sync.mutate()}
+            disabled={sync.isPending}
+            title="Sync with TickTick"
+            className="p-1 text-gray-400 hover:text-indigo-500 disabled:opacity-40 transition-colors"
+          >
+            <RefreshCw size={15} className={sync.isPending ? 'animate-spin' : ''} />
+          </button>
+        </div>
         <button
           onClick={() => setModalOpen(true)}
           className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
@@ -49,7 +63,7 @@ export function TodosApp({ drakeEmail, shawnaEmail }: Props) {
       {/* Task list */}
       <div className="mt-4 space-y-2">
         {isLoading && (
-          <p className="text-center text-gray-500 py-12">Loading tasks from TickTick…</p>
+          <p className="text-center text-gray-500 py-12">Loading tasks…</p>
         )}
         {isError && (
           <div className="text-center text-red-500 py-12">

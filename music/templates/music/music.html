@@ -1,0 +1,10 @@
+{% extends "base_public.html" %}
+{% load django_vite %}
+
+{% block page_head %}
+{% vite_asset 'src/music/main.tsx' %}
+{% endblock %}
+
+{% block page_content %}
+<div id="music-root"></div>
+{% endblock %}

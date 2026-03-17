@@ -1,139 +1,80 @@
-{% extends "base.html" %}
+{% extends "base_public.html" %}
 {% load static %}
-{% block page_head %}
-    <!-- Custom CSS -->
-    <link href="{% static 'bigday/css/creative.css' %}" rel="stylesheet">
-    <style>
-        /* Hero header sits behind the fixed navbar; no body padding needed */
-        body { padding-top: 0; }
-        /* Center the hero text vertically so it isn't clipped by the fixed navbar */
-        @media (min-width: 768px) {
-            header .header-content { top: 50%; }
-        }
-    </style>
-{% endblock %}
+
 {% block page_content %}
-    {% block main %}
-    <header id="main-header">
-        <div class="header-content">
-            <div class="header-content-inner">
-                <h1>{{ wedding.hero_title }}</h1>
-                <hr>
-                <a href="#welcome" class="btn btn-info btn-xl page-scroll">Welcome</a>
-                <a href="#event" class="btn btn-primary btn-xl page-scroll">The Event</a>
-                <a href="#story" class="btn btn-success btn-xl page-scroll">Our Story</a>
-            </div>
-        </div>
-    </header>
-    <section class="bg-info" id="welcome">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-lg-offset-2 text-center">
-                    <h2 class="section-heading">Welcome!</h2>
-                    <hr>
-                    <p>
-                        Hello friends and family! Welcome to the wedding website for {{ couple_name }}.
-                    </p>
-                    <p>
-                        If you're looking for information about the event, look no further!
-                        Please see below for all the details regarding <a href="#event" class="page-scroll">the event</a> and <a href="#niagara" class="page-scroll">getting there</a>.
-                    </p>
-                    {% if support_email %}
-                    <p>
-                        If you have any questions, feel free to reach out to us at
-                        <a href="mailto:{{ support_email }}">{{ support_email }}</a>.
-                    </p>
-                    {% endif %}
-                    <p>
-                        Looking forward to seeing everyone soon!
-                    </p>
-                    <p class="pull-right">- {{ couple_name }}</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    <section class="no-padding" id="navigation">
-        <div class="container-fluid">
-            <div class="row no-gutter">
-                <div class="col-lg-4 col-sm-6">
-                    <a href="#event" class="portfolio-box page-scroll">
-                        <img src="{% static 'bigday/images/ravine-nav.jpg' %}" class="img-responsive" alt="">
-                        <div class="portfolio-box-caption">
-                            <div class="portfolio-box-caption-content">
-                                <div class="project-name">
-                                    The Event
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-lg-4 col-sm-6">
-                    <a href="#niagara" class="portfolio-box page-scroll">
-                        <img src="{% static 'bigday/images/prince-of-wales-hotel-nav.jpg' %}" class="img-responsive" alt="">
-                        <div class="portfolio-box-caption">
-                            <div class="portfolio-box-caption-content">
-                                <div class="project-name">
-                                    Getting There
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-lg-4 col-sm-6">
-                    <a href="#story" class="portfolio-box page-scroll">
-                        <img src="{% static 'bigday/images/twelve-apostles-nav.jpg' %}" class="img-responsive" alt="">
-                        <div class="portfolio-box-caption">
-                            <div class="portfolio-box-caption-content">
-                                <div class="project-name">
-                                    Our Story
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-    {% include 'partials/event.html' %}
-    <section id="niagara">
-        {% include 'partials/niagara.html' %}
-    </section>
-    <section id="other-stuff" class="bg-primary">
-        {% include 'partials/misc.html' %}
-    </section>
-    <section id="gifts">
-        {% include 'partials/gifts.html' %}
-    </section>
-    <section id="story" class="bg-dark">
-        {% include 'partials/story.html' %}
-    </section>
-    {% include 'partials/proposal.html' %}
-    {% include 'partials/save-the-dates.html' %}
-    <section id="contact" class="bg-dark">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8 col-lg-offset-2 text-center">
-                    <h2 class="section-heading">Contact us!</h2>
-                    <hr class="primary">
-                    <p>If you have any questions don't hesitate to reach out!</p>
-                </div>
-                {% if support_email %}
-                <div class="col-lg-8 col-lg-offset-2 text-center">
-                    <i class="fa fa-envelope-o fa-3x wow bounceIn" data-wow-delay=".1s"></i>
-                    <p><a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-    </section>
-    {% endblock %}
-{% endblock %}
-{% block page_js %}
-    <!-- Plugin JavaScript -->
-    <!-- Easing is for the vertical scroll animations -->
-    <script src="{% static 'creative/js/jquery.easing.min.js' %}"></script>
-    <!-- Automatically fit text based on screen size.-->
-    <script src="{% static 'creative/js/jquery.fittext.js' %}"></script>
-    <!-- Custom Theme JavaScript -->
-    <script src="{% static 'creative/js/creative.js' %}"></script>
+
+<!-- Hero -->
+<header id="main-header"
+        class="relative flex items-center justify-center min-h-screen text-white text-center"
+        style="background-image: url('{% static 'bigday/images/wedding-selfie-better.jpg' %}'); background-size: cover; background-position: center;">
+  <div class="absolute inset-0 bg-black/40"></div>
+  <div class="relative z-10 px-6 max-w-2xl mx-auto">
+    <h1 class="text-4xl sm:text-5xl md:text-6xl font-light tracking-wide mb-4">{{ wedding.hero_title }}</h1>
+    <hr class="border-white/50 my-6 w-24 mx-auto">
+    <div class="flex flex-wrap justify-center gap-3">
+      <a href="#welcome" class="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium transition-colors text-sm">Welcome</a>
+      <a href="#event"   class="px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-medium transition-colors text-sm">The Event</a>
+      <a href="#story"   class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors text-sm">Our Story</a>
+    </div>
+  </div>
+</header>
+
+<!-- Welcome -->
+<section id="welcome" class="py-16 px-4 bg-sky-600 text-white">
+  <div class="max-w-2xl mx-auto text-center">
+    <h2 class="text-3xl font-light mb-4">Welcome!</h2>
+    <hr class="border-white/40 w-16 mx-auto mb-6">
+    <p class="mb-3">Hello friends and family! Welcome to the wedding website for {{ couple_name }}.</p>
+    <p class="mb-3">
+      If you're looking for information about the event, look no further!
+      Please see below for all the details regarding
+      <a href="#event" class="underline hover:no-underline">the event</a>
+      and <a href="#niagara" class="underline hover:no-underline">getting there</a>.
+    </p>
+    {% if support_email %}
+    <p class="mb-3">
+      If you have any questions, feel free to reach out to us at
+      <a href="mailto:{{ support_email }}" class="underline hover:no-underline">{{ support_email }}</a>.
+    </p>
+    {% endif %}
+    <p class="mb-3">Looking forward to seeing everyone soon!</p>
+    <p class="text-right">— {{ couple_name }}</p>
+  </div>
+</section>
+
+{% include 'partials/event.html' %}
+
+<section id="niagara" class="py-16 px-4">
+  {% include 'partials/niagara.html' %}
+</section>
+
+<section id="other-stuff" class="py-16 px-4 bg-rose-700 text-white">
+  {% include 'partials/misc.html' %}
+</section>
+
+<section id="gifts" class="py-16 px-4">
+  {% include 'partials/gifts.html' %}
+</section>
+
+<section id="story" class="py-16 px-4 bg-stone-900 text-white">
+  {% include 'partials/story.html' %}
+</section>
+
+{% include 'partials/proposal.html' %}
+
+{% include 'partials/questions.html' %}
+
+<!-- Contact -->
+<section id="contact" class="py-16 px-4 bg-stone-900 text-white text-center">
+  <div class="max-w-xl mx-auto">
+    <h2 class="text-3xl font-light mb-4">Contact us!</h2>
+    <hr class="border-white/30 w-16 mx-auto mb-6">
+    <p class="text-stone-300 mb-6">If you have any questions don't hesitate to reach out!</p>
+    {% if support_email %}
+    <i class="fa fa-envelope-o fa-3x text-rose-400 mb-4 block"></i>
+    <p><a href="mailto:{{ support_email }}" class="text-rose-300 hover:text-rose-200 underline hover:no-underline">{{ support_email }}</a></p>
+    {% endif %}
+  </div>
+</section>
+
 {% endblock %}

@@ -1,139 +1,140 @@
-{% extends 'base.html' %}
+{% extends 'base_public.html' %}
 {% block page_content %}
-<div class="container" id="main">
-  <div class="page-header">
-    <h1>Invitations</h1>
-  </div>
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <h1 class="text-2xl font-semibold text-stone-800 mb-6">Invitations</h1>
 
   {% if messages %}
     {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        {{ message }}
-      </div>
+    <div class="mb-4 px-4 py-3 rounded-lg border text-sm
+                {% if 'success' in message.tags %}bg-green-50 border-green-200 text-green-800
+                {% elif 'error' in message.tags %}bg-red-50 border-red-200 text-red-800
+                {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+      {{ message }}
+    </div>
     {% endfor %}
   {% endif %}
 
-  <!-- Summary counts -->
-  <div class="row" style="margin-bottom: 20px;">
-    <div class="col-xs-6 col-sm-3">
-      <div class="panel panel-default text-center">
-        <div class="panel-body">
-          <h3 style="margin:0;">{{ parties|length }}</h3>
-          <small class="text-muted">Total Invited</small>
-        </div>
-      </div>
+  <!-- Summary stats -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-stone-800">{{ parties|length }}</p>
+      <p class="text-sm text-stone-500 mt-1">Total Invited</p>
     </div>
-    <div class="col-xs-6 col-sm-3">
-      <div class="panel panel-default text-center">
-        <div class="panel-body">
-          <h3 style="margin:0;" class="text-danger">
-            {{ parties|length }}<!-- overridden below by JS count -->
-          </h3>
-          <small class="text-muted">Not Sent</small>
-        </div>
-      </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-red-600" id="count-not-sent">—</p>
+      <p class="text-sm text-stone-500 mt-1">Not Sent</p>
     </div>
-    <div class="col-xs-6 col-sm-3">
-      <div class="panel panel-default text-center">
-        <div class="panel-body">
-          <h3 style="margin:0;" class="text-info" id="count-opened">—</h3>
-          <small class="text-muted">Opened</small>
-        </div>
-      </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-blue-600" id="count-opened">—</p>
+      <p class="text-sm text-stone-500 mt-1">Opened</p>
     </div>
-    <div class="col-xs-6 col-sm-3">
-      <div class="panel panel-default text-center">
-        <div class="panel-body">
-          <h3 style="margin:0;" class="text-success" id="count-responded">—</h3>
-          <small class="text-muted">Responded</small>
-        </div>
-      </div>
+    <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
+      <p class="text-2xl font-bold text-green-600" id="count-responded">—</p>
+      <p class="text-sm text-stone-500 mt-1">Responded</p>
     </div>
   </div>
 
-  <table class="table table-striped table-hover" id="invitations-table">
-    <thead>
-      <tr>
-        <th>Party</th>
-        <th>Guests</th>
-        <th>Status</th>
-        <th>RSVP Link</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for party in parties %}
-      {% with rsvp_url=site_base|add:"/invite/"|add:party.invitation_id|add:"/" %}
-      <tr>
-        <td>
-          <strong>{{ party.name }}</strong>
-          {% if party.category %}<br><small class="text-muted">{{ party.category }}</small>{% endif %}
-        </td>
-        <td>
-          {% for guest in party.ordered_guests %}
-            {{ guest.first_name }} {{ guest.last_name }}{% if not forloop.last %}<br>{% endif %}
+  <div class="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm" id="invitations-table">
+        <thead>
+          <tr class="bg-stone-50 border-b border-stone-200">
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Party</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Guests</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Status</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">RSVP Link</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-100">
+          {% for party in parties %}
+          {% with rsvp_url=site_base|add:"/invite/"|add:party.invitation_id|add:"/" %}
+          <tr class="hover:bg-stone-50 transition-colors"
+              data-status="{% if party.is_attending is not None %}responded{% elif party.invitation_opened %}opened{% elif party.invitation_sent %}sent{% else %}not-sent{% endif %}">
+            <td class="px-4 py-3">
+              <span class="font-medium text-stone-800">{{ party.name }}</span>
+              {% if party.category %}<br><span class="text-xs text-stone-400">{{ party.category }}</span>{% endif %}
+            </td>
+            <td class="px-4 py-3 text-stone-600">
+              {% for guest in party.ordered_guests %}
+                {{ guest.first_name }} {{ guest.last_name }}{% if not forloop.last %}<br>{% endif %}
+              {% endfor %}
+            </td>
+            <td class="px-4 py-3">
+              {% if party.is_attending is not None %}
+                {% if party.is_attending %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Attending</span>
+                {% else %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">Declined</span>
+                {% endif %}
+              {% elif party.invitation_opened %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Opened</span>
+              {% elif party.invitation_sent %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Sent</span>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Not Sent</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3" style="min-width: 240px;">
+              <div class="flex items-center gap-1">
+                <input type="text"
+                       class="flex-1 text-xs px-2 py-1.5 border border-stone-200 rounded bg-stone-50 text-stone-600 min-w-0"
+                       readonly value="{{ rsvp_url }}" onclick="this.select()">
+                <button class="copy-btn shrink-0 px-2.5 py-1.5 text-xs rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors"
+                        type="button" data-url="{{ rsvp_url }}">
+                  Copy
+                </button>
+              </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              <a href="{% url 'invitation-email' party.invitation_id %}"
+                 target="_blank"
+                 class="inline-flex items-center px-2.5 py-1.5 text-xs rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors mr-1">
+                Preview
+              </a>
+              <form method="post" action="{% url 'send-invitation' party.pk %}"
+                    style="display:inline;"
+                    onsubmit="return confirmSend('{{ party.name|escapejs }}', {{ party.invitation_sent|yesno:'true,false' }})">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center px-2.5 py-1.5 text-xs rounded bg-rose-600 hover:bg-rose-700 text-white transition-colors">
+                  {% if party.invitation_sent %}Resend{% else %}Send{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endwith %}
+          {% empty %}
+          <tr>
+            <td colspan="5" class="px-4 py-8 text-center text-stone-400">
+              No invited parties yet. Add guests via the
+              <a href="/admin/guests/party/" class="text-rose-700 hover:underline">admin</a>.
+            </td>
+          </tr>
           {% endfor %}
-        </td>
-        <td>
-          {% if party.is_attending is not None %}
-            {% if party.is_attending %}
-              <span class="label label-success">Attending</span>
-            {% else %}
-              <span class="label label-default">Declined</span>
-            {% endif %}
-          {% elif party.invitation_opened %}
-            <span class="label label-warning">Opened</span>
-          {% elif party.invitation_sent %}
-            <span class="label label-info">Sent</span>
-          {% else %}
-            <span class="label label-danger">Not Sent</span>
-          {% endif %}
-        </td>
-        <td style="min-width: 280px;">
-          <div class="input-group input-group-sm">
-            <input type="text" class="form-control rsvp-url-input" readonly
-                   value="{{ rsvp_url }}"
-                   onclick="this.select()">
-            <span class="input-group-btn">
-              <button class="btn btn-default copy-btn" type="button" data-url="{{ rsvp_url }}">
-                Copy
-              </button>
-            </span>
-          </div>
-        </td>
-        <td style="white-space: nowrap;">
-          <a href="{% url 'invitation-email' party.invitation_id %}"
-             target="_blank"
-             class="btn btn-xs btn-default">
-            Preview
-          </a>
-          <form method="post" action="{% url 'send-invitation' party.pk %}"
-                style="display:inline;"
-                onsubmit="return confirmSend('{{ party.name|escapejs }}', {{ party.invitation_sent|yesno:'true,false' }})">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-xs btn-primary">
-              {% if party.invitation_sent %}Resend{% else %}Send{% endif %}
-            </button>
-          </form>
-        </td>
-      </tr>
-      {% endwith %}
-    {% empty %}
-      <tr>
-        <td colspan="5" class="text-center text-muted" style="padding: 30px;">
-          No invited parties yet. Add guests via the
-          <a href="/admin/guests/party/">admin</a>.
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 {% block page_js %}
 <script>
 (function () {
+  // Tally status counts from data attributes
+  var rows = document.querySelectorAll('#invitations-table tbody tr[data-status]');
+  var notSent = 0, opened = 0, responded = 0;
+  rows.forEach(function (row) {
+    var s = row.dataset.status;
+    if (s === 'not-sent') notSent++;
+    else if (s === 'opened') opened++;
+    else if (s === 'responded') responded++;
+  });
+  var el = function (id) { return document.getElementById(id); };
+  if (el('count-not-sent')) el('count-not-sent').textContent = notSent;
+  if (el('count-opened')) el('count-opened').textContent = opened;
+  if (el('count-responded')) el('count-responded').textContent = responded;
+
   // Copy-to-clipboard
   document.querySelectorAll('.copy-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -142,18 +143,18 @@
       navigator.clipboard.writeText(url).then(function () {
         var orig = self.textContent;
         self.textContent = 'Copied!';
-        self.classList.add('btn-success');
-        self.classList.remove('btn-default');
+        self.classList.add('bg-green-600', 'text-white', 'border-green-600');
+        self.classList.remove('border-stone-300', 'text-stone-600');
         setTimeout(function () {
           self.textContent = orig;
-          self.classList.remove('btn-success');
-          self.classList.add('btn-default');
+          self.classList.remove('bg-green-600', 'text-white', 'border-green-600');
+          self.classList.add('border-stone-300', 'text-stone-600');
         }, 2000);
       });
     });
   });
 
-  // Confirm before resending
+  // Confirm before sending/resending
   window.confirmSend = function (name, alreadySent) {
     if (alreadySent) {
       return confirm('Resend invitation to ' + name + '?');

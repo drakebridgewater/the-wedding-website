@@ -12,6 +12,7 @@ urlpatterns = [
     path('schedule/', include('schedule.urls', namespace='schedule')),
     path('todos/', include('todos.urls', namespace='todos')),
     path('vendors/', include('vendors.urls', namespace='vendors')),
+    path('music/', include('music.urls', namespace='music')),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
 ]

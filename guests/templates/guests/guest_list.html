@@ -1,60 +1,66 @@
-{% extends 'base.html' %}
+{% extends 'base_public.html' %}
 {% block page_content %}
-<div class="container" id="main">
-    <div class="row">
-        <div class="col-lg-12">
-            <h1>Guest List</h1>
-            <p class="text-muted">{{ object_list.count }} guests total</p>
-            <a href="{% url 'export-guest-list' %}" class="btn btn-default btn-sm" style="margin-bottom: 16px;">
-                Export CSV
-            </a>
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Party</th>
-                        <th>Category</th>
-                        <th>Email</th>
-                        <th>Attending</th>
-                        <th>Meal</th>
-                        <th>Child</th>
-                        <th>Table</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for guest in object_list %}
-                    <tr>
-                        <td>{{ guest.first_name }}</td>
-                        <td>{{ guest.last_name }}</td>
-                        <td>
-                            <a href="{% url 'admin:guests_party_change' guest.party.pk %}">
-                                {{ guest.party.name }}
-                            </a>
-                        </td>
-                        <td>{{ guest.party.category }}</td>
-                        <td>{{ guest.email|default:"—" }}</td>
-                        <td>
-                            {% if guest.is_attending == True %}
-                                <span class="label label-success">Yes</span>
-                            {% elif guest.is_attending == False %}
-                                <span class="label label-danger">No</span>
-                            {% else %}
-                                <span class="label label-default">Pending</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ guest.get_meal_display|default:"—" }}</td>
-                        <td>{% if guest.is_child %}Yes{% else %}—{% endif %}</td>
-                        <td>{{ guest.seating_table.name|default:"—" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="9" class="text-center text-muted">No guests found.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold text-stone-800">Guest List</h1>
+      <p class="text-sm text-stone-500 mt-0.5">{{ object_list.count }} guests total</p>
     </div>
+    <a href="{% url 'export-guest-list' %}"
+       class="px-3 py-1.5 text-sm rounded border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors">
+      Export CSV
+    </a>
+  </div>
+
+  <div class="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-stone-50 border-b border-stone-200">
+            <th class="px-4 py-3 text-left font-medium text-stone-500">First Name</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Last Name</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Party</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Category</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Email</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Attending</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Meal</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Child</th>
+            <th class="px-4 py-3 text-left font-medium text-stone-500">Table</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-100">
+          {% for guest in object_list %}
+          <tr class="hover:bg-stone-50 transition-colors">
+            <td class="px-4 py-2.5 text-stone-800">{{ guest.first_name }}</td>
+            <td class="px-4 py-2.5 text-stone-800">{{ guest.last_name }}</td>
+            <td class="px-4 py-2.5">
+              <a href="{% url 'admin:guests_party_change' guest.party.pk %}" class="text-rose-700 hover:underline">
+                {{ guest.party.name }}
+              </a>
+            </td>
+            <td class="px-4 py-2.5 text-stone-600">{{ guest.party.category }}</td>
+            <td class="px-4 py-2.5 text-stone-600">{{ guest.email|default:"—" }}</td>
+            <td class="px-4 py-2.5">
+              {% if guest.is_attending == True %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Yes</span>
+              {% elif guest.is_attending == False %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">No</span>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">Pending</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2.5 text-stone-600">{{ guest.get_meal_display|default:"—" }}</td>
+            <td class="px-4 py-2.5 text-stone-600">{% if guest.is_child %}Yes{% else %}—{% endif %}</td>
+            <td class="px-4 py-2.5 text-stone-600">{{ guest.seating_table.name|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="px-4 py-8 text-center text-stone-400">No guests found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}
