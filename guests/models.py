@@ -79,6 +79,7 @@ class Guest(models.Model):
         on_delete=models.SET_NULL,
         related_name='guests',
     )
+    seat_color = models.CharField(max_length=20, blank=True, default='')
 
     @property
     def name(self):
@@ -113,6 +114,11 @@ class WeddingPartyMember(models.Model):
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     order = models.PositiveIntegerField(default=0)
+    guest = models.OneToOneField(
+        'Guest', null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='wedding_party_info',
+    )
 
     class Meta:
         ordering = ['order', 'name']

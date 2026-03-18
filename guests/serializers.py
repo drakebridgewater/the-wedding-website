@@ -8,7 +8,8 @@ class WeddingPartyMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WeddingPartyMember
-        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'order']
+        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'order', 'guest_id']
+        read_only_fields = ['guest_id']
 
 
 class WeddingPartyGroupSerializer(serializers.ModelSerializer):

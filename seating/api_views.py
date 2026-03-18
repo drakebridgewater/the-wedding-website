@@ -57,6 +57,18 @@ def guest_seating_list(request):
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
+def guest_color(request, pk):
+    try:
+        guest = Guest.objects.get(pk=pk)
+    except Guest.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    guest.seat_color = request.data.get('color', '')
+    guest.save(update_fields=['seat_color'])
+    return Response(GuestSeatingSerializer(guest).data)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
 def guest_assign(request, pk):
     try:
         guest = Guest.objects.get(pk=pk)

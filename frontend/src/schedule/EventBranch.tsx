@@ -97,7 +97,7 @@ export function EventBranch({ event, dotY, spineX, columnIndex, onClick }: Props
         />
 
         <div className="absolute top-2.5 right-2.5 flex gap-1">
-          {isPublic && <Globe size={11} className="text-emerald-500" title="On public program" />}
+          {isPublic && <Globe size={11} className="text-emerald-500" aria-label="On public program" />}
           {hasConflict && <AlertTriangle size={11} className="text-amber-500" />}
         </div>
 

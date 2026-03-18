@@ -14,6 +14,7 @@ export interface WeddingPartyMember {
   email: string
   phone: string
   order: number
+  guest_id: number | null
 }
 
 export interface WeddingPartyGroup {

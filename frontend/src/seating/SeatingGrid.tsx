@@ -25,7 +25,6 @@ export const SeatingGrid = forwardRef<SeatingGridHandle, Props>(
   function SeatingGrid({ config, tables, overTableId, transform, onTransformChange }, ref) {
     const viewportRef = useRef<HTMLDivElement>(null)
     const canvasRef = useRef<HTMLDivElement>(null)
-    // Keep refs so wheel/pan closures are never stale
     const transformRef = useRef(transform)
     transformRef.current = transform
     const onChangeRef = useRef(onTransformChange)
@@ -37,26 +36,42 @@ export const SeatingGrid = forwardRef<SeatingGridHandle, Props>(
     const gridWidth = config.grid_cols * CELL_SIZE
     const gridHeight = config.grid_rows * CELL_SIZE
 
+    // Padding around the room floor area
+    const floorPad = 20
+
     function fitView() {
       const vp = viewportRef.current
       if (!vp) return
       const { clientWidth, clientHeight } = vp
-      const scale = Math.min(clientWidth / gridWidth, clientHeight / gridHeight) * 0.92
-      const x = (clientWidth - gridWidth * scale) / 2
-      const y = (clientHeight - gridHeight * scale) / 2
+      const totalW = gridWidth + floorPad * 2
+      const totalH = gridHeight + floorPad * 2
+      const scale = Math.min(clientWidth / totalW, clientHeight / totalH) * 0.92
+      const x = (clientWidth - totalW * scale) / 2
+      const y = (clientHeight - totalH * scale) / 2
       onChangeRef.current({ x, y, scale })
     }
 
     useImperativeHandle(ref, () => ({ fitView }))
 
-    // Keep --view-scale CSS variable in sync so table text can counter-scale without prop drilling
     useEffect(() => {
       canvasRef.current?.style.setProperty('--view-scale', String(transform.scale))
     }, [transform.scale])
 
-    // Auto-fit when grid dimensions change
+    // Auto-fit on load — clamp to a min scale so tables are always readable
     useEffect(() => {
-      const id = setTimeout(fitView, 50)
+      const id = setTimeout(() => {
+        const vp = viewportRef.current
+        if (!vp) return
+        const { clientWidth, clientHeight } = vp
+        const totalW = gridWidth + floorPad * 2
+        const totalH = gridHeight + floorPad * 2
+        const fitScale = Math.min(clientWidth / totalW, clientHeight / totalH) * 0.92
+        // Never go below 0.65 so 2×2 tables (160px) show at ≥104px
+        const scale = Math.max(fitScale, 0.65)
+        const x = (clientWidth - totalW * scale) / 2
+        const y = (clientHeight - totalH * scale) / 2
+        onChangeRef.current({ x, y, scale })
+      }, 50)
       return () => clearTimeout(id)
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config.grid_cols, config.grid_rows])
@@ -88,7 +103,6 @@ export const SeatingGrid = forwardRef<SeatingGridHandle, Props>(
 
     function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
       if (e.button !== 0) return
-      // Don't start panning when pressing on a table block
       if ((e.target as Element).closest('.table-block')) return
       panRef.current = {
         startX: e.clientX,
@@ -114,7 +128,6 @@ export const SeatingGrid = forwardRef<SeatingGridHandle, Props>(
       panRef.current = null
     }
 
-    // Merge the drop ref and the viewport ref onto the same element
     function setRootRef(el: HTMLDivElement | null) {
       ;(viewportRef as React.MutableRefObject<HTMLDivElement | null>).current = el
       setDropRef(el)
@@ -123,8 +136,11 @@ export const SeatingGrid = forwardRef<SeatingGridHandle, Props>(
     return (
       <div
         ref={setRootRef}
-        className="relative flex-1 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 shadow-inner select-none"
-        style={{ cursor: panRef.current ? 'grabbing' : 'grab' }}
+        className="relative flex-1 overflow-hidden rounded-xl select-none"
+        style={{
+          cursor: panRef.current ? 'grabbing' : 'grab',
+          background: '#e8e3db',
+        }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={stopPan}
@@ -137,48 +153,65 @@ export const SeatingGrid = forwardRef<SeatingGridHandle, Props>(
             position: 'absolute',
             top: 0,
             left: 0,
-            width: gridWidth,
-            height: gridHeight,
+            width: gridWidth + floorPad * 2,
+            height: gridHeight + floorPad * 2,
             transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
             transformOrigin: '0 0',
           }}
         >
-          {/* Grid lines */}
+          {/* Venue floor area */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: '#fefcf8',
+              borderRadius: 12,
+              boxShadow: '0 2px 24px rgba(0,0,0,0.10)',
+              border: '1.5px solid #d4b896',
+            }}
+          />
+
+          {/* Subtle dot grid overlay on the floor */}
           <svg
             className="pointer-events-none absolute inset-0"
-            width={gridWidth}
-            height={gridHeight}
+            width={gridWidth + floorPad * 2}
+            height={gridHeight + floorPad * 2}
+            style={{ opacity: 0.35 }}
           >
-            {Array.from({ length: config.grid_cols + 1 }, (_, i) => (
-              <line
-                key={`v${i}`}
-                x1={i * CELL_SIZE} y1={0}
-                x2={i * CELL_SIZE} y2={gridHeight}
-                stroke="#e5e7eb" strokeWidth={1}
-              />
-            ))}
-            {Array.from({ length: config.grid_rows + 1 }, (_, i) => (
-              <line
-                key={`h${i}`}
-                x1={0} y1={i * CELL_SIZE}
-                x2={gridWidth} y2={i * CELL_SIZE}
-                stroke="#e5e7eb" strokeWidth={1}
-              />
-            ))}
+            <defs>
+              <pattern id="dots" x="0" y="0" width={CELL_SIZE} height={CELL_SIZE} patternUnits="userSpaceOnUse">
+                <circle cx={CELL_SIZE / 2} cy={CELL_SIZE / 2} r={1.5} fill="#c4a882" />
+              </pattern>
+            </defs>
+            <rect
+              x={floorPad} y={floorPad}
+              width={gridWidth} height={gridHeight}
+              fill="url(#dots)"
+            />
           </svg>
 
           {/* Tables */}
-          {tables.map((table) => (
-            <TableBlock
-              key={table.id}
-              table={table}
-              isOver={overTableId === table.id}
-            />
-          ))}
+          <div
+            style={{
+              position: 'absolute',
+              left: floorPad,
+              top: floorPad,
+              width: gridWidth,
+              height: gridHeight,
+            }}
+          >
+            {tables.map((table) => (
+              <TableBlock
+                key={table.id}
+                table={table}
+                isOver={overTableId === table.id}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Zoom level indicator */}
-        <div className="pointer-events-none absolute bottom-3 right-3 rounded-lg bg-white/80 px-2 py-1 text-xs text-gray-400 shadow">
+        <div className="pointer-events-none absolute bottom-3 right-3 rounded-lg bg-white/80 px-2 py-1 text-xs text-stone-400 shadow">
           {Math.round(transform.scale * 100)}%
         </div>
       </div>

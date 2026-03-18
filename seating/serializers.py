@@ -13,7 +13,7 @@ class SeatingConfigSerializer(serializers.ModelSerializer):
 class GuestSeatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guest
-        fields = ['id', 'first_name', 'last_name', 'is_child', 'meal', 'seating_table_id']
+        fields = ['id', 'first_name', 'last_name', 'is_child', 'meal', 'seating_table_id', 'seat_color']
 
 
 class SeatingTableSerializer(serializers.ModelSerializer):

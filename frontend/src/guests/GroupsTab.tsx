@@ -123,7 +123,7 @@ function GroupModal({
   const [name, setName] = useState(initial?.name ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
   const [color, setColor] = useState(initial?.color ?? '#6366f1')
-  const [order, setOrder] = useState(initial?.order ?? 0)
+  const [order] = useState(initial?.order ?? 0)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(
     new Set(initial?.members.map((m) => m.id) ?? [])
   )

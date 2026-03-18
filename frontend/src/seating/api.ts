@@ -106,6 +106,41 @@ export function useGuests() {
   })
 }
 
+export function useUpdateGuestColor() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ guestId, color }: { guestId: number; color: string }) =>
+      apiFetch<GuestSeating>(`/seating/api/guests/${guestId}/color/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ color }),
+      }),
+    onMutate: async ({ guestId, color }) => {
+      await qc.cancelQueries({ queryKey: QK.guests })
+      await qc.cancelQueries({ queryKey: QK.tables })
+      const prevGuests = qc.getQueryData<GuestSeating[]>(QK.guests)
+      const prevTables = qc.getQueryData<SeatingTable[]>(QK.tables)
+      qc.setQueryData(QK.guests, (old: GuestSeating[] = []) =>
+        old.map((g) => (g.id === guestId ? { ...g, seat_color: color } : g)),
+      )
+      qc.setQueryData(QK.tables, (old: SeatingTable[] = []) =>
+        old.map((t) => ({
+          ...t,
+          guests: t.guests.map((g) => (g.id === guestId ? { ...g, seat_color: color } : g)),
+        })),
+      )
+      return { prevGuests, prevTables }
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevGuests) qc.setQueryData(QK.guests, ctx.prevGuests)
+      if (ctx?.prevTables) qc.setQueryData(QK.tables, ctx.prevTables)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: QK.guests })
+      qc.invalidateQueries({ queryKey: QK.tables })
+    },
+  })
+}
+
 export function useAssignGuest() {
   const qc = useQueryClient()
   return useMutation({

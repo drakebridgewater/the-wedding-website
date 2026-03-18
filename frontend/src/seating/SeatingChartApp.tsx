@@ -103,30 +103,30 @@ export function SeatingChartApp() {
       {/* Header */}
       <div className="flex flex-shrink-0 items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Seating Chart</h1>
+          <h1 className="text-xl font-semibold text-stone-900">Seating Chart</h1>
           {viewMode === 'grid' && (
-            <p className="text-xs text-gray-500 mt-0.5">
-              Scroll to zoom · Drag empty space to pan · Drag tables to move · Drag guests onto tables to seat
+            <p className="text-xs text-stone-400 mt-0.5">
+              Scroll to zoom · Drag to pan · Drag guests onto tables to assign seats
             </p>
           )}
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="flex overflow-hidden rounded-lg border border-stone-200 bg-white shadow-sm">
             <button
               onClick={() => setViewMode('list')}
               title="List view"
               className={`flex items-center gap-1.5 px-3 py-2 text-sm transition-colors ${
-                viewMode === 'list' ? 'bg-rose-50 text-rose-600' : 'text-gray-600 hover:bg-gray-50'
+                viewMode === 'list' ? 'bg-rose-50 text-rose-600' : 'text-stone-600 hover:bg-stone-50'
               }`}
             >
               <LayoutList size={14} />
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              title="Grid view"
-              className={`flex items-center gap-1.5 border-l border-gray-200 px-3 py-2 text-sm transition-colors ${
-                viewMode === 'grid' ? 'bg-rose-50 text-rose-600' : 'text-gray-600 hover:bg-gray-50'
+              title="Floor plan view"
+              className={`flex items-center gap-1.5 border-l border-stone-200 px-3 py-2 text-sm transition-colors ${
+                viewMode === 'grid' ? 'bg-rose-50 text-rose-600' : 'text-stone-600 hover:bg-stone-50'
               }`}
             >
               <LayoutGrid size={14} />
@@ -137,7 +137,7 @@ export function SeatingChartApp() {
             <>
               <button
                 onClick={() => gridRef.current?.fitView()}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 shadow-sm hover:bg-gray-50"
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 shadow-sm hover:bg-stone-50"
                 title="Fit to screen"
               >
                 <Maximize2 size={14} />
@@ -145,10 +145,10 @@ export function SeatingChartApp() {
               </button>
               <button
                 onClick={() => setSettingsOpen(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 shadow-sm hover:bg-gray-50"
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-600 shadow-sm hover:bg-stone-50"
               >
                 <Settings size={14} />
-                <span className="hidden sm:inline">Grid Settings</span>
+                <span className="hidden sm:inline">Room Size</span>
               </button>
             </>
           )}
@@ -159,7 +159,9 @@ export function SeatingChartApp() {
         <TableListView tables={tables} guests={guests} />
       ) : (
         <DndContext sensors={sensors} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+          {/* Sidebar LEFT, canvas RIGHT */}
           <div className="flex min-h-0 flex-1 gap-4">
+            <GuestSidebar guests={guests} tables={tables} />
             <SeatingGrid
               ref={gridRef}
               config={config}
@@ -168,7 +170,6 @@ export function SeatingChartApp() {
               transform={viewTransform}
               onTransformChange={setViewTransform}
             />
-            <GuestSidebar guests={guests} tables={tables} />
           </div>
         </DndContext>
       )}

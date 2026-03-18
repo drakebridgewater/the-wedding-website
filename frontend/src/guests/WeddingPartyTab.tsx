@@ -5,9 +5,6 @@ import { useMembers, useCreateMember, useUpdateMember, useDeleteMember } from '.
 import type { MemberFormData, MemberRole, WeddingPartyMember } from './types'
 import { ROLE_LABELS, ROLE_ORDER } from './types'
 
-const DEFAULT_FORM: MemberFormData = {
-  name: '', role: 'other', color: '#6366f1', email: '', phone: '', order: 0,
-}
 
 export function WeddingPartyTab() {
   const { data: members = [], isLoading } = useMembers()
@@ -85,7 +82,12 @@ export function WeddingPartyTab() {
                   <div key={m.id} className="flex items-center gap-3 bg-white rounded-xl border border-stone-100 shadow-sm px-4 py-3">
                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-800 truncate">{m.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-stone-800 truncate">{m.name}</p>
+                        {m.guest_id && (
+                          <span className="flex-shrink-0 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">Guest ✓</span>
+                        )}
+                      </div>
                       {m.email && <p className="text-xs text-stone-400 truncate">{m.email}</p>}
                     </div>
                     <div className="flex gap-1">

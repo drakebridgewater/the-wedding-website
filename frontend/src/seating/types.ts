@@ -11,6 +11,7 @@ export interface GuestSeating {
   is_child: boolean
   meal: string | null
   seating_table_id: number | null
+  seat_color: string
 }
 
 export interface SeatingTable {

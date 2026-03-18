@@ -5,7 +5,7 @@ import {
   useParties, useCreateParty, useUpdateParty, useDeleteParty,
   useAddGuest, useUpdateGuest, useDeleteGuest,
 } from './api'
-import type { Guest, GuestFormData, Party, PartyFormData, PartyType } from './types'
+import type { Guest, Party, PartyFormData, PartyType } from './types'
 import { MEAL_LABELS, PARTY_TYPE_LABELS } from './types'
 
 // ── Guest List Tab ─────────────────────────────────────────────────────────────

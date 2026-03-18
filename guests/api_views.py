@@ -12,6 +12,12 @@ from .serializers import (
 )
 
 
+def _parse_name(full_name):
+    """Split 'First Last Name' into (first, rest)."""
+    parts = full_name.strip().split(' ', 1)
+    return parts[0], parts[1] if len(parts) > 1 else ''
+
+
 # ── Wedding party members ──────────────────────────────────────────────────────
 
 @api_view(['GET', 'POST'])
@@ -23,8 +29,21 @@ def members(request):
 
     serializer = WeddingPartyMemberSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # Auto-create a Party + Guest so the WP member appears in the full guest list
+    name = serializer.validated_data['name']
+    email = serializer.validated_data.get('email', '')
+    first_name, last_name = _parse_name(name)
+    party = Party.objects.create(name=name, type='formal', is_invited=True)
+    guest = Guest.objects.create(
+        party=party,
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        is_attending=True,
+    )
+    member = serializer.save(guest=guest)
+    return Response(WeddingPartyMemberSerializer(member).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
@@ -37,14 +56,37 @@ def member_detail(request, pk):
 
     if request.method == 'GET':
         return Response(WeddingPartyMemberSerializer(obj).data)
+
     if request.method == 'DELETE':
+        linked_guest = obj.guest
         obj.delete()
+        if linked_guest:
+            party = linked_guest.party
+            linked_guest.delete()
+            if not party.guest_set.exists():
+                party.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     serializer = WeddingPartyMemberSerializer(obj, data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data)
+    member = serializer.save()
+
+    # Keep linked Guest in sync when name or email changes
+    if member.guest:
+        g = member.guest
+        guest_fields = []
+        if 'name' in request.data:
+            g.first_name, g.last_name = _parse_name(member.name)
+            guest_fields += ['first_name', 'last_name']
+            g.party.name = member.name
+            g.party.save(update_fields=['name'])
+        if 'email' in request.data:
+            g.email = member.email
+            guest_fields.append('email')
+        if guest_fields:
+            g.save(update_fields=guest_fields)
+
+    return Response(WeddingPartyMemberSerializer(member).data)
 
 
 # ── Wedding party groups ───────────────────────────────────────────────────────
