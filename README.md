@@ -93,6 +93,55 @@ Just access `/dashboard/` from an account with admin access. Your other guests w
 You can easily hook up Google analytics by editing the tracking ID in `google-analytics.html`.
 
 
+## Google Drive / Sheets Sync
+
+All wedding data can be exported to a Google Spreadsheet on demand. The command creates 15 sheets covering Guests, Parties, Wedding Party, Budget, Expenses, Schedule, Seating, Music (Playlist + Do-Not-Play), and all 5 vendor types.
+
+### Setup
+
+**1. Create a Google Cloud project**
+
+- Go to [console.cloud.google.com](https://console.cloud.google.com/)
+- Create a new project (or use an existing one)
+- Enable **Google Sheets API** and **Google Drive API**
+
+**2. Create a Service Account**
+
+- Go to **IAM & Admin → Service Accounts → Create Service Account**
+- Give it any name (e.g. "wedding-sync")
+- On the service account page, go to **Keys → Add Key → Create new key → JSON**
+- Save the downloaded file as `.google-credentials.json` in the project root
+
+> ⚠️ Never commit `.google-credentials.json` — it is listed in `.gitignore`.
+
+**3. Share your spreadsheet**
+
+- Create a Google Sheet named **"Wedding Planning"** (or set `GOOGLE_SPREADSHEET_TITLE` in settings to match)
+- Click **Share** and invite the service account email (found in the JSON under `"client_email"`) with **Editor** access
+
+**4. Run the sync**
+
+```bash
+python manage.py sync_to_drive
+```
+
+The command prints progress as each sheet is written and outputs the spreadsheet URL when done.
+
+**Options**
+
+```
+--spreadsheet TITLE   Override the spreadsheet title from settings
+```
+
+**Settings** (`config/settings/base.py`, override in `local.py`):
+
+```python
+GOOGLE_CREDENTIALS_FILE = str(BASE_DIR / '.google-credentials.json')
+GOOGLE_SPREADSHEET_TITLE = 'Wedding Planning'
+```
+
+---
+
 ## Installation
 
 This is developed for Python 3 and Django 4.1.
