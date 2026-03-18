@@ -6,3 +6,5 @@ djangorestframework>=3,<4
 django-vite>=3,<4
 Pillow>=10,<12
 requests>=2.31
+gspread>=6,<7
+google-auth>=2,<3

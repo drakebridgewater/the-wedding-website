@@ -157,6 +157,16 @@ TICKTICK_DRAKE_ASSIGNEE = ''
 TICKTICK_SHAWNA_ASSIGNEE = ''
 
 # -------------------------
+# Google Drive / Sheets sync
+# 1. Create a Google Cloud project, enable Sheets + Drive APIs.
+# 2. Create a Service Account and download its JSON credentials file.
+# 3. Share the target spreadsheet with the service account email address.
+# 4. Run: python manage.py sync_to_drive
+# -------------------------
+GOOGLE_CREDENTIALS_FILE = str(BASE_DIR / '.google-credentials.json')
+GOOGLE_SPREADSHEET_TITLE = 'Wedding Planning'
+
+# -------------------------
 # Logging
 # -------------------------
 LOGGING = {
