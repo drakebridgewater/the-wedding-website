@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Minus, Pencil, Trash2 } from 'lucide-react'
 import type { SeatingTable, TableFormData } from './types'
 import { useAssignGuest, useDeleteTable, useUpdateTable } from './api'
@@ -6,15 +7,32 @@ import { TableForm } from './TableForm'
 
 interface Props {
   table: SeatingTable
+  anchor: { x: number; y: number }
   onClose: () => void
 }
 
-export function TablePopup({ table, onClose }: Props) {
+export function TablePopup({ table, anchor, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: anchor.y + 8, left: anchor.x })
   const [editing, setEditing] = useState(false)
   const assignGuest = useAssignGuest()
   const deleteTable = useDeleteTable()
   const updateTable = useUpdateTable()
+
+  // After first render, clamp horizontally so the popup stays inside the viewport.
+  // Also flip above the table if it would overflow the bottom.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const { offsetWidth, offsetHeight } = el
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    let top = anchor.y + 8
+    let left = anchor.x - offsetWidth / 2
+    if (top + offsetHeight > vh - 12) top = anchor.y - offsetHeight - 8
+    left = Math.max(8, Math.min(left, vw - offsetWidth - 8))
+    setPos({ top, left })
+  }, [anchor])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -41,11 +59,11 @@ export function TablePopup({ table, onClose }: Props) {
 
   const fill = table.assigned_count >= table.capacity ? 'text-amber-600' : 'text-green-600'
 
-  return (
+  return createPortal(
     <div
       ref={ref}
-      className="absolute z-50 w-72 rounded-xl border border-gray-200 bg-white shadow-2xl"
-      style={{ top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 8 }}
+      className="w-72 rounded-xl border border-gray-200 bg-white shadow-2xl"
+      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
@@ -122,6 +140,7 @@ export function TablePopup({ table, onClose }: Props) {
           </div>
         </>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }

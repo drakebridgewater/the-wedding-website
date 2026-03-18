@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import type { SeatingTable, GuestSeating } from './types'
@@ -209,8 +209,11 @@ interface Props {
   isOver?: boolean
 }
 
+interface PopupAnchor { x: number; y: number }
+
 export function TableBlock({ table, isOver }: Props) {
-  const [popupOpen, setPopupOpen] = useState(false)
+  const [anchor, setAnchor] = useState<PopupAnchor | null>(null)
+  const blockRef = useRef<HTMLDivElement>(null)
 
   const { setNodeRef: setDropRef } = useDroppable({
     id: `table-${table.id}`,
@@ -229,7 +232,7 @@ export function TableBlock({ table, isOver }: Props) {
     width: table.grid_width * CELL_SIZE,
     height: table.grid_height * CELL_SIZE,
     transform: CSS.Translate.toString(transform),
-    zIndex: isDragging ? 100 : popupOpen ? 50 : 10,
+    zIndex: isDragging ? 100 : anchor ? 50 : 10,
     opacity: isDragging ? 0.7 : 1,
   }
 
@@ -238,11 +241,18 @@ export function TableBlock({ table, isOver }: Props) {
     setDragRef(el)
   }
 
+  function handleClick() {
+    if (isDragging) return
+    if (anchor) { setAnchor(null); return }
+    const rect = blockRef.current?.getBoundingClientRect()
+    if (rect) setAnchor({ x: rect.left + rect.width / 2, y: rect.bottom })
+  }
+
   return (
-    <div style={style} className="table-block relative">
+    <div style={style} className="table-block relative" ref={blockRef}>
       <div
         ref={setRef}
-        onClick={() => !isDragging && setPopupOpen((v) => !v)}
+        onClick={handleClick}
         className="flex h-full w-full cursor-pointer items-center justify-center select-none"
         {...listeners}
         {...attributes}
@@ -254,8 +264,8 @@ export function TableBlock({ table, isOver }: Props) {
         )}
       </div>
 
-      {popupOpen && (
-        <TablePopup table={table} onClose={() => setPopupOpen(false)} />
+      {anchor && (
+        <TablePopup table={table} anchor={anchor} onClose={() => setAnchor(null)} />
       )}
     </div>
   )
