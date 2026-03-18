@@ -1,56 +1,61 @@
-import type { ListType, Moment, Song } from './types'
+import { useState } from 'react'
+import { Plus, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import type { CreateSongData, ListType, Moment, Song } from './types'
 import { MOMENT_LABELS, MOMENT_ORDER } from './types'
 import { useSongs } from './api'
 import { SongCard } from './SongCard'
+import { SUGGESTIONS } from './suggestions'
 
 interface Props {
   listType: ListType
-  onAdd: () => void
+  onAdd: (prefill?: Partial<CreateSongData>) => void
 }
 
-function AddButton({ onClick }: { onClick: () => void }) {
+function SuggestionPanel({ moment, onAdd }: { moment: Moment; onAdd: (prefill: Partial<CreateSongData>) => void }) {
+  const suggestions = SUGGESTIONS[moment] ?? []
   return (
-    <button
-      onClick={onClick}
-      style={{
-        background: '#4f46e5',
-        color: '#fff',
-        border: 'none',
-        borderRadius: 6,
-        padding: '8px 16px',
-        cursor: 'pointer',
-        fontWeight: 600,
-        marginBottom: 16,
-      }}
-    >
-      + Add Song
-    </button>
-  )
-}
-
-function EmptyState() {
-  return (
-    <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>
-      No songs yet. Paste a YouTube, Spotify, or SoundCloud link to get started.
-    </p>
+    <div className="mb-4 rounded-xl bg-stone-50 border border-stone-100 p-3">
+      <p className="text-xs text-stone-400 mb-2.5">
+        Popular picks for this moment — click to add to your list
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+        {suggestions.map((s) => (
+          <div key={s.title} className="flex items-center justify-between bg-white rounded-lg border border-stone-100 px-3 py-2">
+            <div className="min-w-0 mr-2">
+              <p className="text-sm font-medium text-stone-700 truncate">{s.title}</p>
+              <p className="text-xs text-stone-400 truncate">{s.artist}</p>
+            </div>
+            <button
+              onClick={() => onAdd({ title: s.title, artist: s.artist, moment })}
+              className="flex-shrink-0 flex items-center gap-0.5 px-2 py-1 rounded-full bg-stone-100 text-stone-500 text-xs font-medium hover:bg-rose-100 hover:text-rose-600 transition-colors"
+            >
+              <Plus size={10} /> Add
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
 export function SongList({ listType, onAdd }: Props) {
   const { data: songs = [], isLoading, isError } = useSongs(listType)
+  const [openSuggestions, setOpenSuggestions] = useState<Moment | null>(null)
 
-  if (isLoading) return <p style={{ color: '#6b7280' }}>Loading…</p>
-  if (isError) return <p style={{ color: '#ef4444' }}>Failed to load songs.</p>
+  if (isLoading) return <p className="text-sm text-stone-400">Loading…</p>
+  if (isError) return <p className="text-sm text-rose-500">Failed to load songs.</p>
 
-  // Do-Not-Play: flat list, no moment grouping needed
+  // Do-Not-Play: flat list, no grouping
   if (listType === 'do_not_play') {
     return (
       <div>
-        <AddButton onClick={onAdd} />
         {songs.length === 0 ? (
-          <EmptyState />
+          <div className="text-center py-16 text-stone-400">
+            <p className="text-sm">No songs on the do-not-play list yet.</p>
+            <button onClick={() => onAdd()} className="mt-3 text-sm text-rose-600 hover:underline">Add one →</button>
+          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="space-y-2">
             {songs.map((song) => <SongCard key={song.id} song={song} />)}
           </div>
         )}
@@ -59,34 +64,58 @@ export function SongList({ listType, onAdd }: Props) {
   }
 
   // Playlist: group by moment
-  const grouped = MOMENT_ORDER.reduce<Record<Moment, Song[]>>((acc, moment) => {
-    acc[moment] = songs.filter((s) => s.moment === moment)
+  const grouped = MOMENT_ORDER.reduce<Record<Moment, Song[]>>((acc, m) => {
+    acc[m] = songs.filter((s) => s.moment === m)
     return acc
   }, {} as Record<Moment, Song[]>)
 
+  const hasAnySongs = songs.length > 0
+
   return (
-    <div>
-      <AddButton onClick={onAdd} />
-      {songs.length === 0 && <EmptyState />}
+    <div className="space-y-8">
+      {!hasAnySongs && (
+        <div className="text-center py-12 text-stone-400">
+          <p className="text-sm">No songs yet. Use the suggestions below or add your own.</p>
+        </div>
+      )}
+
       {MOMENT_ORDER.map((moment) => {
         const group = grouped[moment]
-        if (group.length === 0) return null
+        const isOpen = openSuggestions === moment
+
         return (
-          <div key={moment} style={{ marginBottom: 24 }}>
-            <h4 style={{
-              margin: '0 0 10px',
-              fontSize: 13,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              color: '#9ca3af',
-            }}>
-              {MOMENT_LABELS[moment]}
-              <span style={{ marginLeft: 8, fontWeight: 400 }}>({group.length})</span>
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {group.map((song) => <SongCard key={song.id} song={song} />)}
+          <div key={moment}>
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-stone-400">
+                {MOMENT_LABELS[moment]}
+                {group.length > 0 && (
+                  <span className="ml-2 font-normal text-stone-300">({group.length})</span>
+                )}
+              </h4>
+              <button
+                onClick={() => setOpenSuggestions(isOpen ? null : moment)}
+                className="flex items-center gap-1 text-xs text-stone-400 hover:text-rose-500 transition-colors"
+              >
+                <Sparkles size={11} />
+                {isOpen ? 'Hide' : 'Suggestions'}
+                {isOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+              </button>
             </div>
+
+            {/* Suggestion panel */}
+            {isOpen && <SuggestionPanel moment={moment} onAdd={onAdd} />}
+
+            {/* Songs */}
+            {group.length > 0 ? (
+              <div className="space-y-2">
+                {group.map((song) => <SongCard key={song.id} song={song} />)}
+              </div>
+            ) : (
+              !isOpen && (
+                <p className="text-xs text-stone-300 italic py-1">No songs yet for this moment.</p>
+              )
+            )}
           </div>
         )
       })}

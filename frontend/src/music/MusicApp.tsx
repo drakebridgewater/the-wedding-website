@@ -1,51 +1,63 @@
 import { useState } from 'react'
-import type { ListType } from './types'
+import { Plus } from 'lucide-react'
+import type { CreateSongData, ListType } from './types'
 import { SongList } from './SongList'
 import { AddSongModal } from './AddSongModal'
 
 const TABS: { id: ListType; label: string }[] = [
   { id: 'playlist', label: 'Playlist' },
-  { id: 'do_not_play', label: 'Do-Not-Play' },
+  { id: 'do_not_play', label: 'Do Not Play' },
 ]
 
 export function MusicApp() {
   const [activeTab, setActiveTab] = useState<ListType>('playlist')
   const [showModal, setShowModal] = useState(false)
+  const [prefill, setPrefill] = useState<Partial<CreateSongData> | null>(null)
+
+  function openAdd(data?: Partial<CreateSongData>) {
+    setPrefill(data ?? null)
+    setShowModal(true)
+  }
 
   return (
-    <div style={{ padding: '24px 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h2 style={{ margin: 0 }}>Music</h2>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-800">Music</h1>
+          <p className="text-sm text-stone-400 mt-0.5">Build your wedding playlist moment by moment</p>
+        </div>
+        <button
+          onClick={() => openAdd()}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium hover:bg-stone-700 transition-colors"
+        >
+          <Plus size={14} /> Add Song
+        </button>
       </div>
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '2px solid #e5e7eb' }}>
+      <div className="flex border-b border-stone-200 mb-6">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '8px 20px',
-              border: 'none',
-              background: 'none',
-              cursor: 'pointer',
-              fontWeight: activeTab === tab.id ? 700 : 400,
-              color: activeTab === tab.id ? '#4f46e5' : '#6b7280',
-              borderBottom: activeTab === tab.id ? '2px solid #4f46e5' : '2px solid transparent',
-              marginBottom: -2,
-              fontSize: 15,
-            }}
+            className={`px-5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              activeTab === tab.id
+                ? 'border-stone-800 text-stone-800'
+                : 'border-transparent text-stone-400 hover:text-stone-600'
+            }`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <SongList listType={activeTab} onAdd={() => setShowModal(true)} />
+      <SongList listType={activeTab} onAdd={openAdd} />
 
       {showModal && (
         <AddSongModal
           listType={activeTab}
+          prefill={prefill}
           onClose={() => setShowModal(false)}
         />
       )}

@@ -46,6 +46,13 @@ export interface FetchedMetadata {
   source: Source
 }
 
+export interface MusicBrainzResult {
+  mbid: string
+  title: string
+  artist: string
+  duration_ms: number | null
+}
+
 export interface CreateSongData {
   list_type: ListType
   moment: Moment

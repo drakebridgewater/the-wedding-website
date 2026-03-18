@@ -1,102 +1,71 @@
+import { ExternalLink, Trash2 } from 'lucide-react'
 import type { Song, Source } from './types'
 import { useDeleteSong } from './api'
 
-const SOURCE_LABELS: Record<Source, string> = {
-  youtube: 'YouTube',
-  spotify: 'Spotify',
-  soundcloud: 'SoundCloud',
-  other: 'Link',
+const SOURCE_LABEL: Record<Source, string> = {
+  youtube: 'YouTube', spotify: 'Spotify', soundcloud: 'SoundCloud', other: 'Link', '': '',
+}
+const SOURCE_COLOR: Record<Source, string> = {
+  youtube: 'bg-red-100 text-red-700',
+  spotify: 'bg-green-100 text-green-700',
+  soundcloud: 'bg-orange-100 text-orange-700',
+  other: 'bg-stone-100 text-stone-500',
   '': '',
 }
 
-const SOURCE_COLORS: Record<Source, string> = {
-  youtube: '#ff0000',
-  spotify: '#1db954',
-  soundcloud: '#ff5500',
-  other: '#6b7280',
-  '': '',
-}
-
-interface Props {
-  song: Song
-}
+interface Props { song: Song }
 
 export function SongCard({ song }: Props) {
   const deleteSong = useDeleteSong()
 
   return (
-    <div style={{
-      display: 'flex',
-      gap: '12px',
-      padding: '12px',
-      background: '#fff',
-      border: '1px solid #e5e7eb',
-      borderRadius: '8px',
-      alignItems: 'flex-start',
-    }}>
+    <div className="flex items-center gap-3 bg-white rounded-xl border border-stone-100 shadow-sm px-4 py-3 group">
       {song.thumbnail_url && (
-        <a href={song.url || '#'} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0 }}>
+        <a href={song.url || '#'} target="_blank" rel="noopener noreferrer" className="flex-shrink-0">
           <img
             src={song.thumbnail_url}
             alt={song.title}
-            style={{ width: 80, height: 60, objectFit: 'cover', borderRadius: 4 }}
+            className="w-16 h-12 object-cover rounded-md"
           />
         </a>
       )}
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
           {song.url ? (
             <a
               href={song.url}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontWeight: 600, fontSize: 15, color: '#1f2937', textDecoration: 'none' }}
+              className="text-sm font-medium text-stone-800 hover:text-rose-600 transition-colors flex items-center gap-1"
             >
               {song.title}
+              <ExternalLink size={11} className="opacity-0 group-hover:opacity-60 transition-opacity" />
             </a>
           ) : (
-            <span style={{ fontWeight: 600, fontSize: 15, color: '#1f2937' }}>{song.title}</span>
+            <span className="text-sm font-medium text-stone-800">{song.title}</span>
           )}
           {song.artist && (
-            <span style={{ fontSize: 13, color: '#6b7280' }}>{song.artist}</span>
+            <span className="text-xs text-stone-400">{song.artist}</span>
           )}
           {song.source && (
-            <span style={{
-              fontSize: 11,
-              fontWeight: 600,
-              padding: '1px 6px',
-              borderRadius: 999,
-              color: '#fff',
-              background: SOURCE_COLORS[song.source],
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>
-              {SOURCE_LABELS[song.source]}
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${SOURCE_COLOR[song.source]}`}>
+              {SOURCE_LABEL[song.source]}
             </span>
           )}
         </div>
         {song.notes && (
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>{song.notes}</p>
+          <p className="text-xs text-stone-400 mt-0.5 truncate">{song.notes}</p>
         )}
       </div>
 
       <button
         onClick={() => deleteSong.mutate(song.id)}
         disabled={deleteSong.isPending}
+        className="flex-shrink-0 p-1.5 rounded hover:bg-rose-50 text-stone-300 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
         title="Remove"
-        style={{
-          flexShrink: 0,
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: '#9ca3af',
-          fontSize: 18,
-          lineHeight: 1,
-          padding: '2px 4px',
-        }}
       >
-        ×
+        <Trash2 size={13} />
       </button>
     </div>
   )

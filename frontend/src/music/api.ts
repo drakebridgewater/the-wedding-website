@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { CreateSongData, FetchedMetadata, ListType, Song } from './types'
+import type { CreateSongData, FetchedMetadata, ListType, MusicBrainzResult, Song } from './types'
 
 function getCsrf(): string {
   return (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? ''
@@ -76,5 +76,14 @@ export function useFetchUrl() {
         method: 'POST',
         body: JSON.stringify({ url }),
       }),
+  })
+}
+
+export function useMusicBrainzSearch(q: string) {
+  return useQuery<MusicBrainzResult[]>({
+    queryKey: ['music', 'mb-search', q],
+    queryFn: () => apiFetch(`/music/api/search/?q=${encodeURIComponent(q)}`),
+    enabled: q.length >= 2,
+    staleTime: 5 * 60 * 1000,
   })
 }

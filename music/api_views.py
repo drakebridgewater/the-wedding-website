@@ -1,3 +1,5 @@
+import requests as http_requests
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -50,3 +52,34 @@ def fetch_url(request):
         return Response({'error': 'url is required'}, status=status.HTTP_400_BAD_REQUEST)
     metadata = fetch_metadata(url)
     return Response(metadata)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def musicbrainz_search(request):
+    """Proxy MusicBrainz recording search to avoid CORS and add User-Agent."""
+    q = request.query_params.get('q', '').strip()
+    if len(q) < 2:
+        return Response([])
+    try:
+        resp = http_requests.get(
+            'https://musicbrainz.org/ws/2/recording/',
+            params={'query': q, 'fmt': 'json', 'limit': 8},
+            headers={'User-Agent': 'WeddingWebsite/1.0 (https://github.com/wedding)'},
+            timeout=8,
+        )
+        resp.raise_for_status()
+    except Exception:
+        return Response([])
+
+    results = []
+    for r in resp.json().get('recordings', []):
+        credits = r.get('artist-credit', [])
+        artist = credits[0]['name'] if credits else ''
+        results.append({
+            'mbid': r['id'],
+            'title': r['title'],
+            'artist': artist,
+            'duration_ms': r.get('length'),
+        })
+    return Response(results)

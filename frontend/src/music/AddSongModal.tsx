@@ -1,44 +1,68 @@
-import { useState } from 'react'
-import type { CreateSongData, FetchedMetadata, ListType, Moment, Source } from './types'
+import { useEffect, useState } from 'react'
+import { Search, Link, Loader2 } from 'lucide-react'
+import type { CreateSongData, ListType, Moment, Source } from './types'
 import { MOMENT_LABELS, MOMENT_ORDER } from './types'
-import { useCreateSong, useFetchUrl } from './api'
+import { useCreateSong, useFetchUrl, useMusicBrainzSearch } from './api'
 
 interface Props {
   listType: ListType
+  prefill: Partial<CreateSongData> | null
   onClose: () => void
 }
 
-const INITIAL_FORM: Omit<CreateSongData, 'list_type'> = {
-  moment: 'other',
-  title: '',
-  artist: '',
-  url: '',
-  source: '' as Source,
-  thumbnail_url: '',
-  notes: '',
+type SearchMode = 'search' | 'url'
+
+const BLANK: Omit<CreateSongData, 'list_type'> = {
+  moment: 'other', title: '', artist: '', url: '', source: '' as Source, thumbnail_url: '', notes: '',
 }
 
-export function AddSongModal({ listType, onClose }: Props) {
+function fmtDuration(ms: number | null): string {
+  if (!ms) return ''
+  const s = Math.round(ms / 1000)
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
+export function AddSongModal({ listType, prefill, onClose }: Props) {
+  const [mode, setMode] = useState<SearchMode>('search')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedQ, setDebouncedQ] = useState('')
   const [urlInput, setUrlInput] = useState('')
-  const [form, setForm] = useState(INITIAL_FORM)
+  const [form, setForm] = useState<Omit<CreateSongData, 'list_type'>>({
+    ...BLANK,
+    moment: listType === 'do_not_play' ? 'other' : (prefill?.moment ?? 'other'),
+    ...(prefill ? { title: prefill.title ?? '', artist: prefill.artist ?? '' } : {}),
+  })
 
   const fetchUrl = useFetchUrl()
   const createSong = useCreateSong()
 
+  // Debounce MusicBrainz search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(searchQuery), 400)
+    return () => clearTimeout(t)
+  }, [searchQuery])
+
+  const { data: searchResults = [], isFetching: isSearching } = useMusicBrainzSearch(debouncedQ)
+
+  function set<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
+    setForm((f) => ({ ...f, [k]: v }))
+  }
+
+  function handleSelectResult(title: string, artist: string) {
+    set('title', title)
+    set('artist', artist)
+    setSearchQuery('')
+    setDebouncedQ('')
+  }
+
   function handleFetch() {
     fetchUrl.mutate(urlInput, {
-      onSuccess: (meta: FetchedMetadata) => {
-        setForm((prev) => ({
-          ...prev,
-          title: meta.title || prev.title,
-          artist: meta.artist || prev.artist,
-          thumbnail_url: meta.thumbnail_url || prev.thumbnail_url,
-          source: meta.source || prev.source,
-          url: urlInput,
-        }))
-      },
-      onError: () => {
-        setForm((prev) => ({ ...prev, url: urlInput }))
+      onSuccess: (meta) => {
+        set('title', meta.title || form.title)
+        set('artist', meta.artist || form.artist)
+        set('thumbnail_url', meta.thumbnail_url || form.thumbnail_url)
+        set('source', meta.source || form.source)
+        set('url', urlInput)
       },
     })
   }
@@ -51,145 +75,177 @@ export function AddSongModal({ listType, onClose }: Props) {
     )
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '8px 10px',
-    border: '1px solid #d1d5db',
-    borderRadius: 6,
-    fontSize: 14,
-    boxSizing: 'border-box',
-  }
-
-  const labelStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#374151',
-    marginBottom: 4,
-  }
+  const inputCls = 'w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400'
+  const labelCls = 'block text-xs font-medium text-stone-600 mb-1'
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }}>
-      <div style={{
-        background: '#fff', borderRadius: 12, padding: 24,
-        width: '100%', maxWidth: 480, maxHeight: '90vh', overflowY: 'auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>Add Song</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#6b7280' }}>×</button>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
+          <h2 className="text-sm font-semibold text-stone-900">Add Song</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 text-lg leading-none">&times;</button>
         </div>
 
-        {/* Step 1: URL fetch */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Share URL (YouTube, Spotify, SoundCloud)</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://..."
-              style={{ ...inputStyle, flex: 1 }}
-            />
-            <button
-              type="button"
-              onClick={handleFetch}
-              disabled={!urlInput || fetchUrl.isPending}
-              style={{
-                padding: '8px 14px', borderRadius: 6, border: 'none',
-                background: '#4f46e5', color: '#fff', cursor: 'pointer', fontWeight: 600,
-                opacity: !urlInput ? 0.5 : 1,
-              }}
-            >
-              {fetchUrl.isPending ? '…' : 'Fetch'}
-            </button>
-          </div>
-          {fetchUrl.isError && (
-            <p style={{ color: '#ef4444', fontSize: 12, margin: '4px 0 0' }}>
-              Could not fetch metadata — fill in manually below.
-            </p>
-          )}
-        </div>
-
-        {/* Step 2: form (always visible, pre-filled after fetch) */}
-        <form onSubmit={handleSubmit}>
-          {form.thumbnail_url && (
-            <div style={{ marginBottom: 12 }}>
-              <img src={form.thumbnail_url} alt="" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 6 }} />
-            </div>
-          )}
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>Title *</label>
-            <input
-              required
-              value={form.title}
-              onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-              style={inputStyle}
-            />
-          </div>
-
-          <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>Artist</label>
-            <input
-              value={form.artist}
-              onChange={(e) => setForm((p) => ({ ...p, artist: e.target.value }))}
-              style={inputStyle}
-            />
-          </div>
-
-          {listType === 'playlist' && (
-            <div style={{ marginBottom: 12 }}>
-              <label style={labelStyle}>Moment</label>
-              <select
-                value={form.moment}
-                onChange={(e) => setForm((p) => ({ ...p, moment: e.target.value as Moment }))}
-                style={inputStyle}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+          {/* Mode toggle */}
+          <div className="flex rounded-lg bg-stone-100 p-1 gap-1">
+            {([['search', <Search size={12} />, 'Search by name'],
+               ['url',    <Link    size={12} />, 'Add by URL']] as const).map(([id, icon, label]) => (
+              <button
+                key={id}
+                onClick={() => setMode(id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  mode === id ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'
+                }`}
               >
-                {MOMENT_ORDER.map((m) => (
-                  <option key={m} value={m}>{MOMENT_LABELS[m]}</option>
-                ))}
-              </select>
+                {icon} {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search mode */}
+          {mode === 'search' && (
+            <div>
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search song title or artist…"
+                  className="w-full border border-stone-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+                />
+                {isSearching && (
+                  <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 animate-spin" />
+                )}
+              </div>
+              {searchResults.length > 0 && (
+                <div className="mt-1.5 border border-stone-200 rounded-lg overflow-hidden divide-y divide-stone-100 max-h-52 overflow-y-auto">
+                  {searchResults.map((r) => (
+                    <button
+                      key={r.mbid}
+                      type="button"
+                      onClick={() => handleSelectResult(r.title, r.artist)}
+                      className="w-full text-left px-3 py-2.5 hover:bg-stone-50 transition-colors flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-stone-800 truncate">{r.title}</p>
+                        <p className="text-xs text-stone-400 truncate">{r.artist}</p>
+                      </div>
+                      {r.duration_ms && (
+                        <span className="flex-shrink-0 text-xs text-stone-300 font-mono">
+                          {fmtDuration(r.duration_ms)}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {debouncedQ.length >= 2 && !isSearching && searchResults.length === 0 && (
+                <p className="text-xs text-stone-400 mt-1.5 pl-1">No results — try a different search or fill in manually below.</p>
+              )}
             </div>
           )}
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={labelStyle}>Notes</label>
-            <textarea
-              value={form.notes}
-              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-              rows={2}
-              style={{ ...inputStyle, resize: 'vertical' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={onClose} style={{
-              padding: '8px 16px', borderRadius: 6, border: '1px solid #d1d5db',
-              background: '#fff', cursor: 'pointer',
-            }}>
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={createSong.isPending}
-              style={{
-                padding: '8px 16px', borderRadius: 6, border: 'none',
-                background: '#4f46e5', color: '#fff', cursor: 'pointer', fontWeight: 600,
-              }}
-            >
-              {createSong.isPending ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-
-          {createSong.isError && (
-            <p style={{ color: '#ef4444', fontSize: 12, marginTop: 8 }}>
-              Failed to save — please try again.
-            </p>
+          {/* URL mode */}
+          {mode === 'url' && (
+            <div>
+              <label className={labelCls}>YouTube, Spotify, or SoundCloud URL</label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="https://…"
+                  className={`${inputCls} flex-1`}
+                />
+                <button
+                  type="button"
+                  onClick={handleFetch}
+                  disabled={!urlInput || fetchUrl.isPending}
+                  className="px-3 py-2 rounded-lg bg-stone-800 text-white text-sm font-medium hover:bg-stone-700 disabled:opacity-50 transition-colors"
+                >
+                  {fetchUrl.isPending ? '…' : 'Fetch'}
+                </button>
+              </div>
+              {fetchUrl.isError && (
+                <p className="text-xs text-rose-500 mt-1">Could not fetch metadata — fill in manually below.</p>
+              )}
+            </div>
           )}
-        </form>
+
+          {/* Divider */}
+          <div className="border-t border-stone-100" />
+
+          {/* Form */}
+          <form id="song-form" onSubmit={handleSubmit} className="space-y-3">
+            {form.thumbnail_url && (
+              <img src={form.thumbnail_url} alt="" className="w-full max-h-40 object-cover rounded-lg" />
+            )}
+            <div>
+              <label className={labelCls}>Title *</label>
+              <input
+                required
+                value={form.title}
+                onChange={(e) => set('title', e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Artist</label>
+              <input
+                value={form.artist}
+                onChange={(e) => set('artist', e.target.value)}
+                className={inputCls}
+              />
+            </div>
+            {listType === 'playlist' && (
+              <div>
+                <label className={labelCls}>Moment</label>
+                <select
+                  value={form.moment}
+                  onChange={(e) => set('moment', e.target.value as Moment)}
+                  className={inputCls}
+                >
+                  {MOMENT_ORDER.map((m) => (
+                    <option key={m} value={m}>{MOMENT_LABELS[m]}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div>
+              <label className={labelCls}>Notes</label>
+              <textarea
+                value={form.notes}
+                onChange={(e) => set('notes', e.target.value)}
+                rows={2}
+                className={`${inputCls} resize-none`}
+              />
+            </div>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-stone-100 flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="song-form"
+            disabled={!form.title || createSong.isPending}
+            className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50 transition-colors"
+          >
+            {createSong.isPending ? 'Saving…' : 'Add Song'}
+          </button>
+        </div>
       </div>
     </div>
   )
