@@ -5,11 +5,16 @@ import uuid
 from django.db import models
 from django.dispatch import receiver
 
-# these will determine the default formality of correspondence
+# Party type controls invitation tone and is used for filtering/grouping.
+# formal  — Elders, distant relatives, or professional contacts: formal wording.
+# fun     — Close friends and young circle: casual, playful wording.
+# family  — Family members (general grouping).
+# work    — Work colleagues and professional contacts.
 ALLOWED_TYPES = [
-    ('formal', 'formal'),
-    ('fun', 'fun'),
-    ('dimagi', 'dimagi'),
+    ('formal', 'Formal'),
+    ('fun', 'Fun'),
+    ('family', 'Family'),
+    ('work', 'Work'),
 ]
 
 SIDE_CHOICES = [

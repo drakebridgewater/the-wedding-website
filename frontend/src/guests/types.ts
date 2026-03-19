@@ -3,7 +3,7 @@ export type MemberRole =
   | 'bridesmaid' | 'groomsman' | 'other'
 
 export type Meal = 'beef' | 'fish' | 'hen' | 'vegetarian' | ''
-export type PartyType = 'formal' | 'fun' | 'dimagi' | ''
+export type PartyType = 'formal' | 'fun' | 'family' | 'work' | ''
 
 export interface WeddingPartyMember {
   id: number
@@ -119,7 +119,16 @@ export const PARTY_TYPE_LABELS: Record<string, string> = {
   '': 'None',
   formal: 'Formal',
   fun: 'Fun',
-  dimagi: 'Dimagi',
+  family: 'Family',
+  work: 'Work',
+}
+
+// Used as tooltips wherever the type badge or select is shown.
+export const PARTY_TYPE_DESCRIPTIONS: Record<string, string> = {
+  formal: 'Elders, distant relatives, or professional contacts — formal invitation wording.',
+  fun: 'Close friends and your casual circle — relaxed, playful invitation tone.',
+  family: 'Family members — useful for grouping and seating.',
+  work: 'Work colleagues and professional contacts.',
 }
 
 export const INVITE_STATUS_LABELS: Record<InviteStatus, string> = {

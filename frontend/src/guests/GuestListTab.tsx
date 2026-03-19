@@ -7,7 +7,7 @@ import {
   useAddGuest, useUpdateGuest, useDeleteGuest,
 } from './api'
 import type { Guest, Party, PartyFormData, PartyType, PartySide, InviteStatus } from './types'
-import { MEAL_LABELS, PARTY_TYPE_LABELS, PARTY_SIDE_LABELS, INVITE_STATUS_LABELS, INVITE_STATUS_COLORS } from './types'
+import { MEAL_LABELS, PARTY_TYPE_LABELS, PARTY_TYPE_DESCRIPTIONS, PARTY_SIDE_LABELS, INVITE_STATUS_LABELS, INVITE_STATUS_COLORS } from './types'
 
 // ── CSV Import Modal ───────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ function ImportCsvModal({ onClose }: { onClose: () => void }) {
             <div className="bg-stone-50 rounded-lg p-3 text-xs text-stone-500 space-y-1">
               <p className="font-medium text-stone-700">Expected CSV columns (with header row):</p>
               <p className="font-mono">party_name, first_name, last_name, party_type, is_child, category, is_invited, email</p>
-              <p className="mt-1">• <code>party_type</code>: formal / fun / dimagi</p>
+              <p className="mt-1">• <code>party_type</code>: formal / fun / family / work</p>
               <p>• <code>is_child</code> / <code>is_invited</code>: y / yes / true / 1</p>
             </div>
 
@@ -268,7 +268,10 @@ function PartyRow({
         </button>
 
         {party.type && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 font-medium">
+          <span
+            className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 font-medium cursor-help"
+            title={PARTY_TYPE_DESCRIPTIONS[party.type]}
+          >
             {PARTY_TYPE_LABELS[party.type]}
           </span>
         )}
@@ -523,11 +526,21 @@ function PartyModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Type</label>
+              <label className="block text-xs font-medium text-stone-600 mb-1">
+                Type
+                {type && PARTY_TYPE_DESCRIPTIONS[type] && (
+                  <span className="ml-1.5 font-normal text-stone-400" title={PARTY_TYPE_DESCRIPTIONS[type]}>ⓘ</span>
+                )}
+              </label>
               <select value={type} onChange={(e) => setType(e.target.value as PartyType)}
                 className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
-                {Object.entries(PARTY_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                {Object.entries(PARTY_TYPE_LABELS).map(([v, l]) => (
+                  <option key={v} value={v} title={PARTY_TYPE_DESCRIPTIONS[v] ?? ''}>{l}</option>
+                ))}
               </select>
+              {type && PARTY_TYPE_DESCRIPTIONS[type] && (
+                <p className="mt-1 text-[11px] text-stone-400">{PARTY_TYPE_DESCRIPTIONS[type]}</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-600 mb-1">Category</label>
