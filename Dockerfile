@@ -4,7 +4,7 @@
 FROM node:23-slim AS frontend-build
 WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
