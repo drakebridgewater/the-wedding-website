@@ -10,6 +10,7 @@ from .serializers import (
     WeddingPartyGroupSerializer,
     WeddingPartyMemberSerializer,
 )
+from .csv_import import import_guests_from_fileobj
 
 
 def _parse_name(full_name):
@@ -198,3 +199,20 @@ def guest_detail(request, pk):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data)
+
+
+# ── CSV import ─────────────────────────────────────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def import_csv(request):
+    csv_file = request.FILES.get('file')
+    if not csv_file:
+        return Response({'error': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not csv_file.name.endswith('.csv'):
+        return Response({'error': 'File must be a .csv'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        stats = import_guests_from_fileobj(csv_file)
+    except Exception as e:
+        return Response({'error': f'Import failed: {e}'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(stats, status=status.HTTP_200_OK)

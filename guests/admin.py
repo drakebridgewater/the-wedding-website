@@ -11,17 +11,30 @@ class GuestForm(forms.ModelForm):
             'first_name': forms.TextInput(),
             'last_name': forms.TextInput(),
             'email': forms.TextInput(),
+            'dietary_restrictions': forms.Textarea(attrs={'rows': 3}),
         }
 
 
-class GuestInline(admin.TabularInline):
+class PartyForm(forms.ModelForm):
+    class Meta:
+        model = Party
+        fields = '__all__'
+        widgets = {
+            'name': forms.TextInput(),
+            'address': forms.Textarea(attrs={'rows': 3}),
+            'comments': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class GuestInline(admin.StackedInline):
     model = Guest
     form = GuestForm
-    fields = ('first_name', 'last_name', 'email', 'is_attending', 'meal', 'is_child', 'dietary_restrictions')
+    fields = ('first_name', 'last_name', 'email', 'is_attending', 'is_child', 'meal', 'dietary_restrictions')
     extra = 1
 
 
 class PartyAdmin(admin.ModelAdmin):
+    form = PartyForm
     list_display = ('name', 'type', 'category', 'side', 'status', 'save_the_date_sent', 'invitation_sent',
                     'rehearsal_dinner', 'invitation_opened', 'is_attending', 'rsvp_responded_at', 'plus_one_allowed')
     list_filter = ('type', 'category', 'side', 'status', 'is_attending', 'rehearsal_dinner',

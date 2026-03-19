@@ -43,10 +43,10 @@ export function VendorModal({ vendorType, vendor, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[1040] flex items-start justify-center bg-black/40 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8">
+    <div className="fixed inset-0 z-[1040] flex items-start justify-center bg-black/40 p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-4 sm:my-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white rounded-t-xl z-10">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b sticky top-0 bg-white rounded-t-xl z-10">
           <h2 className="text-lg font-semibold text-gray-900">
             {isEdit ? vendor!.name : `Add ${VENDOR_LABELS[vendorType]}`}
           </h2>
@@ -55,7 +55,7 @@ export function VendorModal({ vendorType, vendor, onClose }: Props) {
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-4 sm:px-6 py-5 space-y-5">
           {/* For venues: photos + map live inside the form's own tabs.
               For other vendor types: show them here above the form. */}
           {!isVenue && isEdit && (

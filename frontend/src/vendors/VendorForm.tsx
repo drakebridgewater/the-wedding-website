@@ -228,7 +228,7 @@ function CatererFields({ register, control, errors }: FieldSectionProps) {
   return (
     <>
       <SectionHeader title="Caterer Details" />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Price per Head ($)" error={errors.price_per_head?.message as string}>
           <input {...register('price_per_head')} className={inputCls(errors.price_per_head?.message as string)} placeholder="e.g. 95" />
         </Field>
@@ -263,7 +263,7 @@ function CakeFields({ register, control, errors }: FieldSectionProps) {
   return (
     <>
       <SectionHeader title="Cake Details" />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Price per Serving ($)" error={errors.price_per_serving?.message as string}>
           <input {...register('price_per_serving')} className={inputCls(errors.price_per_serving?.message as string)} placeholder="e.g. 12" />
         </Field>
@@ -295,7 +295,7 @@ function FloristFields({ register, errors }: FieldSectionProps) {
   return (
     <>
       <SectionHeader title="Florist Details" />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Style" error={errors.style?.message as string}>
           <select {...register('style')} className={inputCls()}>
             {STYLES.map((s) => <option key={s} value={s}>{STYLE_LABELS[s]}</option>)}
@@ -318,7 +318,7 @@ function EntertainmentFields({ register, errors }: FieldSectionProps) {
   return (
     <>
       <SectionHeader title="Entertainment Details" />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Type" error={errors.type?.message as string}>
           <select {...register('type')} className={inputCls()}>
             {TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
@@ -333,7 +333,7 @@ function EntertainmentFields({ register, errors }: FieldSectionProps) {
           />
         </Field>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Performance Duration (hours)" error={errors.performance_duration_hours?.message as string}>
           <input {...register('performance_duration_hours')} className={inputCls()} placeholder="e.g. 4" />
         </Field>
@@ -487,7 +487,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
 
       {/* ---- Venue tab bar ---- */}
       {isVenue && (
-        <div className="flex border-b border-gray-200 -mx-6 px-6 overflow-x-auto">
+        <div className="flex border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-x-auto">
           {VENUE_TABS.filter((t) => t.id !== 'photos' || !!vendor).map((tab) => (
             <button
               key={tab.id}
@@ -515,7 +515,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
           OVERVIEW TAB  (also the full form for non-venue)
           ==================================================== */}
       <div className={cn('space-y-4', tabHidden('overview') && 'hidden')}>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Name *" error={errors.name?.message as string}>
             <input
               {...register('name')}
@@ -534,7 +534,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
 
         {/* Venue: style + capacity on overview */}
         {isVenue && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Style" error={errors.style?.message as string}>
               <select {...register('style')} className={inputCls()}>
                 {VENUE_STYLES.map((s) => <option key={s} value={s}>{VENUE_STYLE_LABELS[s]}</option>)}
@@ -587,7 +587,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
         {!isVenue && (
           <>
             <SectionHeader title="Contact" />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Website" error={errors.website?.message as string}>
                 <input {...register('website')} className={inputCls(errors.website?.message as string)} placeholder="https://…" />
               </Field>
@@ -608,7 +608,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             <Field label="Address" error={errors.address?.message as string}>
               <input {...register('address')} className={inputCls()} placeholder="Street, City, State ZIP" />
             </Field>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Latitude" error={errors.latitude?.message as string}>
                 <input {...register('latitude')} className={inputCls()} placeholder="e.g. 40.7128" />
               </Field>
@@ -631,7 +631,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
           CONTACT TAB  (venue only)
           ==================================================== */}
       <div className={cn('space-y-4', tabHidden('contact') && 'hidden')}>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Website" error={errors.website?.message as string}>
             <input {...register('website')} className={inputCls(errors.website?.message as string)} placeholder="https://…" />
           </Field>
@@ -651,7 +651,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
         <Field label="Address" error={errors.address?.message as string}>
           <input {...register('address')} className={inputCls()} placeholder="Street, City, State ZIP" />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Latitude" error={errors.latitude?.message as string}>
             <input {...register('latitude')} className={inputCls()} placeholder="e.g. 40.7128" />
           </Field>

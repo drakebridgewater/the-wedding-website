@@ -19,6 +19,7 @@ urlpatterns = [
     path('guests/api/parties/<int:pk>/', api_views.party_detail, name='api-party-detail'),
     path('guests/api/parties/<int:party_pk>/guests/', api_views.party_guests, name='api-party-guests'),
     path('guests/api/guests/<int:pk>/', api_views.guest_detail, name='api-guest-detail'),
+    path('guests/api/import-csv/', api_views.import_csv, name='api-import-csv'),
 
     re_path(r'^guests/$', login_required(GuestListView.as_view()), name='guest-list'),
     re_path(r'^dashboard/$', dashboard, name='dashboard'),

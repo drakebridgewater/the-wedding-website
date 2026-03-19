@@ -1,12 +1,117 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronRight, Pencil, Trash2, Plus, UserPlus } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { ChevronDown, ChevronRight, Pencil, Trash2, Plus, UserPlus, Upload, X } from 'lucide-react'
 import {
   useParties, useCreateParty, useUpdateParty, useDeleteParty,
   useAddGuest, useUpdateGuest, useDeleteGuest,
 } from './api'
 import type { Guest, Party, PartyFormData, PartyType, PartySide, InviteStatus } from './types'
 import { MEAL_LABELS, PARTY_TYPE_LABELS, PARTY_SIDE_LABELS, INVITE_STATUS_LABELS, INVITE_STATUS_COLORS } from './types'
+
+// ── CSV Import Modal ───────────────────────────────────────────────────────────
+
+interface ImportStats {
+  parties_created: number
+  parties_updated: number
+  guests_created: number
+  guests_updated: number
+  skipped: number
+}
+
+function ImportCsvModal({ onClose }: { onClose: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<ImportStats | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const qc = useQueryClient()
+
+  async function handleImport() {
+    if (!file) return
+    setLoading(true)
+    setError(null)
+    const form = new FormData()
+    form.append('file', file)
+    try {
+      const res = await fetch('/guests/api/import-csv/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) ?? [])[1] ?? '' },
+        body: form,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Import failed')
+      setResult(data as ImportStats)
+      qc.invalidateQueries({ queryKey: ['guests', 'parties'] })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Import failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+         onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between px-5 py-4 border-b">
+          <h2 className="text-sm font-semibold text-stone-900">Import Guests from CSV</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
+        </div>
+
+        {result ? (
+          <div className="px-5 py-5 space-y-3">
+            <p className="text-sm font-medium text-emerald-700">Import complete!</p>
+            <ul className="text-sm text-stone-600 space-y-1">
+              <li>{result.parties_created} parties created, {result.parties_updated} updated</li>
+              <li>{result.guests_created} guests created, {result.guests_updated} updated</li>
+              {result.skipped > 0 && <li className="text-amber-600">{result.skipped} rows skipped</li>}
+            </ul>
+            <button onClick={onClose}
+              className="w-full mt-2 py-2 bg-stone-800 text-white text-sm rounded-lg hover:bg-stone-700">
+              Done
+            </button>
+          </div>
+        ) : (
+          <div className="px-5 py-5 space-y-4">
+            <div className="bg-stone-50 rounded-lg p-3 text-xs text-stone-500 space-y-1">
+              <p className="font-medium text-stone-700">Expected CSV columns (with header row):</p>
+              <p className="font-mono">party_name, first_name, last_name, party_type, is_child, category, is_invited, email</p>
+              <p className="mt-1">• <code>party_type</code>: formal / fun / dimagi</p>
+              <p>• <code>is_child</code> / <code>is_invited</code>: y / yes / true / 1</p>
+            </div>
+
+            <div>
+              <input ref={fileRef} type="file" accept=".csv" className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+              <button onClick={() => fileRef.current?.click()}
+                className="w-full border-2 border-dashed border-stone-300 rounded-lg py-6 text-sm text-stone-400 hover:border-stone-400 hover:text-stone-600 transition-colors">
+                {file ? (
+                  <span className="text-stone-700 font-medium">{file.name}</span>
+                ) : (
+                  <span>Click to choose a .csv file</span>
+                )}
+              </button>
+            </div>
+
+            {error && <p className="text-xs text-red-600">{error}</p>}
+
+            <div className="flex gap-2 justify-end">
+              <button onClick={onClose}
+                className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">
+                Cancel
+              </button>
+              <button onClick={handleImport} disabled={!file || loading}
+                className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50">
+                {loading ? 'Importing…' : 'Import'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ── Guest List Tab ─────────────────────────────────────────────────────────────
 
@@ -18,6 +123,7 @@ export function GuestListTab() {
 
   const [editingParty, setEditingParty] = useState<Party | null>(null)
   const [showPartyModal, setShowPartyModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
   function toggleExpand(id: number) {
@@ -69,12 +175,20 @@ export function GuestListTab() {
           {parties.length} parties · {totalGuests} guests
           {attending > 0 && <span className="ml-2 text-emerald-600">{attending} attending</span>}
         </p>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 text-white text-sm hover:bg-stone-700 transition-colors"
-        >
-          <Plus size={14} /> Add Party
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-300 text-stone-600 text-sm hover:bg-stone-50 transition-colors"
+          >
+            <Upload size={14} /> Import CSV
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 text-white text-sm hover:bg-stone-700 transition-colors"
+          >
+            <Plus size={14} /> Add Party
+          </button>
+        </div>
       </div>
 
       {parties.length === 0 ? (
@@ -104,6 +218,10 @@ export function GuestListTab() {
           onClose={closeModal}
           saving={createParty.isPending || updateParty.isPending}
         />
+      )}
+
+      {showImportModal && (
+        <ImportCsvModal onClose={() => setShowImportModal(false)} />
       )}
     </div>
   )
