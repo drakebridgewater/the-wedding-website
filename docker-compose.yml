@@ -9,7 +9,7 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
     ports:
-      - 8080:8080
+      - "${APP_PORT:-8080}:8080"
     volumes:
       - ./media:/app/media
     restart: unless-stopped

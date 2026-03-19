@@ -1,4 +1,14 @@
 # Dockerfile
+
+# ---- Frontend build stage ----
+FROM node:22-slim AS frontend-build
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# ---- App stage ----
 FROM python:3.12
 
 RUN apt-get update && apt-get install nginx --yes
@@ -12,6 +22,9 @@ COPY deploy/nginx.conf /etc/nginx/sites-enabled/default
 # Mounts the application code to the image
 COPY . app
 WORKDIR /app
+
+# Copy the built frontend assets into static/dist/
+COPY --from=frontend-build /static/dist /app/static/dist
 
 EXPOSE 8080
 
