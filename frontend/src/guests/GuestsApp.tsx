@@ -19,7 +19,10 @@ export function GuestsApp() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <Toaster richColors position="top-right" />
 
-      <h1 className="text-xl font-semibold text-stone-900 mb-6">Guest Management</h1>
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-stone-900">Guest Management</h1>
+        <p className="text-sm text-stone-500 mt-1">Track your guest list, RSVPs, meal choices, and wedding party roles.</p>
+      </div>
 
       {/* Tab bar */}
       <div className="flex gap-1 mb-6 border-b border-stone-200">

@@ -133,10 +133,12 @@ export function ScheduleApp() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-semibold text-stone-900">Day-of Schedule</h1>
-          {conflictCount > 0 && (
+          {conflictCount > 0 ? (
             <p className="text-xs text-amber-600 mt-0.5">
               ⚠ {conflictCount} scheduling conflict{conflictCount > 1 ? 's' : ''}
             </p>
+          ) : (
+            <p className="text-xs text-stone-400 mt-0.5">Plan every moment — from getting ready to the last dance.</p>
           )}
         </div>
         <p className="text-xs text-stone-400 hidden sm:block">Click the timeline to add an event</p>

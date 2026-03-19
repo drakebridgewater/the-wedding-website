@@ -104,11 +104,11 @@ export function SeatingChartApp() {
       <div className="flex flex-shrink-0 items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-stone-900">Seating Chart</h1>
-          {viewMode === 'grid' && (
-            <p className="text-xs text-stone-400 mt-0.5">
-              Scroll to zoom · Drag to pan · Drag guests onto tables to assign seats
-            </p>
-          )}
+          <p className="text-xs text-stone-400 mt-0.5">
+            {viewMode === 'grid'
+              ? 'Scroll to zoom · Drag to pan · Drag guests onto tables to assign seats'
+              : 'Assign guests to tables and keep track of every seat.'}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {/* View toggle */}
