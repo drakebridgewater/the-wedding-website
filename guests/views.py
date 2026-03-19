@@ -1,7 +1,7 @@
 import base64
 from collections import namedtuple
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -34,7 +34,7 @@ def export_guests(request):
 @login_required
 def dashboard(request):
     parties_with_pending_invites = Party.objects.filter(
-        is_invited=True, is_attending=None
+        status='invited', is_attending=None
     ).order_by('category', 'name')
     parties_with_unopen_invites = parties_with_pending_invites.filter(invitation_opened=None)
     parties_with_open_unresponded_invites = parties_with_pending_invites.exclude(invitation_opened=None)
@@ -48,23 +48,37 @@ def dashboard(request):
     )
     meal_breakdown = attending_guests.exclude(meal=None).values('meal').annotate(count=Count('*'))
     category_breakdown = attending_guests.values('party__category').annotate(count=Count('*'))
+
+    from wedding.models import WeddingSettings
+    from datetime import date
+    wedding = WeddingSettings.get()
+    rsvp_deadline = wedding.rsvp_deadline
+    today = date.today()
+    rsvp_days_remaining = (rsvp_deadline - today).days if rsvp_deadline else None
+    rsvp_overdue = rsvp_deadline and today > rsvp_deadline
+
     return render(request, 'guests/dashboard.html', context={
         'couple_name': settings.BRIDE_AND_GROOM,
-        'website_url': settings.WEDDING_WEBSITE_URL,        
+        'website_url': settings.WEDDING_WEBSITE_URL,
         'guests': Guest.objects.filter(is_attending=True).count(),
-        'possible_guests': Guest.objects.filter(party__is_invited=True).exclude(is_attending=False).count(),
+        'possible_guests': Guest.objects.filter(party__status='invited').exclude(is_attending=False).count(),
         'not_coming_guests': Guest.objects.filter(is_attending=False).count(),
         'pending_invites': parties_with_pending_invites.count(),
-        'pending_guests': Guest.objects.filter(party__is_invited=True, is_attending=None).count(),
+        'pending_guests': Guest.objects.filter(party__status='invited', is_attending=None).count(),
         'guests_without_meals': guests_without_meals,
         'parties_with_unopen_invites': parties_with_unopen_invites,
         'parties_with_open_unresponded_invites': parties_with_open_unresponded_invites,
         'unopened_invite_count': parties_with_unopen_invites.count(),
-        'total_invites': Party.objects.filter(is_invited=True).count(),
+        'total_invites': Party.objects.filter(status='invited').count(),
+        'planned_count': Party.objects.filter(status='planned').count(),
+        'not_invited_count': Party.objects.filter(status='not_invited').count(),
         'meal_breakdown': meal_breakdown,
         'category_breakdown': category_breakdown,
         'guestlist': Guest.objects.filter(is_attending=True),
         'notcoming': Guest.objects.filter(is_attending=False),
+        'rsvp_deadline': rsvp_deadline,
+        'rsvp_days_remaining': rsvp_days_remaining,
+        'rsvp_overdue': rsvp_overdue,
     })
 
 
@@ -72,7 +86,7 @@ def invitation(request, invite_id):
     party = guess_party_by_invite_id_or_404(invite_id)
     if party.invitation_opened is None:
         # update if this is the first time the invitation was opened
-        party.invitation_opened = datetime.utcnow()
+        party.invitation_opened = datetime.now(timezone.utc)
         party.save()
     if request.method == 'POST':
         for response in _parse_invite_params(request.POST):
@@ -80,11 +94,13 @@ def invitation(request, invite_id):
             assert guest.party == party
             guest.is_attending = response.is_attending
             guest.meal = response.meal
+            guest.dietary_restrictions = response.dietary_restrictions
             guest.save()
         if request.POST.get('comments'):
             comments = request.POST.get('comments')
             party.comments = comments if not party.comments else '{}; {}'.format(party.comments, comments)
         party.is_attending = party.any_guests_attending
+        party.rsvp_responded_at = datetime.now(timezone.utc)
         party.save()
         return HttpResponseRedirect(reverse('rsvp-confirm', args=[invite_id]))
     return render(request, template_name='guests/invitation.html', context={
@@ -95,7 +111,7 @@ def invitation(request, invite_id):
     })
 
 
-InviteResponse = namedtuple('InviteResponse', ['guest_pk', 'is_attending', 'meal'])
+InviteResponse = namedtuple('InviteResponse', ['guest_pk', 'is_attending', 'meal', 'dietary_restrictions'])
 
 
 def _parse_invite_params(params):
@@ -111,9 +127,14 @@ def _parse_invite_params(params):
             response = responses.get(pk, {})
             response['meal'] = value
             responses[pk] = response
+        elif param.startswith('dietary'):
+            pk = int(param.split('-')[-1])
+            response = responses.get(pk, {})
+            response['dietary_restrictions'] = value
+            responses[pk] = response
 
     for pk, response in responses.items():
-        yield InviteResponse(pk, response['attending'], response.get('meal', None))
+        yield InviteResponse(pk, response['attending'], response.get('meal', None), response.get('dietary_restrictions', ''))
 
 
 def rsvp_confirm(request, invite_id=None):
@@ -165,7 +186,7 @@ def _base64_encode(filepath):
 
 @login_required
 def invitations_list(request):
-    parties = Party.objects.filter(is_invited=True).prefetch_related('guest_set').order_by('category', 'name')
+    parties = Party.objects.filter(status='invited').prefetch_related('guest_set').order_by('category', 'name')
     site_base = request.build_absolute_uri('/').rstrip('/')
     return render(request, 'guests/invitations.html', {
         'parties': parties,
@@ -177,9 +198,9 @@ def invitations_list(request):
 @login_required
 @require_POST
 def send_party_invitation(request, party_pk):
-    party = get_object_or_404(Party, pk=party_pk, is_invited=True)
+    party = get_object_or_404(Party, pk=party_pk, status='invited')
     send_invitation_email(party)
-    party.invitation_sent = datetime.utcnow()
+    party.invitation_sent = datetime.now(timezone.utc)
     party.save()
     messages.success(request, f'Invitation sent to {party.name}.')
     return redirect('invitations')

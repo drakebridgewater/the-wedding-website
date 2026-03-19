@@ -65,6 +65,16 @@
             </div>
           </div>
           {% endif %}
+
+          <!-- Dietary restrictions -->
+          <div class="dietary-group mt-3 {% if guest.is_attending == False %}opacity-40 pointer-events-none{% endif %}">
+            {% with 'dietary-'|add:guest.unique_id as dietary_name %}
+            <input type="text" name="{{ dietary_name }}"
+                   value="{{ guest.dietary_restrictions }}"
+                   placeholder="Dietary restrictions or allergies (optional)"
+                   class="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm text-stone-700 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400">
+            {% endwith %}
+          </div>
         </div>
         {% endfor %}
 
@@ -95,15 +105,21 @@
       var group = this.closest('[data-is-child]');
       if (group.dataset.isChild === 'True') return;
       var mealGroup = group.querySelector('.meal-group');
-      if (!mealGroup) return;
+      var dietaryGroup = group.querySelector('.dietary-group');
       var isAttending = this.value === 'yes';
-      mealGroup.classList.toggle('opacity-40', !isAttending);
-      mealGroup.classList.toggle('pointer-events-none', !isAttending);
-      mealGroup.querySelectorAll('[type=radio]').forEach(function (btn) {
-        btn.disabled = !isAttending;
-        btn.required = isAttending;
-        if (!isAttending) btn.checked = false;
-      });
+      if (mealGroup) {
+        mealGroup.classList.toggle('opacity-40', !isAttending);
+        mealGroup.classList.toggle('pointer-events-none', !isAttending);
+        mealGroup.querySelectorAll('[type=radio]').forEach(function (btn) {
+          btn.disabled = !isAttending;
+          btn.required = isAttending;
+          if (!isAttending) btn.checked = false;
+        });
+      }
+      if (dietaryGroup) {
+        dietaryGroup.classList.toggle('opacity-40', !isAttending);
+        dietaryGroup.classList.toggle('pointer-events-none', !isAttending);
+      }
     });
   });
 })();

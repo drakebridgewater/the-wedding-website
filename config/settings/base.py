@@ -114,7 +114,7 @@ DJANGO_VITE = {
 # -------------------------
 
 # Names of the couple, used in emails and templates
-BRIDE_AND_GROOM = 'Bride and Groom'
+BRIDE_AND_GROOM = 'Drake & Shawna'
 # Date of the wedding, displayed on the site
 WEDDING_DATE = 'January 1st, 1969'
 # Location of the wedding, displayed on the site

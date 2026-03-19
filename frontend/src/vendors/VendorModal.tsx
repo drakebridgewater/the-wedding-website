@@ -18,6 +18,7 @@ export function VendorModal({ vendorType, vendor, onClose }: Props) {
   const deleteMutation = useDeleteVendor(vendorType)
 
   const isEdit = vendor !== null
+  const isVenue = vendorType === 'venue'
   const isPending = createMutation.isPending || updateMutation.isPending
 
   const lat = vendor?.latitude ? parseFloat(vendor.latitude) : null
@@ -55,8 +56,9 @@ export function VendorModal({ vendorType, vendor, onClose }: Props) {
         </div>
 
         <div className="px-6 py-5 space-y-5">
-          {/* Photos (only for existing vendors) */}
-          {isEdit && (
+          {/* For venues: photos + map live inside the form's own tabs.
+              For other vendor types: show them here above the form. */}
+          {!isVenue && isEdit && (
             <div>
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Photos</h3>
               <PhotoUpload
@@ -67,15 +69,14 @@ export function VendorModal({ vendorType, vendor, onClose }: Props) {
             </div>
           )}
 
-          {/* Map */}
-          {isEdit && hasLocation && (
+          {!isVenue && isEdit && hasLocation && (
             <div>
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Location</h3>
               <LocationMap lat={lat!} lng={lng!} />
             </div>
           )}
 
-          {/* Form */}
+          {/* Form — for venues this includes all tabs internally */}
           <VendorForm
             vendorType={vendorType}
             vendor={vendor}

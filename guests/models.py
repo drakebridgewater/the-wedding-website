@@ -12,6 +12,18 @@ ALLOWED_TYPES = [
     ('dimagi', 'dimagi'),
 ]
 
+SIDE_CHOICES = [
+    ('bride', "Bride's side"),
+    ('groom', "Groom's side"),
+    ('both', 'Both'),
+]
+
+INVITE_STATUS_CHOICES = [
+    ('planned', 'Planned'),          # On the list, invitation not yet confirmed
+    ('invited', 'Invited'),          # Actively invited — will receive/has received invitation
+    ('not_invited', 'Not invited'),  # Won't be invited
+]
+
 
 def _random_uuid():
     return uuid.uuid4().hex
@@ -29,17 +41,33 @@ class Party(models.Model):
     invitation_id = models.CharField(max_length=32, db_index=True, default=_random_uuid, unique=True)
     invitation_sent = models.DateTimeField(null=True, blank=True, default=None)
     invitation_opened = models.DateTimeField(null=True, blank=True, default=None)
-    is_invited = models.BooleanField(default=False)
+    status = models.CharField(max_length=15, choices=INVITE_STATUS_CHOICES, default='planned')
     rehearsal_dinner = models.BooleanField(default=False)
     is_attending = models.BooleanField(default=None, null=True)
+    rsvp_responded_at = models.DateTimeField(null=True, blank=True, default=None)
     comments = models.TextField(null=True, blank=True)
+    address = models.TextField(blank=True)
+    side = models.CharField(max_length=10, choices=SIDE_CHOICES, blank=True)
+    plus_one_allowed = models.BooleanField(default=False)
 
     def __str__(self):
         return 'Party: {}'.format(self.name)
 
+    @property
+    def is_invited(self):
+        return self.status == 'invited'
+
     @classmethod
     def in_default_order(cls):
-        return cls.objects.order_by('category', '-is_invited', 'name')
+        from django.db.models import Case, When, Value, IntegerField
+        status_order = Case(
+            When(status='invited', then=Value(0)),
+            When(status='planned', then=Value(1)),
+            When(status='not_invited', then=Value(2)),
+            default=Value(3),
+            output_field=IntegerField(),
+        )
+        return cls.objects.annotate(_status_order=status_order).order_by('_status_order', 'category', 'name')
 
     @property
     def ordered_guests(self):
@@ -73,6 +101,7 @@ class Guest(models.Model):
     is_attending = models.BooleanField(default=None, null=True)
     meal = models.CharField(max_length=20, choices=MEALS, null=True, blank=True)
     is_child = models.BooleanField(default=False)
+    dietary_restrictions = models.TextField(blank=True)
     seating_table = models.ForeignKey(
         'seating.SeatingTable',
         null=True, blank=True,

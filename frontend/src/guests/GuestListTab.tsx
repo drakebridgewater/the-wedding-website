@@ -5,8 +5,8 @@ import {
   useParties, useCreateParty, useUpdateParty, useDeleteParty,
   useAddGuest, useUpdateGuest, useDeleteGuest,
 } from './api'
-import type { Guest, Party, PartyFormData, PartyType } from './types'
-import { MEAL_LABELS, PARTY_TYPE_LABELS } from './types'
+import type { Guest, Party, PartyFormData, PartyType, PartySide, InviteStatus } from './types'
+import { MEAL_LABELS, PARTY_TYPE_LABELS, PARTY_SIDE_LABELS, INVITE_STATUS_LABELS, INVITE_STATUS_COLORS } from './types'
 
 // ── Guest List Tab ─────────────────────────────────────────────────────────────
 
@@ -124,9 +124,9 @@ function PartyRow({
   const addGuest = useAddGuest()
   const [showAddGuest, setShowAddGuest] = useState(false)
 
-  async function toggleInvited() {
+  async function setStatus(status: InviteStatus) {
     try {
-      await updateParty.mutateAsync({ id: party.id, data: { is_invited: !party.is_invited } })
+      await updateParty.mutateAsync({ id: party.id, data: { status } })
     } catch {
       toast.error('Failed to update')
     }
@@ -154,18 +154,26 @@ function PartyRow({
             {PARTY_TYPE_LABELS[party.type]}
           </span>
         )}
+        {party.side && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 font-medium hidden sm:inline">
+            {PARTY_SIDE_LABELS[party.side]}
+          </span>
+        )}
+        {party.plus_one_allowed && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 font-medium hidden sm:inline">+1</span>
+        )}
 
-        {/* Invited toggle */}
-        <button
-          onClick={toggleInvited}
-          className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
-            party.is_invited
-              ? 'bg-emerald-100 text-emerald-700'
-              : 'bg-stone-100 text-stone-400'
-          }`}
+        {/* Status dropdown */}
+        <select
+          value={party.status}
+          onChange={(e) => setStatus(e.target.value as InviteStatus)}
+          onClick={(e) => e.stopPropagation()}
+          className={`text-[10px] px-2 py-0.5 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-stone-400 ${INVITE_STATUS_COLORS[party.status]}`}
         >
-          {party.is_invited ? 'Invited' : 'Not invited'}
-        </button>
+          {(Object.entries(INVITE_STATUS_LABELS) as [InviteStatus, string][]).map(([v, l]) => (
+            <option key={v} value={v}>{l}</option>
+          ))}
+        </select>
 
         <div className="flex gap-1 ml-1">
           <button onClick={onEdit} className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors">
@@ -190,6 +198,7 @@ function PartyRow({
                   <th className="text-left px-2 py-2 text-stone-400 font-medium hidden sm:table-cell">Email</th>
                   <th className="text-left px-2 py-2 text-stone-400 font-medium">Attending</th>
                   <th className="text-left px-2 py-2 text-stone-400 font-medium hidden sm:table-cell">Meal</th>
+                  <th className="text-left px-2 py-2 text-stone-400 font-medium hidden md:table-cell">Dietary</th>
                   <th className="px-2 py-2" />
                 </tr>
               </thead>
@@ -282,6 +291,9 @@ function GuestRow({ guest }: { guest: Guest }) {
           ))}
         </select>
       </td>
+      <td className="px-2 py-2 hidden md:table-cell text-stone-400 text-[11px] max-w-[140px] truncate" title={guest.dietary_restrictions || undefined}>
+        {guest.dietary_restrictions || '—'}
+      </td>
       <td className="px-2 py-2">
         <button onClick={handleDelete} className="p-1 rounded hover:bg-rose-50 text-stone-300 hover:text-rose-400 transition-colors">
           <Trash2 size={12} />
@@ -304,11 +316,12 @@ function AddGuestRow({
   const [lastName, setLastName]  = useState('')
   const [email, setEmail]        = useState('')
   const [isChild, setIsChild]    = useState(false)
+  const [dietary, setDietary]    = useState('')
 
   async function handleSubmit() {
     if (!firstName) return
     try {
-      await addGuest.mutateAsync({ partyId, data: { first_name: firstName, last_name: lastName, email, is_child: isChild } })
+      await addGuest.mutateAsync({ partyId, data: { first_name: firstName, last_name: lastName, email, is_child: isChild, dietary_restrictions: dietary } })
       toast.success('Guest added')
       onDone()
     } catch {
@@ -336,7 +349,11 @@ function AddGuestRow({
           Child
         </label>
       </td>
-      <td colSpan={2} className="px-2 py-2">
+      <td className="px-2 py-2 hidden md:table-cell">
+        <input placeholder="Dietary restrictions" value={dietary} onChange={(e) => setDietary(e.target.value)}
+          className="w-36 border border-stone-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-stone-400" />
+      </td>
+      <td colSpan={1} className="px-2 py-2">
         <div className="flex gap-1">
           <button onClick={handleSubmit} disabled={!firstName || addGuest.isPending}
             className="px-2.5 py-1 text-xs text-white bg-stone-800 rounded hover:bg-stone-700 disabled:opacity-50">
@@ -361,12 +378,15 @@ function PartyModal({
   onClose: () => void
   saving: boolean
 }) {
-  const [name, setName]               = useState(initial?.name ?? '')
-  const [type, setType]               = useState<PartyType>(initial?.type ?? '')
-  const [category, setCategory]       = useState(initial?.category ?? '')
-  const [isInvited, setIsInvited]     = useState(initial?.is_invited ?? false)
-  const [rehearsal, setRehearsal]     = useState(initial?.rehearsal_dinner ?? false)
-  const [comments, setComments]       = useState(initial?.comments ?? '')
+  const [name, setName]           = useState(initial?.name ?? '')
+  const [type, setType]           = useState<PartyType>(initial?.type ?? '')
+  const [category, setCategory]   = useState(initial?.category ?? '')
+  const [status, setStatus]       = useState<InviteStatus>(initial?.status ?? 'planned')
+  const [rehearsal, setRehearsal] = useState(initial?.rehearsal_dinner ?? false)
+  const [comments, setComments]   = useState(initial?.comments ?? '')
+  const [address, setAddress]     = useState(initial?.address ?? '')
+  const [side, setSide]           = useState<PartySide>(initial?.side ?? '')
+  const [plusOne, setPlusOne]     = useState(initial?.plus_one_allowed ?? false)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -398,17 +418,41 @@ function PartyModal({
                 className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value as InviteStatus)}
+                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+                {(Object.entries(INVITE_STATUS_LABELS) as [InviteStatus, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">Side</label>
+              <select value={side} onChange={(e) => setSide(e.target.value as PartySide)}
+                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
+                {Object.entries(PARTY_SIDE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+          </div>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-              <input type="checkbox" checked={isInvited} onChange={(e) => setIsInvited(e.target.checked)}
-                className="w-4 h-4 rounded border-stone-300" />
-              Invited
-            </label>
             <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
               <input type="checkbox" checked={rehearsal} onChange={(e) => setRehearsal(e.target.checked)}
                 className="w-4 h-4 rounded border-stone-300" />
               Rehearsal dinner
             </label>
+            <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
+              <input type="checkbox" checked={plusOne} onChange={(e) => setPlusOne(e.target.checked)}
+                className="w-4 h-4 rounded border-stone-300" />
+              +1 allowed
+            </label>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-600 mb-1">Mailing address</label>
+            <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
+              placeholder="Street, City, State ZIP"
+              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none" />
           </div>
           <div>
             <label className="block text-xs font-medium text-stone-600 mb-1">Comments</label>
@@ -420,7 +464,7 @@ function PartyModal({
           <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">Cancel</button>
           <button
             disabled={!name || saving}
-            onClick={() => name && onSave({ name, type, category, is_invited: isInvited, rehearsal_dinner: rehearsal, comments })}
+            onClick={() => name && onSave({ name, type, category, status, rehearsal_dinner: rehearsal, comments, address, side, plus_one_allowed: plusOne })}
             className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50"
           >
             {saving ? 'Saving…' : initial ? 'Save changes' : 'Add party'}

@@ -39,6 +39,7 @@ export interface VenueVendor extends BaseVendor {
   accommodation_nearby: boolean
   is_indoor: boolean
   is_outdoor: boolean
+  checklist: string[]
 }
 
 export interface CatererVendor extends BaseVendor {

@@ -1,9 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { cn } from '@/lib/utils'
-import type { AnyVendor, VendorType } from './types'
+import type { AnyVendor, VendorType, VenueVendor } from './types'
+import { PhotoUpload } from './PhotoUpload'
+import { LocationMap } from './LocationMap'
+import { VenueChecklist } from './VenueChecklist'
 
 // ---- Zod schemas ----
 
@@ -37,6 +40,7 @@ const venueExtension = z.object({
   accommodation_nearby: z.boolean(),
   is_indoor: z.boolean(),
   is_outdoor: z.boolean(),
+  checklist: z.array(z.string()).optional(),
 })
 
 const catererExtension = z.object({
@@ -82,6 +86,19 @@ const SCHEMA_MAP = {
 
 type FormValues = Record<string, unknown>
 
+// ---- Venue tab types ----
+
+type VenueTab = 'overview' | 'contact' | 'location' | 'notes' | 'checklist' | 'photos'
+
+const VENUE_TABS: { id: VenueTab; label: string }[] = [
+  { id: 'overview',  label: 'Overview' },
+  { id: 'contact',   label: 'Contact' },
+  { id: 'location',  label: 'Location' },
+  { id: 'notes',     label: 'Notes' },
+  { id: 'checklist', label: 'Checklist' },
+  { id: 'photos',    label: 'Photos' },
+]
+
 // ---- UI helpers ----
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
@@ -96,7 +113,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 
 function inputCls(error?: string) {
   return cn(
-    'w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2',
+    'w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 text-sm',
     error ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-rose-400',
   )
 }
@@ -169,48 +186,36 @@ function RatingPicker({ value, onChange }: { value: number | null; onChange: (v:
 
 // ---- Type-specific field sections ----
 
-function VenueFields({ register, control, errors }: FieldSectionProps) {
-  const STYLES = ['', 'rustic', 'modern', 'garden', 'ballroom', 'barn', 'industrial', 'other']
-  const STYLE_LABELS: Record<string, string> = {
-    '': 'Select…', rustic: 'Rustic', modern: 'Modern', garden: 'Garden',
-    ballroom: 'Ballroom', barn: 'Barn', industrial: 'Industrial', other: 'Other',
-  }
+interface FieldSectionProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  register: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  control: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  errors: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  watch?: any
+}
+
+function VenueFeatureToggles({ control }: FieldSectionProps) {
   return (
-    <>
-      <SectionHeader title="Venue Details" />
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Style" error={errors.style?.message as string}>
-          <select {...register('style')} className={inputCls()}>
-            {STYLES.map((s) => <option key={s} value={s}>{STYLE_LABELS[s]}</option>)}
-          </select>
-        </Field>
-        <Field label="Capacity (guests)" error={errors.capacity?.message as string}>
-          <input
-            type="number"
-            {...register('capacity', { valueAsNumber: true, setValueAs: (v: string) => v === '' || isNaN(Number(v)) ? null : Number(v) })}
-            className={inputCls()}
-            placeholder="e.g. 200"
-          />
-        </Field>
-      </div>
-      <div className="space-y-0.5 bg-gray-50 rounded-lg p-3">
-        <Controller control={control} name="has_parking" render={({ field }) =>
-          <ToggleRow label="Parking available" value={!!field.value} onChange={field.onChange} />
-        } />
-        <Controller control={control} name="catering_included" render={({ field }) =>
-          <ToggleRow label="Catering included" value={!!field.value} onChange={field.onChange} />
-        } />
-        <Controller control={control} name="accommodation_nearby" render={({ field }) =>
-          <ToggleRow label="Accommodation nearby" value={!!field.value} onChange={field.onChange} />
-        } />
-        <Controller control={control} name="is_indoor" render={({ field }) =>
-          <ToggleRow label="Indoor space" value={!!field.value} onChange={field.onChange} />
-        } />
-        <Controller control={control} name="is_outdoor" render={({ field }) =>
-          <ToggleRow label="Outdoor space" value={!!field.value} onChange={field.onChange} />
-        } />
-      </div>
-    </>
+    <div className="space-y-0.5 bg-gray-50 rounded-lg p-3">
+      <Controller control={control} name="has_parking" render={({ field }) =>
+        <ToggleRow label="Parking available" value={!!field.value} onChange={field.onChange} />
+      } />
+      <Controller control={control} name="catering_included" render={({ field }) =>
+        <ToggleRow label="Catering included" value={!!field.value} onChange={field.onChange} />
+      } />
+      <Controller control={control} name="accommodation_nearby" render={({ field }) =>
+        <ToggleRow label="Accommodation nearby" value={!!field.value} onChange={field.onChange} />
+      } />
+      <Controller control={control} name="is_indoor" render={({ field }) =>
+        <ToggleRow label="Indoor space" value={!!field.value} onChange={field.onChange} />
+      } />
+      <Controller control={control} name="is_outdoor" render={({ field }) =>
+        <ToggleRow label="Outdoor space" value={!!field.value} onChange={field.onChange} />
+      } />
+    </div>
   )
 }
 
@@ -346,26 +351,7 @@ function EntertainmentFields({ register, errors }: FieldSectionProps) {
   )
 }
 
-interface FieldSectionProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  control: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  errors: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  watch?: any
-}
-
-// ---- Main form component ----
-
-interface Props {
-  vendorType: VendorType
-  vendor?: AnyVendor | null
-  onSubmit: (data: Partial<AnyVendor>) => void
-  onDelete?: () => void
-  isPending: boolean
-}
+// ---- Defaults builder ----
 
 function buildDefaults(vendorType: VendorType, vendor?: AnyVendor | null): FormValues {
   const base = {
@@ -399,6 +385,7 @@ function buildDefaults(vendorType: VendorType, vendor?: AnyVendor | null): FormV
       accommodation_nearby: v?.accommodation_nearby ?? false,
       is_indoor: v?.is_indoor ?? false,
       is_outdoor: v?.is_outdoor ?? false,
+      checklist: (v?.checklist as string[]) ?? [],
     }
   }
   if (vendorType === 'caterer') {
@@ -443,9 +430,22 @@ function buildDefaults(vendorType: VendorType, vendor?: AnyVendor | null): FormV
   }
 }
 
+// ---- Main form component ----
+
+interface Props {
+  vendorType: VendorType
+  vendor?: AnyVendor | null
+  onSubmit: (data: Partial<AnyVendor>) => void
+  onDelete?: () => void
+  isPending: boolean
+}
+
 export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }: Props) {
+  const isVenue = vendorType === 'venue'
+  const [activeTab, setActiveTab] = useState<VenueTab>('overview')
+
   const schema = SCHEMA_MAP[vendorType]
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: buildDefaults(vendorType, vendor),
   })
@@ -454,8 +454,18 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
     reset(buildDefaults(vendorType, vendor))
   }, [vendor, vendorType, reset])
 
+  const checklistValue = (watch('checklist') ?? []) as string[]
+
+  const lat = vendor?.latitude ? parseFloat(String(vendor.latitude)) : null
+  const lng = vendor?.longitude ? parseFloat(String(vendor.longitude)) : null
+  const hasLocation = lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)
+
+  // For venue tabs: hide a section if it's not the active tab. Non-venue: never hide.
+  function tabHidden(tab: VenueTab): boolean {
+    return isVenue && activeTab !== tab
+  }
+
   function submit(values: FormValues) {
-    // Convert empty strings to null for money fields
     const clean: Record<string, unknown> = { ...values }
     const moneyFields = ['price_estimate', 'price_per_head', 'price_per_serving', 'minimum_order']
     moneyFields.forEach((f) => {
@@ -466,81 +476,255 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
 
   const fieldProps = { register, control, errors }
 
+  const VENUE_STYLES = ['', 'rustic', 'modern', 'garden', 'ballroom', 'barn', 'industrial', 'other']
+  const VENUE_STYLE_LABELS: Record<string, string> = {
+    '': 'Select…', rustic: 'Rustic', modern: 'Modern', garden: 'Garden',
+    ballroom: 'Ballroom', barn: 'Barn', industrial: 'Industrial', other: 'Other',
+  }
+
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-4">
-      {/* Basic Info */}
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Name *" error={errors.name?.message as string}>
-          <input {...register('name')} className={inputCls(errors.name?.message as string)} placeholder="Vendor name" />
-        </Field>
-        <Field label="Price Estimate ($)" error={errors.price_estimate?.message as string}>
-          <input {...register('price_estimate')} className={inputCls(errors.price_estimate?.message as string)} placeholder="e.g. 5000" />
+
+      {/* ---- Venue tab bar ---- */}
+      {isVenue && (
+        <div className="flex border-b border-gray-200 -mx-6 px-6 overflow-x-auto">
+          {VENUE_TABS.filter((t) => t.id !== 'photos' || !!vendor).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
+                activeTab === tab.id
+                  ? 'border-rose-500 text-rose-600'
+                  : 'border-transparent text-gray-400 hover:text-gray-600',
+              )}
+            >
+              {tab.label}
+              {tab.id === 'checklist' && checklistValue.length > 0 && (
+                <span className="ml-1.5 text-xs bg-rose-100 text-rose-500 rounded-full px-1.5 py-0.5 font-normal">
+                  {checklistValue.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ====================================================
+          OVERVIEW TAB  (also the full form for non-venue)
+          ==================================================== */}
+      <div className={cn('space-y-4', tabHidden('overview') && 'hidden')}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Name *" error={errors.name?.message as string}>
+            <input
+              {...register('name')}
+              className={inputCls(errors.name?.message as string)}
+              placeholder={isVenue ? 'Venue name' : 'Name'}
+            />
+          </Field>
+          <Field label="Price Estimate ($)" error={errors.price_estimate?.message as string}>
+            <input
+              {...register('price_estimate')}
+              className={inputCls(errors.price_estimate?.message as string)}
+              placeholder="e.g. 8000"
+            />
+          </Field>
+        </div>
+
+        {/* Venue: style + capacity on overview */}
+        {isVenue && (
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Style" error={errors.style?.message as string}>
+              <select {...register('style')} className={inputCls()}>
+                {VENUE_STYLES.map((s) => <option key={s} value={s}>{VENUE_STYLE_LABELS[s]}</option>)}
+              </select>
+            </Field>
+            <Field label="Capacity (guests)" error={errors.capacity?.message as string}>
+              <input
+                type="number"
+                {...register('capacity', {
+                  valueAsNumber: true,
+                  setValueAs: (v: string) => v === '' || isNaN(Number(v)) ? null : Number(v),
+                })}
+                className={inputCls()}
+                placeholder="e.g. 200"
+              />
+            </Field>
+          </div>
+        )}
+
+        <SectionHeader title="Rating" />
+        <Controller control={control} name="rating" render={({ field }) => (
+          <RatingPicker value={field.value as number | null} onChange={field.onChange} />
+        )} />
+
+        <SectionHeader title="Status" />
+        <div className="space-y-0.5 bg-gray-50 rounded-lg p-3">
+          <Controller control={control} name="is_chosen" render={({ field }) =>
+            <ToggleRow label="Selected / Chosen" value={!!field.value} onChange={field.onChange} />
+          } />
+          <Controller control={control} name="is_favorite" render={({ field }) =>
+            <ToggleRow label="Favourite" value={!!field.value} onChange={field.onChange} />
+          } />
+          <Controller control={control} name="has_talked_to" render={({ field }) =>
+            <ToggleRow label="Have talked to" value={!!field.value} onChange={field.onChange} />
+          } />
+          <Controller control={control} name="has_visited" render={({ field }) =>
+            <ToggleRow label="Have visited" value={!!field.value} onChange={field.onChange} />
+          } />
+        </div>
+
+        {/* Venue: feature toggles on overview */}
+        {isVenue && (
+          <>
+            <SectionHeader title="Features" />
+            <VenueFeatureToggles {...fieldProps} />
+          </>
+        )}
+
+        {/* Non-venue: all sections remain in a flat layout */}
+        {!isVenue && (
+          <>
+            <SectionHeader title="Contact" />
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Website" error={errors.website?.message as string}>
+                <input {...register('website')} className={inputCls(errors.website?.message as string)} placeholder="https://…" />
+              </Field>
+              <Field label="Phone" error={errors.phone?.message as string}>
+                <input {...register('phone')} className={inputCls()} placeholder="(555) 000-0000" />
+              </Field>
+            </div>
+            <Field label="Email" error={errors.email?.message as string}>
+              <input {...register('email')} className={inputCls(errors.email?.message as string)} placeholder="contact@example.com" />
+            </Field>
+
+            {vendorType === 'caterer' && <CatererFields {...fieldProps} />}
+            {vendorType === 'cake' && <CakeFields {...fieldProps} />}
+            {vendorType === 'florist' && <FloristFields {...fieldProps} />}
+            {vendorType === 'entertainment' && <EntertainmentFields {...fieldProps} />}
+
+            <SectionHeader title="Location" />
+            <Field label="Address" error={errors.address?.message as string}>
+              <input {...register('address')} className={inputCls()} placeholder="Street, City, State ZIP" />
+            </Field>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Latitude" error={errors.latitude?.message as string}>
+                <input {...register('latitude')} className={inputCls()} placeholder="e.g. 40.7128" />
+              </Field>
+              <Field label="Longitude" error={errors.longitude?.message as string}>
+                <input {...register('longitude')} className={inputCls()} placeholder="e.g. -74.0060" />
+              </Field>
+            </div>
+
+            <SectionHeader title="Positives" />
+            <textarea {...register('positives')} rows={3} className={inputCls()} placeholder="What you like…" />
+            <SectionHeader title="Negatives" />
+            <textarea {...register('negatives')} rows={3} className={inputCls()} placeholder="Concerns or drawbacks…" />
+            <SectionHeader title="Comments" />
+            <textarea {...register('comments')} rows={3} className={inputCls()} placeholder="Other notes…" />
+          </>
+        )}
+      </div>
+
+      {/* ====================================================
+          CONTACT TAB  (venue only)
+          ==================================================== */}
+      <div className={cn('space-y-4', tabHidden('contact') && 'hidden')}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Website" error={errors.website?.message as string}>
+            <input {...register('website')} className={inputCls(errors.website?.message as string)} placeholder="https://…" />
+          </Field>
+          <Field label="Phone" error={errors.phone?.message as string}>
+            <input {...register('phone')} className={inputCls()} placeholder="(555) 000-0000" />
+          </Field>
+        </div>
+        <Field label="Email" error={errors.email?.message as string}>
+          <input {...register('email')} className={inputCls(errors.email?.message as string)} placeholder="contact@example.com" />
         </Field>
       </div>
 
-      <SectionHeader title="Contact" />
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Website" error={errors.website?.message as string}>
-          <input {...register('website')} className={inputCls(errors.website?.message as string)} placeholder="https://…" />
+      {/* ====================================================
+          LOCATION TAB  (venue only)
+          ==================================================== */}
+      <div className={cn('space-y-4', tabHidden('location') && 'hidden')}>
+        <Field label="Address" error={errors.address?.message as string}>
+          <input {...register('address')} className={inputCls()} placeholder="Street, City, State ZIP" />
         </Field>
-        <Field label="Phone" error={errors.phone?.message as string}>
-          <input {...register('phone')} className={inputCls()} placeholder="(555) 000-0000" />
-        </Field>
-      </div>
-      <Field label="Email" error={errors.email?.message as string}>
-        <input {...register('email')} className={inputCls(errors.email?.message as string)} placeholder="contact@example.com" />
-      </Field>
-
-      <SectionHeader title="Rating" />
-      <Controller control={control} name="rating" render={({ field }) => (
-        <RatingPicker value={field.value as number | null} onChange={field.onChange} />
-      )} />
-
-      <SectionHeader title="Status" />
-      <div className="space-y-0.5 bg-gray-50 rounded-lg p-3">
-        <Controller control={control} name="is_chosen" render={({ field }) =>
-          <ToggleRow label="Selected / Chosen" value={!!field.value} onChange={field.onChange} />
-        } />
-        <Controller control={control} name="has_talked_to" render={({ field }) =>
-          <ToggleRow label="Have talked to" value={!!field.value} onChange={field.onChange} />
-        } />
-        <Controller control={control} name="has_visited" render={({ field }) =>
-          <ToggleRow label="Have visited" value={!!field.value} onChange={field.onChange} />
-        } />
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Latitude" error={errors.latitude?.message as string}>
+            <input {...register('latitude')} className={inputCls()} placeholder="e.g. 40.7128" />
+          </Field>
+          <Field label="Longitude" error={errors.longitude?.message as string}>
+            <input {...register('longitude')} className={inputCls()} placeholder="e.g. -74.0060" />
+          </Field>
+        </div>
+        {hasLocation
+          ? <LocationMap lat={lat!} lng={lng!} />
+          : <p className="text-xs text-gray-400 italic">Enter coordinates above and save to see the map.</p>
+        }
       </div>
 
-      {/* Type-specific section */}
-      {vendorType === 'venue' && <VenueFields {...fieldProps} />}
-      {vendorType === 'caterer' && <CatererFields {...fieldProps} />}
-      {vendorType === 'cake' && <CakeFields {...fieldProps} />}
-      {vendorType === 'florist' && <FloristFields {...fieldProps} />}
-      {vendorType === 'entertainment' && <EntertainmentFields {...fieldProps} />}
-
-      {/* Location */}
-      <SectionHeader title="Location" />
-      <Field label="Address" error={errors.address?.message as string}>
-        <input {...register('address')} className={inputCls()} placeholder="Street, City, State ZIP" />
-      </Field>
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Latitude" error={errors.latitude?.message as string}>
-          <input {...register('latitude')} className={inputCls()} placeholder="e.g. 40.7128" />
+      {/* ====================================================
+          NOTES TAB  (venue only)
+          ==================================================== */}
+      <div className={cn('space-y-4', tabHidden('notes') && 'hidden')}>
+        <Field label="Positives" error={undefined}>
+          <textarea
+            {...register('positives')}
+            rows={4}
+            className={inputCls()}
+            placeholder="What you like about this venue…"
+          />
         </Field>
-        <Field label="Longitude" error={errors.longitude?.message as string}>
-          <input {...register('longitude')} className={inputCls()} placeholder="e.g. -74.0060" />
+        <Field label="Negatives" error={undefined}>
+          <textarea
+            {...register('negatives')}
+            rows={4}
+            className={inputCls()}
+            placeholder="Concerns or drawbacks…"
+          />
+        </Field>
+        <Field label="Comments" error={undefined}>
+          <textarea
+            {...register('comments')}
+            rows={4}
+            className={inputCls()}
+            placeholder="Other notes, questions asked, visit impressions…"
+          />
         </Field>
       </div>
 
-      {/* Notes sections */}
-      <SectionHeader title="Positives" />
-      <textarea {...register('positives')} rows={3} className={inputCls()} placeholder="What you like…" />
+      {/* ====================================================
+          CHECKLIST TAB  (venue only)
+          ==================================================== */}
+      <div className={cn(tabHidden('checklist') && 'hidden')}>
+        <Controller
+          control={control}
+          name="checklist"
+          render={({ field }) => (
+            <VenueChecklist
+              checked={(field.value as string[]) ?? []}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </div>
 
-      <SectionHeader title="Negatives" />
-      <textarea {...register('negatives')} rows={3} className={inputCls()} placeholder="Concerns or drawbacks…" />
+      {/* ====================================================
+          PHOTOS TAB  (venue only, edit mode)
+          ==================================================== */}
+      {isVenue && vendor && (
+        <div className={cn(tabHidden('photos') && 'hidden')}>
+          <PhotoUpload
+            vendorId={(vendor as VenueVendor).id}
+            vendorType={vendorType}
+            photos={(vendor as VenueVendor).photos}
+          />
+        </div>
+      )}
 
-      <SectionHeader title="Comments" />
-      <textarea {...register('comments')} rows={3} className={inputCls()} placeholder="Other notes…" />
-
-      {/* Actions */}
+      {/* ---- Actions ---- */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
         <div>
           {onDelete && (

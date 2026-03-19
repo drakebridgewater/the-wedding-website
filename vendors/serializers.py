@@ -97,6 +97,7 @@ class VenueSerializer(BaseVendorSerializer):
             'capacity', 'style',
             'has_parking', 'catering_included',
             'accommodation_nearby', 'is_indoor', 'is_outdoor',
+            'checklist',
         ]
         read_only_fields = BASE_READ_ONLY
 

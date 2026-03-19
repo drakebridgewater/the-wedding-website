@@ -1,26 +1,47 @@
 export type ListType = 'playlist' | 'do_not_play'
 
 export type Moment =
+  | 'start'
+  | 'prelude'
+  | 'party'
+  | 'bride'
   | 'ceremony'
+  | 'exit'
+  | 'postlude'
   | 'cocktail'
-  | 'first_dance'
-  | 'reception'
-  | 'other'
+  | 'entrance'
+  | 'dance'
+  | 'dinner'
+  | 'review'
 
 export const MOMENT_LABELS: Record<Moment, string> = {
+  start: 'Start',
+  prelude: 'Prelude',
+  party: 'Party',
+  bride: 'Bride',
   ceremony: 'Ceremony',
-  cocktail: 'Cocktail Hour',
-  first_dance: 'First Dance',
-  reception: 'Reception',
-  other: 'Other',
+  exit: 'Exit',
+  postlude: 'Postlude',
+  cocktail: 'Cocktail',
+  entrance: 'Entrance',
+  dance: 'Dance',
+  dinner: 'Dinner',
+  review: 'Review',
 }
 
 export const MOMENT_ORDER: Moment[] = [
+  'start',
+  'prelude',
+  'bride',
   'ceremony',
-  'first_dance',
+  'exit',
+  'postlude',
   'cocktail',
-  'reception',
-  'other',
+  'entrance',
+  'dance',
+  'dinner',
+  'party',
+  'review',
 ]
 
 export type Source = 'youtube' | 'spotify' | 'soundcloud' | 'other' | ''

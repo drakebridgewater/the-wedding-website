@@ -23,7 +23,7 @@ def import_guests(path):
             party = Party.objects.get_or_create(name=party_name)[0]
             party.type = party_type
             party.category = category
-            party.is_invited = _is_true(is_invited)
+            party.status = 'invited' if _is_true(is_invited) else 'planned'
             if not party.invitation_id:
                 party.invitation_id = uuid.uuid4().hex
             party.save()
@@ -40,7 +40,7 @@ def import_guests(path):
 def export_guests():
     headers = [
         'party_name', 'first_name', 'last_name', 'party_type',
-        'is_child', 'category', 'is_invited', 'is_attending',
+        'is_child', 'category', 'status', 'is_attending',
         'rehearsal_dinner', 'meal', 'email', 'comments'
     ]
     file = io.StringIO()
@@ -56,7 +56,7 @@ def export_guests():
                     party.type,
                     guest.is_child,
                     party.category,
-                    party.is_invited,
+                    party.status,
                     guest.is_attending,
                     party.rehearsal_dinner,
                     guest.meal,

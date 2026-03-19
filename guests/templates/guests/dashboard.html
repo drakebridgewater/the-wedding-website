@@ -1,10 +1,28 @@
 {% extends 'base_public.html' %}
 {% block page_content %}
 <div class="max-w-6xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-semibold text-stone-800 mb-6">Dashboard</h1>
+  <h1 class="text-2xl font-semibold text-stone-800 mb-2">Dashboard</h1>
+
+  <!-- RSVP Deadline banner -->
+  {% if rsvp_deadline %}
+  <div class="mb-6 rounded-xl border px-5 py-3 flex items-center gap-3
+    {% if rsvp_overdue %}bg-red-50 border-red-200 text-red-700{% elif rsvp_days_remaining <= 7 %}bg-amber-50 border-amber-200 text-amber-700{% else %}bg-sky-50 border-sky-200 text-sky-700{% endif %}">
+    <span class="text-lg">📅</span>
+    <div>
+      <span class="font-medium">RSVP Deadline: {{ rsvp_deadline }}</span>
+      {% if rsvp_overdue %}
+        <span class="ml-2 text-sm">— {{ rsvp_days_remaining|cut:"-" }} days overdue · {{ pending_invites }} parties still pending</span>
+      {% elif rsvp_days_remaining == 0 %}
+        <span class="ml-2 text-sm">— Today! · {{ pending_invites }} parties still pending</span>
+      {% else %}
+        <span class="ml-2 text-sm">— {{ rsvp_days_remaining }} days remaining · {{ pending_invites }} parties still pending</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Summary stats -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
     <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
       <p class="text-2xl font-bold text-stone-800">{{ guests }} <span class="text-base font-normal text-stone-400">/ {{ possible_guests }}</span></p>
       <p class="text-sm text-stone-500 mt-1">Attending / Possible</p>
@@ -20,6 +38,22 @@
     <div class="bg-white border border-stone-200 rounded-xl p-4 text-center shadow-sm">
       <p class="text-2xl font-bold text-stone-800">{{ not_coming_guests }}</p>
       <p class="text-sm text-stone-500 mt-1">Not Coming</p>
+    </div>
+  </div>
+
+  <!-- Invite status breakdown -->
+  <div class="grid grid-cols-3 gap-3 mb-8">
+    <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
+      <p class="text-xl font-bold text-emerald-700">{{ total_invites }}</p>
+      <p class="text-xs text-emerald-600 mt-0.5">Invited</p>
+    </div>
+    <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center">
+      <p class="text-xl font-bold text-amber-700">{{ planned_count }}</p>
+      <p class="text-xs text-amber-600 mt-0.5">Planned</p>
+    </div>
+    <div class="bg-stone-50 border border-stone-100 rounded-xl p-3 text-center">
+      <p class="text-xl font-bold text-stone-500">{{ not_invited_count }}</p>
+      <p class="text-xs text-stone-400 mt-0.5">Not Invited</p>
     </div>
   </div>
 

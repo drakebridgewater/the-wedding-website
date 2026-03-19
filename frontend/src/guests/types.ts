@@ -26,6 +26,9 @@ export interface WeddingPartyGroup {
   members: WeddingPartyMember[]
 }
 
+export type PartySide = 'bride' | 'groom' | 'both' | ''
+export type InviteStatus = 'planned' | 'invited' | 'not_invited'
+
 export interface Guest {
   id: number
   first_name: string
@@ -34,6 +37,7 @@ export interface Guest {
   is_attending: boolean | null
   meal: Meal
   is_child: boolean
+  dietary_restrictions: string
 }
 
 export interface Party {
@@ -41,11 +45,15 @@ export interface Party {
   name: string
   type: PartyType
   category: string
-  is_invited: boolean
+  status: InviteStatus
   is_attending: boolean | null
   rehearsal_dinner: boolean
   comments: string
   guests: Guest[]
+  address: string
+  side: PartySide
+  plus_one_allowed: boolean
+  rsvp_responded_at: string | null
 }
 
 export interface MemberFormData {
@@ -69,9 +77,12 @@ export interface PartyFormData {
   name: string
   type: PartyType
   category: string
-  is_invited: boolean
+  status: InviteStatus
   rehearsal_dinner: boolean
   comments: string
+  address: string
+  side: PartySide
+  plus_one_allowed: boolean
 }
 
 export interface GuestFormData {
@@ -79,6 +90,7 @@ export interface GuestFormData {
   last_name: string
   email: string
   is_child: boolean
+  dietary_restrictions: string
 }
 
 export const ROLE_ORDER: MemberRole[] = [
@@ -108,4 +120,23 @@ export const PARTY_TYPE_LABELS: Record<string, string> = {
   formal: 'Formal',
   fun: 'Fun',
   dimagi: 'Dimagi',
+}
+
+export const INVITE_STATUS_LABELS: Record<InviteStatus, string> = {
+  planned: 'Planned',
+  invited: 'Invited',
+  not_invited: 'Not invited',
+}
+
+export const INVITE_STATUS_COLORS: Record<InviteStatus, string> = {
+  planned: 'bg-amber-100 text-amber-700',
+  invited: 'bg-emerald-100 text-emerald-700',
+  not_invited: 'bg-stone-100 text-stone-400',
+}
+
+export const PARTY_SIDE_LABELS: Record<string, string> = {
+  '': 'None',
+  bride: "Bride's side",
+  groom: "Groom's side",
+  both: 'Both',
 }

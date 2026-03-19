@@ -9,21 +9,35 @@ class Song(models.Model):
         (LIST_DO_NOT_PLAY, 'Do Not Play'),
     ]
 
+    MOMENT_START = 'start'
+    MOMENT_PRELUDE = 'prelude'
+    MOMENT_PARTY = 'party'
+    MOMENT_BRIDE = 'bride'
     MOMENT_CEREMONY = 'ceremony'
+    MOMENT_EXIT = 'exit'
+    MOMENT_POSTLUDE = 'postlude'
     MOMENT_COCKTAIL = 'cocktail'
-    MOMENT_FIRST_DANCE = 'first_dance'
-    MOMENT_RECEPTION = 'reception'
-    MOMENT_OTHER = 'other'
+    MOMENT_ENTRANCE = 'entrance'
+    MOMENT_DANCE = 'dance'
+    MOMENT_DINNER = 'dinner'
+    MOMENT_REVIEW = 'review'
     MOMENT_CHOICES = [
+        (MOMENT_START, 'Start'),
+        (MOMENT_PRELUDE, 'Prelude'),
+        (MOMENT_PARTY, 'Party'),
+        (MOMENT_BRIDE, 'Bride'),
         (MOMENT_CEREMONY, 'Ceremony'),
-        (MOMENT_COCKTAIL, 'Cocktail Hour'),
-        (MOMENT_FIRST_DANCE, 'First Dance'),
-        (MOMENT_RECEPTION, 'Reception'),
-        (MOMENT_OTHER, 'Other'),
+        (MOMENT_EXIT, 'Exit'),
+        (MOMENT_POSTLUDE, 'Postlude'),
+        (MOMENT_COCKTAIL, 'Cocktail'),
+        (MOMENT_ENTRANCE, 'Entrance'),
+        (MOMENT_DANCE, 'Dance'),
+        (MOMENT_DINNER, 'Dinner'),
+        (MOMENT_REVIEW, 'Review'),
     ]
 
     list_type = models.CharField(max_length=20, choices=LIST_CHOICES, default=LIST_PLAYLIST)
-    moment = models.CharField(max_length=20, choices=MOMENT_CHOICES, default=MOMENT_OTHER)
+    moment = models.CharField(max_length=20, choices=MOMENT_CHOICES, default=MOMENT_REVIEW)
     title = models.CharField(max_length=200)
     artist = models.CharField(max_length=200, blank=True)
     url = models.URLField(blank=True)

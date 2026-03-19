@@ -34,7 +34,7 @@ def members(request):
     name = serializer.validated_data['name']
     email = serializer.validated_data.get('email', '')
     first_name, last_name = _parse_name(name)
-    party = Party.objects.create(name=name, type='formal', is_invited=True)
+    party = Party.objects.create(name=name, type='formal', status='invited')
     guest = Guest.objects.create(
         party=party,
         first_name=first_name,

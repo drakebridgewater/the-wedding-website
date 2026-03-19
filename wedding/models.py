@@ -35,6 +35,10 @@ class WeddingSettings(models.Model):
         max_length=50, blank=True,
         help_text='Google Analytics tracking ID, e.g. UA-XXXXXXXX-1 or G-XXXXXXXXXX',
     )
+    rsvp_deadline = models.DateField(
+        null=True, blank=True,
+        help_text='Deadline for guests to RSVP. Used to flag overdue responses on the dashboard.',
+    )
 
     class Meta:
         verbose_name = 'Wedding Settings'

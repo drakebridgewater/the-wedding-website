@@ -13,7 +13,7 @@ interface Props {
 type SearchMode = 'search' | 'url'
 
 const BLANK: Omit<CreateSongData, 'list_type'> = {
-  moment: 'other', title: '', artist: '', url: '', source: '' as Source, thumbnail_url: '', notes: '',
+  moment: 'review', title: '', artist: '', url: '', source: '' as Source, thumbnail_url: '', notes: '',
 }
 
 function fmtDuration(ms: number | null): string {
@@ -29,7 +29,7 @@ export function AddSongModal({ listType, prefill, onClose }: Props) {
   const [urlInput, setUrlInput] = useState('')
   const [form, setForm] = useState<Omit<CreateSongData, 'list_type'>>({
     ...BLANK,
-    moment: listType === 'do_not_play' ? 'other' : (prefill?.moment ?? 'other'),
+    moment: listType === 'do_not_play' ? 'review' : (prefill?.moment ?? 'review'),
     ...(prefill ? { title: prefill.title ?? '', artist: prefill.artist ?? '' } : {}),
   })
 

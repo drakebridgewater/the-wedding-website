@@ -23,7 +23,10 @@ class WeddingPartyGroupSerializer(serializers.ModelSerializer):
 class GuestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guest
-        fields = ['id', 'first_name', 'last_name', 'email', 'is_attending', 'meal', 'is_child']
+        fields = [
+            'id', 'first_name', 'last_name', 'email',
+            'is_attending', 'meal', 'is_child', 'dietary_restrictions',
+        ]
 
 
 class PartySerializer(serializers.ModelSerializer):
@@ -32,6 +35,8 @@ class PartySerializer(serializers.ModelSerializer):
     class Meta:
         model = Party
         fields = [
-            'id', 'name', 'type', 'category', 'is_invited',
+            'id', 'name', 'type', 'category', 'status',
             'is_attending', 'rehearsal_dinner', 'comments', 'guests',
+            'address', 'side', 'plus_one_allowed', 'rsvp_responded_at',
         ]
+        read_only_fields = ['rsvp_responded_at']

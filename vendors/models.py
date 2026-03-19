@@ -79,6 +79,7 @@ class VenueOption(BaseVendorOption):
     accommodation_nearby = models.BooleanField(default=False)
     is_indoor = models.BooleanField(default=False)
     is_outdoor = models.BooleanField(default=False)
+    checklist = models.JSONField(default=list, blank=True)
 
     class Meta(BaseVendorOption.Meta):
         verbose_name = 'Venue Option'

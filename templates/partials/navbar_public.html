@@ -24,7 +24,7 @@
 
   <!-- Nav panel (hidden by default) -->
   <div id="nav-panel" class="hidden border-t border-stone-100 bg-white shadow-lg max-h-[80vh] overflow-y-auto">
-    <div class="max-w-6xl mx-auto px-6 py-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <div class="max-w-6xl mx-auto px-6 py-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
 
       <!-- Our Wedding -->
       <div>
@@ -63,6 +63,16 @@
         <a href="{% url 'seating:seating' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Seating Chart</a>
         <a href="{% url 'schedule:schedule' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Day-of Schedule</a>
         <a href="{% url 'music:music' %}"   class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Music</a>
+      </div>
+
+      <!-- Vendors (authenticated only) -->
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Vendors</p>
+        <a href="{% url 'vendors:venue' %}"         class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Venue</a>
+        <a href="{% url 'vendors:caterer' %}"       class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Caterers</a>
+        <a href="{% url 'vendors:cake' %}"          class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Cake &amp; Bakery</a>
+        <a href="{% url 'vendors:florist' %}"       class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Florists</a>
+        <a href="{% url 'vendors:entertainment' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Entertainment</a>
       </div>
       {% endif %}
 
