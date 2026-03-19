@@ -35,20 +35,21 @@
 
                 {% if user.is_authenticated %}
 
+                <li class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                </li>
+
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown"
                        role="button" aria-haspopup="true" aria-expanded="false">
                         Guests <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li><a href="{% url 'guest-list' %}">Guest List</a></li>
+                        <li><a href="{% url 'manage' %}">Guests &amp; Wedding Party</a></li>
                         <li><a href="{% url 'invitations' %}">Invitations</a></li>
-                        <li><a href="{% url 'export-guest-list' %}">Export CSV</a></li>
                         <li role="separator" class="divider"></li>
                         <li class="dropdown-header">Emails</li>
                         <li><a href="{% url 'save-the-date-random' %}">Preview Save the Date</a></li>
-                        <li><a href="/admin/guests/party/">Manage Parties &amp; Invites</a></li>
                     </ul>
                 </li>
 

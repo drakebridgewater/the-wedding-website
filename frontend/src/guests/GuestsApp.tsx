@@ -3,13 +3,15 @@ import { Toaster } from 'sonner'
 import { WeddingPartyTab } from './WeddingPartyTab'
 import { GroupsTab } from './GroupsTab'
 import { GuestListTab } from './GuestListTab'
+import { EmailsTab } from './EmailsTab'
 
-type Tab = 'party' | 'groups' | 'guests'
+type Tab = 'party' | 'groups' | 'guests' | 'emails'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'party',  label: 'Wedding Party' },
   { id: 'groups', label: 'Groups' },
   { id: 'guests', label: 'Guest List' },
+  { id: 'emails', label: 'Emails' },
 ]
 
 export function GuestsApp() {
@@ -44,6 +46,7 @@ export function GuestsApp() {
       {tab === 'party'  && <WeddingPartyTab />}
       {tab === 'groups' && <GroupsTab />}
       {tab === 'guests' && <GuestListTab />}
+      {tab === 'emails' && <EmailsTab />}
     </div>
   )
 }

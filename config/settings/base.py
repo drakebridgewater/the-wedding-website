@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'vendors.apps.VendorsConfig',
     'music.apps.MusicConfig',
     'drive_sync.apps.DriveSyncConfig',
+    'dashboard.apps.DashboardConfig',
 ]
 
 MIDDLEWARE = [

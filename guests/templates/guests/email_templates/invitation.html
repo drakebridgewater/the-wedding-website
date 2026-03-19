@@ -34,7 +34,11 @@
         <tr>
             <td style="padding: 20px 0 0 0; font-size: 16px; line-height: 20px; font-family: Helvetica, Arial, sans-serif; color: {{ font_color }};"
                 class="padding-copy" align="center">
-                {{ couple }}'s Wedding<br>
+                {% if custom_body %}
+                    {{ custom_body|safe }}
+                {% else %}
+                    {{ couple }}'s Wedding<br>
+                {% endif %}
             </td>
         </tr>
         </tbody>

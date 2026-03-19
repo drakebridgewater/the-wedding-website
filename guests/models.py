@@ -11,6 +11,7 @@ from django.dispatch import receiver
 # family  — Family members (general grouping).
 # work    — Work colleagues and professional contacts.
 ALLOWED_TYPES = [
+    ('', 'None'),
     ('formal', 'Formal'),
     ('fun', 'Fun'),
     ('family', 'Family'),
@@ -39,7 +40,7 @@ class Party(models.Model):
     A party consists of one or more guests.
     """
     name = models.TextField()
-    type = models.CharField(max_length=10, choices=ALLOWED_TYPES)
+    type = models.CharField(max_length=10, choices=ALLOWED_TYPES, blank=True, default='')
     category = models.CharField(max_length=20, null=True, blank=True)
     save_the_date_sent = models.DateTimeField(null=True, blank=True, default=None)
     save_the_date_opened = models.DateTimeField(null=True, blank=True, default=None)
@@ -54,6 +55,10 @@ class Party(models.Model):
     address = models.TextField(blank=True)
     side = models.CharField(max_length=10, choices=SIDE_CHOICES, blank=True)
     plus_one_allowed = models.BooleanField(default=False)
+    plus_one_count = models.PositiveSmallIntegerField(
+        default=0,
+        help_text='Number of unnamed +1 guests attending with this party.',
+    )
 
     def __str__(self):
         return 'Party: {}'.format(self.name)
@@ -99,7 +104,7 @@ class Guest(models.Model):
     """
     A single guest
     """
-    party = models.ForeignKey('Party', on_delete=models.CASCADE)
+    party = models.ForeignKey('Party', on_delete=models.SET_NULL, null=True, blank=True)
     first_name = models.TextField()
     last_name = models.TextField(null=True, blank=True)
     email = models.TextField(null=True, blank=True)
@@ -126,6 +131,47 @@ class Guest(models.Model):
 
     def __str__(self):
         return 'Guest: {} {}'.format(self.first_name, self.last_name)
+
+
+DEFAULT_INVITE_BODY = (
+    '<p>Dear {{party_name}},</p>'
+    '<p>We would love to have you celebrate our special day with us. '
+    'Please click the button above to view your invitation and RSVP.</p>'
+    '<p>We look forward to seeing you!</p>'
+)
+
+
+class EmailTemplate(models.Model):
+    name = models.CharField(max_length=100)
+    subject = models.CharField(max_length=200, default="You're invited!")
+    body_html = models.TextField(default=DEFAULT_INVITE_BODY)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
+class SentEmail(models.Model):
+    template = models.ForeignKey(
+        EmailTemplate, null=True, on_delete=models.SET_NULL, related_name='sent_emails'
+    )
+    party = models.ForeignKey(
+        Party, null=True, on_delete=models.SET_NULL, related_name='sent_emails'
+    )
+    subject = models.CharField(max_length=200)
+    body_html = models.TextField()
+    recipients = models.JSONField(default=list)
+    sent_at = models.DateTimeField(auto_now_add=True)
+    sent_by = models.ForeignKey(
+        'auth.User', null=True, blank=True, on_delete=models.SET_NULL
+    )
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"SentEmail to {self.party} at {self.sent_at}"
 
 
 class WeddingPartyMember(models.Model):

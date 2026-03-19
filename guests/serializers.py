@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Guest, Party, WeddingPartyGroup, WeddingPartyMember
+from .models import EmailTemplate, Guest, Party, SentEmail, WeddingPartyGroup, WeddingPartyMember
 
 
 class WeddingPartyMemberSerializer(serializers.ModelSerializer):
@@ -21,10 +21,17 @@ class WeddingPartyGroupSerializer(serializers.ModelSerializer):
 
 
 class GuestSerializer(serializers.ModelSerializer):
+    party_id = serializers.PrimaryKeyRelatedField(
+        queryset=Party.objects.all(),
+        source='party',
+        allow_null=True,
+        required=False,
+    )
+
     class Meta:
         model = Guest
         fields = [
-            'id', 'first_name', 'last_name', 'email',
+            'id', 'party_id', 'first_name', 'last_name', 'email',
             'is_attending', 'meal', 'is_child', 'dietary_restrictions',
         ]
 
@@ -37,6 +44,23 @@ class PartySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'type', 'category', 'status',
             'is_attending', 'rehearsal_dinner', 'comments', 'guests',
-            'address', 'side', 'plus_one_allowed', 'rsvp_responded_at',
+            'address', 'side', 'plus_one_allowed', 'plus_one_count', 'rsvp_responded_at',
+            'invitation_id', 'invitation_sent', 'invitation_opened',
         ]
-        read_only_fields = ['rsvp_responded_at']
+        read_only_fields = ['rsvp_responded_at', 'invitation_id', 'invitation_sent', 'invitation_opened']
+
+
+class EmailTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailTemplate
+        fields = ['id', 'name', 'subject', 'body_html', 'created_at', 'updated_at']
+
+
+class SentEmailSerializer(serializers.ModelSerializer):
+    party_name = serializers.CharField(source='party.name', read_only=True, default=None)
+    template_name = serializers.CharField(source='template.name', read_only=True, default=None)
+
+    class Meta:
+        model = SentEmail
+        fields = ['id', 'template_id', 'template_name', 'party_id', 'party_name',
+                  'subject', 'body_html', 'recipients', 'sent_at']

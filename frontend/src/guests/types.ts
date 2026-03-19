@@ -31,6 +31,7 @@ export type InviteStatus = 'planned' | 'invited' | 'not_invited'
 
 export interface Guest {
   id: number
+  party_id: number | null
   first_name: string
   last_name: string
   email: string
@@ -53,7 +54,32 @@ export interface Party {
   address: string
   side: PartySide
   plus_one_allowed: boolean
+  plus_one_count: number
   rsvp_responded_at: string | null
+  invitation_id: string
+  invitation_sent: string | null
+  invitation_opened: string | null
+}
+
+export interface EmailTemplate {
+  id: number
+  name: string
+  subject: string
+  body_html: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SentEmail {
+  id: number
+  template_id: number | null
+  template_name: string | null
+  party_id: number | null
+  party_name: string | null
+  subject: string
+  body_html: string
+  recipients: string[]
+  sent_at: string
 }
 
 export interface MemberFormData {
@@ -83,6 +109,7 @@ export interface PartyFormData {
   address: string
   side: PartySide
   plus_one_allowed: boolean
+  plus_one_count: number
 }
 
 export interface GuestFormData {

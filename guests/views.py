@@ -6,7 +6,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.db.models import Count, Q
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
@@ -30,56 +29,6 @@ def export_guests(request):
     response['Content-Disposition'] = 'attachment; filename=all-guests.csv'
     return response
 
-
-@login_required
-def dashboard(request):
-    parties_with_pending_invites = Party.objects.filter(
-        status='invited', is_attending=None
-    ).order_by('category', 'name')
-    parties_with_unopen_invites = parties_with_pending_invites.filter(invitation_opened=None)
-    parties_with_open_unresponded_invites = parties_with_pending_invites.exclude(invitation_opened=None)
-    attending_guests = Guest.objects.filter(is_attending=True)
-    guests_without_meals = attending_guests.filter(
-        is_child=False
-    ).filter(
-        Q(meal__isnull=True) | Q(meal='')
-    ).order_by(
-        'party__category', 'first_name'
-    )
-    meal_breakdown = attending_guests.exclude(meal=None).values('meal').annotate(count=Count('*'))
-    category_breakdown = attending_guests.values('party__category').annotate(count=Count('*'))
-
-    from wedding.models import WeddingSettings
-    from datetime import date
-    wedding = WeddingSettings.get()
-    rsvp_deadline = wedding.rsvp_deadline
-    today = date.today()
-    rsvp_days_remaining = (rsvp_deadline - today).days if rsvp_deadline else None
-    rsvp_overdue = rsvp_deadline and today > rsvp_deadline
-
-    return render(request, 'guests/dashboard.html', context={
-        'couple_name': settings.BRIDE_AND_GROOM,
-        'website_url': settings.WEDDING_WEBSITE_URL,
-        'guests': Guest.objects.filter(is_attending=True).count(),
-        'possible_guests': Guest.objects.filter(party__status='invited').exclude(is_attending=False).count(),
-        'not_coming_guests': Guest.objects.filter(is_attending=False).count(),
-        'pending_invites': parties_with_pending_invites.count(),
-        'pending_guests': Guest.objects.filter(party__status='invited', is_attending=None).count(),
-        'guests_without_meals': guests_without_meals,
-        'parties_with_unopen_invites': parties_with_unopen_invites,
-        'parties_with_open_unresponded_invites': parties_with_open_unresponded_invites,
-        'unopened_invite_count': parties_with_unopen_invites.count(),
-        'total_invites': Party.objects.filter(status='invited').count(),
-        'planned_count': Party.objects.filter(status='planned').count(),
-        'not_invited_count': Party.objects.filter(status='not_invited').count(),
-        'meal_breakdown': meal_breakdown,
-        'category_breakdown': category_breakdown,
-        'guestlist': Guest.objects.filter(is_attending=True),
-        'notcoming': Guest.objects.filter(is_attending=False),
-        'rsvp_deadline': rsvp_deadline,
-        'rsvp_days_remaining': rsvp_days_remaining,
-        'rsvp_overdue': rsvp_overdue,
-    })
 
 
 def invitation(request, invite_id):

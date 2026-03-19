@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
-  Guest, GuestFormData, GroupFormData, MemberFormData,
-  Party, PartyFormData, WeddingPartyGroup, WeddingPartyMember,
+  EmailTemplate, Guest, GuestFormData, GroupFormData, MemberFormData,
+  Party, PartyFormData, SentEmail, WeddingPartyGroup, WeddingPartyMember,
 } from './types'
 
 function getCsrf(): string {
@@ -24,9 +24,12 @@ async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
 }
 
 const QK = {
-  members: ['guests', 'members'] as const,
-  groups:  ['guests', 'groups']  as const,
-  parties: ['guests', 'parties'] as const,
+  members:        ['guests', 'members']        as const,
+  groups:         ['guests', 'groups']         as const,
+  parties:        ['guests', 'parties']        as const,
+  unassigned:     ['guests', 'unassigned']     as const,
+  emailTemplates: ['guests', 'emailTemplates'] as const,
+  sentEmails:     ['guests', 'sentEmails']     as const,
 }
 
 // ── Members ───────────────────────────────────────────────────────────────────
@@ -157,9 +160,19 @@ export function useAddGuest() {
 export function useUpdateGuest() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Guest> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<Guest> & { party_id?: number | null } }) =>
       apiFetch<Guest>(`/guests/api/guests/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.parties }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.parties })
+      qc.invalidateQueries({ queryKey: QK.unassigned })
+    },
+  })
+}
+
+export function useUnassignedGuests() {
+  return useQuery<Guest[]>({
+    queryKey: QK.unassigned,
+    queryFn: () => apiFetch('/guests/api/guests/unassigned/'),
   })
 }
 
@@ -167,6 +180,75 @@ export function useDeleteGuest() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => apiFetch(`/guests/api/guests/${id}/`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.parties }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.parties })
+      qc.invalidateQueries({ queryKey: QK.unassigned })
+    },
+  })
+}
+
+// ── Email templates ───────────────────────────────────────────────────────────
+
+export function useEmailTemplates() {
+  return useQuery<EmailTemplate[]>({
+    queryKey: QK.emailTemplates,
+    queryFn: () => apiFetch('/guests/api/email-templates/'),
+  })
+}
+
+export function useCreateEmailTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Pick<EmailTemplate, 'name' | 'subject' | 'body_html'>) =>
+      apiFetch<EmailTemplate>('/guests/api/email-templates/', { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
+  })
+}
+
+export function useUpdateEmailTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Pick<EmailTemplate, 'name' | 'subject' | 'body_html'>> }) =>
+      apiFetch<EmailTemplate>(`/guests/api/email-templates/${id}/`, { method: 'PUT', body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
+  })
+}
+
+export function useDeleteEmailTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiFetch(`/guests/api/email-templates/${id}/`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
+  })
+}
+
+export function usePreviewEmailTemplate() {
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch<{ subject: string; body_html: string }>(`/guests/api/email-templates/${id}/preview/`, { method: 'POST' }),
+  })
+}
+
+export function useSendEmailTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ templateId, partyIds }: { templateId: number; partyIds: number[] }) =>
+      apiFetch<{ sent: number; errors: string[] }>(
+        `/guests/api/email-templates/${templateId}/send/`,
+        { method: 'POST', body: JSON.stringify({ party_ids: partyIds }) }
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.sentEmails })
+      qc.invalidateQueries({ queryKey: QK.parties })
+    },
+  })
+}
+
+// ── Sent emails log ───────────────────────────────────────────────────────────
+
+export function useSentEmails(partyId?: number) {
+  return useQuery<SentEmail[]>({
+    queryKey: partyId ? [...QK.sentEmails, partyId] : QK.sentEmails,
+    queryFn: () => apiFetch(partyId ? `/guests/api/sent-emails/?party=${partyId}` : '/guests/api/sent-emails/'),
   })
 }

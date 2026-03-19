@@ -1,10 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
+from django.views.generic import RedirectView
 
 from guests import api_views
-from guests.views import GuestListView, test_email, save_the_date_preview, save_the_date_random, export_guests, \
-    invitation, invitation_email_preview, invitation_email_test, rsvp_confirm, dashboard, \
+from guests.views import test_email, save_the_date_preview, save_the_date_random, export_guests, \
+    invitation, invitation_email_preview, invitation_email_test, rsvp_confirm, \
     invitations_list, send_party_invitation, manage_page
+
 
 urlpatterns = [
     # Guest management React app
@@ -18,11 +20,16 @@ urlpatterns = [
     path('guests/api/parties/', api_views.parties, name='api-parties'),
     path('guests/api/parties/<int:pk>/', api_views.party_detail, name='api-party-detail'),
     path('guests/api/parties/<int:party_pk>/guests/', api_views.party_guests, name='api-party-guests'),
+    path('guests/api/guests/unassigned/', api_views.unassigned_guests, name='api-unassigned-guests'),
     path('guests/api/guests/<int:pk>/', api_views.guest_detail, name='api-guest-detail'),
     path('guests/api/import-csv/', api_views.import_csv, name='api-import-csv'),
+    path('guests/api/email-templates/', api_views.email_templates, name='api-email-templates'),
+    path('guests/api/email-templates/<int:pk>/', api_views.email_template_detail, name='api-email-template-detail'),
+    path('guests/api/email-templates/<int:pk>/preview/', api_views.email_template_preview, name='api-email-template-preview'),
+    path('guests/api/email-templates/<int:pk>/send/', api_views.email_template_send, name='api-email-template-send'),
+    path('guests/api/sent-emails/', api_views.sent_emails, name='api-sent-emails'),
 
-    re_path(r'^guests/$', login_required(GuestListView.as_view()), name='guest-list'),
-    re_path(r'^dashboard/$', dashboard, name='dashboard'),
+    re_path(r'^guests/$', login_required(RedirectView.as_view(url='/guests/manage/', permanent=True)), name='guest-list'),
     re_path(r'^guests/export$', export_guests, name='export-guest-list'),
     re_path(r'^invite/(?P<invite_id>[\w-]+)/$', invitation, name='invitation'),
     re_path(r'^invite-email/(?P<invite_id>[\w-]+)/$', invitation_email_preview, name='invitation-email'),
