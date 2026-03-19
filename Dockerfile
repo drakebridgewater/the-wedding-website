@@ -1,7 +1,7 @@
 # Dockerfile
 
 # ---- Frontend build stage ----
-FROM node:22-slim AS frontend-build
+FROM node:23-slim AS frontend-build
 WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
