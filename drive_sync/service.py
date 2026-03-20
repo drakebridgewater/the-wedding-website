@@ -13,6 +13,7 @@ Setup
 """
 
 import logging
+import time
 from datetime import date, datetime
 
 import gspread
@@ -146,7 +147,9 @@ def sync_all(spreadsheet_name=None, progress=None):
     ]
 
     results = []
-    for title, fn in sheets:
+    for i, (title, fn) in enumerate(sheets):
+        if i > 0:
+            time.sleep(5)  # avoid Google Sheets write quota (60 req/min)
         try:
             headers, rows = fn()
             _write_sheet(sh, title, headers, rows)
@@ -232,9 +235,9 @@ def _rows_guests():
             g.first_name,
             g.last_name or '',
             g.email or '',
-            g.party.name,
-            g.party.get_type_display() if g.party.type else '',
-            g.party.category or '',
+            g.party.name if g.party else '',
+            g.party.get_type_display() if g.party and g.party.type else '',
+            g.party.category if g.party else '',
             _yn_null(g.is_attending),
             g.get_meal_display() if g.meal else '',
             _bool(g.is_child),
