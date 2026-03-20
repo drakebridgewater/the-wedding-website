@@ -1,21 +1,17 @@
 import { useState } from 'react'
 import { Toaster } from 'sonner'
-import { WeddingPartyTab } from './WeddingPartyTab'
-import { GroupsTab } from './GroupsTab'
-import { GuestListTab } from './GuestListTab'
+import { ContactsTab } from './ContactsTab'
 import { EmailsTab } from './EmailsTab'
 
-type Tab = 'party' | 'groups' | 'guests' | 'emails'
+type Tab = 'contacts' | 'emails'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'party',  label: 'Wedding Party' },
-  { id: 'groups', label: 'Groups' },
-  { id: 'guests', label: 'Guest List' },
-  { id: 'emails', label: 'Emails' },
+  { id: 'contacts', label: 'Contacts' },
+  { id: 'emails',   label: 'Emails' },
 ]
 
 export function GuestsApp() {
-  const [tab, setTab] = useState<Tab>('party')
+  const [tab, setTab] = useState<Tab>('contacts')
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -23,7 +19,7 @@ export function GuestsApp() {
 
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-stone-900">Guest Management</h1>
-        <p className="text-sm text-stone-500 mt-1">Track your guest list, RSVPs, meal choices, and wedding party roles.</p>
+        <p className="text-sm text-stone-500 mt-1">Manage your contacts, filter by role, and send invitations.</p>
       </div>
 
       {/* Tab bar */}
@@ -43,10 +39,8 @@ export function GuestsApp() {
         ))}
       </div>
 
-      {tab === 'party'  && <WeddingPartyTab />}
-      {tab === 'groups' && <GroupsTab />}
-      {tab === 'guests' && <GuestListTab />}
-      {tab === 'emails' && <EmailsTab />}
+      {tab === 'contacts' && <ContactsTab />}
+      {tab === 'emails'   && <EmailsTab />}
     </div>
   )
 }

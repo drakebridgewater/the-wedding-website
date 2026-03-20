@@ -206,6 +206,37 @@ def guest_detail(request, pk):
     return Response(serializer.data)
 
 
+# ── Role assignment on existing guests ────────────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def guest_assign_role(request, pk):
+    """Create or update a WeddingPartyMember linked to an existing guest."""
+    try:
+        guest = Guest.objects.get(pk=pk)
+    except Guest.DoesNotExist:
+        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    role = request.data.get('role')
+    color = request.data.get('color', '#94a3b8')
+    order = request.data.get('order', 0)
+    name = f"{guest.first_name} {guest.last_name}".strip() or guest.email or 'Guest'
+
+    member, _ = WeddingPartyMember.objects.update_or_create(
+        guest=guest,
+        defaults={'role': role, 'name': name, 'color': color, 'order': order},
+    )
+    return Response(WeddingPartyMemberSerializer(member).data, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def guest_remove_role(request, pk):
+    """Remove the WeddingPartyMember role from a guest without deleting the guest."""
+    WeddingPartyMember.objects.filter(guest_id=pk).delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 # ── Unassigned guests ──────────────────────────────────────────────────────────
 
 @api_view(['GET'])

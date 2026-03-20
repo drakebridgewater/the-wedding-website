@@ -121,9 +121,9 @@ WEDDING_DATE = 'January 1st, 1969'
 # Location of the wedding, displayed on the site
 WEDDING_LOCATION = 'North Pole, USA'
 # Used in links inside save-the-date and invitation emails
-WEDDING_WEBSITE_URL = 'https://thehappycouple.com'
+WEDDING_WEBSITE_URL = 'https://wedding.bridgewater.digital'
 # Base address for all outgoing emails
-DEFAULT_WEDDING_EMAIL = 'happilyeverafter@example.com'
+DEFAULT_WEDDING_EMAIL = 'wedding@drake.bridgewater.digital'
 # List of addresses to CC on every outgoing email
 WEDDING_CC_LIST = []
 

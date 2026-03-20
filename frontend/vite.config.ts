@@ -5,9 +5,9 @@ import { fileURLToPath, URL } from 'url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: '/static/dist/',
+  base: mode === 'production' ? '/static/dist/' : '/static/',
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -37,4 +37,4 @@ export default defineConfig({
     cors: true,
     origin: 'http://localhost:5173',
   },
-})
+}))

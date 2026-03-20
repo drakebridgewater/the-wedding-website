@@ -1,257 +1,281 @@
-# A Django Wedding Website and Invitation + Guest Management System
+# Wedding Website & Planning Platform
 
-Live site examples:
+A full wedding planning platform built on Django. Includes a public wedding website, guest management with RSVP tracking, budget tracking, vendor comparisons, seating chart, to-dos, music lists, day-of schedule, and Google Sheets sync so a non-technical partner always has access to current data.
 
-- [Standard Wedding Website](http://rowena-and.coryzue.com/)
-- [Random Save The Date Email](http://rowena-and.coryzue.com/save-the-date/) (refresh for more examples)
-- [Sample Personal Invitation Page](http://rowena-and.coryzue.com/invite/b2ad24ec5dbb4694a36ef4ab616264e0/)
+---
 
-There is also [a longer writeup on this project here](https://www.placecard.me/blog/django-wedding-website/).
+## Table of Contents
 
-## What's included?
+- [What's Included](#whats-included)
+- [Local Development](#local-development)
+- [Docker](#docker)
+- [Environment Variables](#environment-variables)
+- [Customization](#customization)
+- [Google Drive Sync](#google-drive--sheets-sync)
+- [Guest Management](#guest-management)
+- [Sending Email](#sending-email)
 
-This includes everything we did for our own wedding:
+---
 
-- A responsive, single-page traditional wedding website
-- A complete guest management application
-- Email framework for sending save the dates
-- Email framework for invitations and built in RSVP system
-- Guest dashboard
+## What's Included
 
-More details on these below.
+| Feature | URL |
+|---------|-----|
+| Public wedding website | `/` |
+| Wedding dashboard | `/dashboard/` |
+| Guest management | `/guests/` |
+| Budget tracker | `/budget/` |
+| Budget estimator | `/budget/estimator/` |
+| Vendor comparisons (venue, caterer, cake, florist, entertainment) | `/vendors/<type>/` |
+| Seating chart | `/seating/` |
+| To-do list | `/todos/` |
+| Music playlist & do-not-play | `/music/` |
+| Day-of schedule | `/schedule/` |
+| Django admin | `/admin/` |
 
-### The "Standard" Wedding Website
+---
 
-The standard wedding website is a responsive, single-page, twitter bootstrap-based site (using a modified version of
-[this theme](https://blackrockdigital.github.io/startbootstrap-creative/)).
+## Local Development
 
-It is completely customizable to your needs and the content is laid out in standard django templates. By default it includes:
+Requires Python 3.12+ and Node.js 18+.
 
-- A "hero" splash screen for a photo
-- A mobile-friendly top nav with scrollspy
-- A photo/hover navigation pane
-- Configurable content sections for every aspect of your site that you want
-- A set of different styles you can use for different sections
+**1. Create and activate a virtual environment**
 
-![Hero Section of Wedding Website](https://raw.githubusercontent.com/czue/django-wedding-website/master/screenshots/hero-page.png)
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-### Guest management
+**2. Install Python dependencies**
 
-The guest management functionality acts as a central place for you to manage your entire guest list.
-It includes two data models - the `Party` and the `Guest`.
+```bash
+pip install -r requirements/local.txt
+```
 
-#### Party model
+**3. Install frontend dependencies**
 
-The `Party` model allows you to group your guests together for things like sending a single invitation to a couple.
-You can also add parties that you're not sure you're going to invite using the `is_invited` field, which works great for sending tiered invitations.
-There's also a field to track whether the party is invited to the rehearsal dinner.
+```bash
+cd frontend && npm install && cd ..
+```
 
-#### Guest model
+**4. Set up the database and create a superuser**
 
-The `Guest` model contains all of your individual guests.
-In addition to standard name/email it has fields to represent whether the guest is a child (for kids meals/pricing differences),
-and, after sending invitations, marking whether the guest is attending and what meal they are having.
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
 
-#### Excel import/export
+**5. Start both servers**
 
-The guest list can be imported and exported via excel (csv).
-This allows you to build your guest list in Excel and get it into the system in a single step.
-It also lets you export the data to share with others or for whatever else you need.
+```bash
+make dev
+```
 
-See the `import_guests` management command for more details and `guests/tests/data` for sample file formats or see the customization section below.
+This starts the Django dev server on `http://localhost:8002` and the Vite dev server on `http://localhost:5173`. Both must be running for the site to look correct — Ctrl+C stops both.
 
-### Save the Dates
+> Local dev uses SQLite and logs email to the console by default. No Postgres or Redis needed.
 
-The app comes with a built-in cross-client and mobile-friendly email template for save the dates (see `save_the_date.html`).
+**Alternatively, start them separately:**
 
-You can create multiple save the dates and send them out either randomly or by `Party` type (useful if you want to send formal
-invitations to some people and more playful ones to others).
+```bash
+# Terminal 1
+python manage.py runserver 8002
 
-See `save_the_date.py` and `SAVE_THE_DATE_CONTEXT_MAP` for customizing your save the dates.
+# Terminal 2
+cd frontend && npm run dev
+```
 
-### Invitations and RSVPs
+---
 
-The app also comes with a built-in invitation system.
-The template is similar to the save-the-date template, however in addition to the standard invitation content it includes:
+## Docker
 
-- A built in tracking pixel to know whether someone has opened the email or not
-- Unique invitation URLs for each party with pre-populated guest names ([example](http://rownena-and.coryzue.com/invite/b2ad24ec5dbb4694a36ef4ab616264e0/))
-- Online RSVP system with meal selection and validation
+The Docker setup runs Django + gunicorn with a pre-built frontend. It requires an external PostgreSQL database (not included in `docker-compose.yml`).
 
-### Guest dashboard
+**1. Create a `.env` file** in the project root (see [Environment Variables](#environment-variables) below for all options):
 
-After your invitations go out you can use the guest dashboard to see how many people have RSVP'd, everyone who still
-has to respond, people who haven't selected a meal, etc.
-It's a great way of tracking your big picture numbers in terms of how many guests to expect.
+```env
+SECRET_KEY=your-secret-key-here
 
-Just access `/dashboard/` from an account with admin access. Your other guests won't be able to see it.
+POSTGRES_DB=wedding
+POSTGRES_USER=wedding
+POSTGRES_PASSWORD=changeme
+POSTGRES_SERVER=your-postgres-host
+POSTGRES_PORT=5432
 
-![Wedding Dashboard](https://raw.githubusercontent.com/czue/django-wedding-website/master/screenshots/wedding-dashboard.png)
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_EMAIL=admin@example.com
+DJANGO_SUPERUSER_PASSWORD=changeme
 
-### Other details
+APP_PORT=8080
+```
 
-You can easily hook up Google analytics by editing the tracking ID in `google-analytics.html`.
+**2. Build and start**
 
+```bash
+docker-compose up --build
+```
+
+Visit `http://localhost:8080`. On first start, migrations run and the superuser is created automatically.
+
+> To add a Postgres container locally, add a `db` service to `docker-compose.yml` and point `POSTGRES_SERVER` at it.
+
+---
+
+## Environment Variables
+
+All variables are read from a `.env` file at the project root (production) or from `config/settings/local.py` (development). The `.env` file is never committed.
+
+### Required (production)
+
+| Variable | Description |
+|----------|-------------|
+| `SECRET_KEY` | Django secret key — generate with `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
+| `POSTGRES_DB` | PostgreSQL database name |
+| `POSTGRES_USER` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `POSTGRES_SERVER` | PostgreSQL host |
+| `POSTGRES_PORT` | PostgreSQL port (default: `5432`) |
+
+### Django / Hosting
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ALLOWED_HOSTS` | `localhost` | Comma-separated list of allowed hostnames |
+| `CSRF_TRUSTED_ORIGINS` | _(empty)_ | Comma-separated list of trusted origins (e.g. `https://yourdomain.com`) |
+| `APP_PORT` | `8080` | Host port exposed by Docker |
+
+### Superuser Auto-Creation (Docker)
+
+| Variable | Description |
+|----------|-------------|
+| `DJANGO_SUPERUSER_USERNAME` | Username for the auto-created admin account |
+| `DJANGO_SUPERUSER_EMAIL` | Email for the auto-created admin account |
+| `DJANGO_SUPERUSER_PASSWORD` | Password for the auto-created admin account |
+
+### Wedding Details
+
+These override the defaults in `config/settings/base.py`. Can be set in `.env` (production) or `config/settings/local.py` (dev).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BRIDE_AND_GROOM` | `Drake & Shawna` | Couple's names — used in emails and templates |
+| `WEDDING_DATE` | `January 1st, 1969` | Display date shown on the site |
+| `WEDDING_LOCATION` | `North Pole, USA` | Display location shown on the site |
+| `WEDDING_WEBSITE_URL` | `https://thehappycouple.com` | Public URL used in email links |
+| `DEFAULT_WEDDING_EMAIL` | `happilyeverafter@example.com` | From/reply address for outgoing emails |
+| `REGISTRY_URL` | _(ThingsToGetMe URL)_ | Gift registry link shown on the site |
+| `WEDDINGSHARE_URL` | `http://10.0.0.10:5123` | URL to self-hosted WeddingShare photo app |
+
+### Email (SMTP)
+
+If `EMAIL_HOST` is not set, email falls back to the console backend. All are optional.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `EMAIL_HOST` | _(unset)_ | SMTP server hostname — setting this enables SMTP |
+| `EMAIL_PORT` | `587` | SMTP port |
+| `EMAIL_USE_TLS` | `true` | Enable STARTTLS |
+| `EMAIL_USE_SSL` | `false` | Enable SSL/TLS (mutually exclusive with TLS) |
+| `EMAIL_HOST_USER` | _(empty)_ | SMTP username |
+| `EMAIL_HOST_PASSWORD` | _(empty)_ | SMTP password |
+| `EMAIL_TIMEOUT` | `10` | Connection timeout in seconds |
+
+### Local Dev — Postgres Override
+
+By default, local dev uses SQLite. To use Postgres locally, set any of these (the others get sensible defaults):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PGHOST` or `DB_HOST` | _(unset)_ | Setting either switches local dev to Postgres |
+| `PGDATABASE` or `DB_NAME` | `wedding` | Database name |
+| `PGUSER` or `DB_USER` | `postgres` | Username |
+| `PGPASSWORD` or `DB_PASSWORD` | _(empty)_ | Password |
+| `PGPORT` or `DB_PORT` | `5432` | Port |
+
+### TickTick Integration
+
+Optional. Syncs tasks from a TickTick project into the to-do list. Run `python manage.py ticktick_auth` once to complete OAuth setup.
+
+| Variable | Description |
+|----------|-------------|
+| `TICKTICK_CLIENT_ID` | OAuth client ID from TickTick developer settings |
+| `TICKTICK_CLIENT_SECRET` | OAuth client secret |
+| `TICKTICK_USERNAME` | TickTick account email |
+| `TICKTICK_PASSWORD` | TickTick account password |
+| `TICKTICK_PROJECT_NAME` | Name of the TickTick project to sync (default: `Wedding`) |
+
+---
+
+## Customization
+
+Wedding-specific details (names, date, venue, etc.) live in `config/settings/base.py`. Override them for local dev in `config/settings/local.py` (not committed to git):
+
+```python
+# config/settings/local.py
+BRIDE_AND_GROOM = 'Your Names'
+WEDDING_DATE = 'June 1st, 2025'
+WEDDING_LOCATION = 'Somewhere Special'
+WEDDING_WEBSITE_URL = 'https://yoursite.com'
+DEFAULT_WEDDING_EMAIL = 'you@example.com'
+```
+
+The public website content lives in templates inside the `wedding/` app. Search for any text on the site to find where it lives.
+
+---
 
 ## Google Drive / Sheets Sync
 
-All wedding data can be exported to a Google Spreadsheet on demand. The command creates 15 sheets covering Guests, Parties, Wedding Party, Budget, Expenses, Schedule, Seating, Music (Playlist + Do-Not-Play), and all 5 vendor types.
+All wedding data can be exported to a Google Spreadsheet on demand.
 
-### Setup
+**Setup**
 
-**1. Create a Google Cloud project**
+1. Go to [console.cloud.google.com](https://console.cloud.google.com/), create a project, and enable the **Google Sheets API** and **Google Drive API**.
+2. Go to **IAM & Admin → Service Accounts → Create Service Account**, then under **Keys → Add Key → Create new key → JSON**, download the credentials file.
+3. Save it as `.google-credentials.json` in the project root (never commit this file).
+4. Create a Google Sheet named **"Wedding Planning"**, click **Share**, and give the service account email (found under `client_email` in the JSON) **Editor** access.
 
-- Go to [console.cloud.google.com](https://console.cloud.google.com/)
-- Create a new project (or use an existing one)
-- Enable **Google Sheets API** and **Google Drive API**
-
-**2. Create a Service Account**
-
-- Go to **IAM & Admin → Service Accounts → Create Service Account**
-- Give it any name (e.g. "wedding-sync")
-- On the service account page, go to **Keys → Add Key → Create new key → JSON**
-- Save the downloaded file as `.google-credentials.json` in the project root
-
-> ⚠️ Never commit `.google-credentials.json` — it is listed in `.gitignore`.
-
-**3. Share your spreadsheet**
-
-- Create a Google Sheet named **"Wedding Planning"** (or set `GOOGLE_SPREADSHEET_TITLE` in settings to match)
-- Click **Share** and invite the service account email (found in the JSON under `"client_email"`) with **Editor** access
-
-**4. Run the sync**
+**Run the sync**
 
 ```bash
 python manage.py sync_to_drive
 ```
 
-The command prints progress as each sheet is written and outputs the spreadsheet URL when done.
+To override the spreadsheet name:
 
-**Options**
-
-```
---spreadsheet TITLE   Override the spreadsheet title from settings
+```bash
+python manage.py sync_to_drive --spreadsheet "My Wedding"
 ```
 
-**Settings** (`config/settings/base.py`, override in `local.py`):
-
-```python
-GOOGLE_CREDENTIALS_FILE = str(BASE_DIR / '.google-credentials.json')
-GOOGLE_SPREADSHEET_TITLE = 'Wedding Planning'
-```
+To change the default spreadsheet title, set `GOOGLE_SPREADSHEET_TITLE` in `config/settings/base.py` or `local.py`.
 
 ---
 
-## Installation
+## Guest Management
 
-This is developed for Python 3 and Django 4.1.
-
-It's recommended that you setup a virtualenv before development.
-
-Then just install requirements, migrate, and runserver to get started:
-
-```bash
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py createsuperuser
-python manage.py runserver
-```
-
-If you run into Python errors, try to replace `python` with `python3`.
-
-You can now visit your site at `http://localhost:8000/`.
-
-The dashboard and admin interface are available at `http://localhost:8000/dashboard/` and `http://localhost:8000/admin/`. 
-Use the superuser created in step three of the commands above.
-
-
-### Database
-The default setup of this project uses a SQLite database, which is persisted on the file system. If you want to use another
-database you can change the `DATABASES` config option in the `settings.py` file. This file already contains an example
-configuration on how to use the [Postgres](https://www.postgresql.org/) database specified in the docker-compose file.
-
-### Docker
-You can also run the project using [Docker](https://www.docker.com/). To build the image and run the container you can run:
-```bash
-docker build -t django-wedding-website .
-docker run -it -p 8080:8080 \
-      -e DJANGO_SUPERUSER_PASSWORD=changeme \
-      -e DJANGO_SUPERUSER_USERNAME=admin \
-      -e DJANGO_SUPERUSER_EMAIL=admin@example.com \
-      django-wedding-website
-```
-You can now visit your site at `http://localhost:8080`
-
-#### Docker Compose
-To run the project with a Postgres database, you can
-- Change the `DATABASES` configuration in `settings.py` to use the Postgres database
-- Start the Postgres Database and the project container with `docker-compose up --build`
-- You can now visit your site at `http://localhost:8080`
-
-> Note that if you want to make a production deployment with Docker you need to backup the SQLite or Postgres database!
-
-## Customization
-
-I recommend forking this project and just manually modifying it by hand to replace everything with what you want.
-Searching for the text on a page in the repository is a great way to find where something lives.
-
-Some things are already customizable thanks to the use of variables. 
-Copy `bigday/localsettings.py.template` to `bigday/localsettings.py` and edit the values.
-You definitely need to change the `SECRET_KEY` to a new secure value.
-
-`localsettings.py` is excluded from Git, so you won't accidentally submit your personal data to a public repository.
-
-### Sending email
-
-This application uses Django's email framework for sending mail. 
-In order to hook it into a real server, you need to switch the variable `MAIL_BACKEND` of the `bigday/settings.py` from `console` to `smtp`.
-You have to enter your email configuration in the `bigday/localsettings.py` (see `Customization`).
-
-This [thread on stack overflow](https://stackoverflow.com/questions/6367014/how-to-send-email-via-django) has a working example for a Gmail configuration.
-
-Save the dates and invitations can be send with the following commands:
-```bash
-python manage.py send_save_the_dates --send --mark-sent
-python manage.py send_invitations --send --mark-sent
-```
-
-If you want to know more about the command line options, please use the `-h` option:
-```bash
-python manage.py send_save_the_dates -h
-python manage.py send_invitations -h
-```
-
-### Email addresses
-
-To customize the email addresses, see the `DEFAULT_WEDDING_FROM_EMAIL` and
-`DEFAULT_WEDDING_REPLY_EMAIL` variables in `bigday/localsettings.py` (See `Customization`).
-You are also able to CC someone on all your outgoing emails using `WEDDING_CC_LIST`
-
-### Import guests
-
-To actually be able to send emails, you need to import your guests first.
-The import method expects a CSV file with the following header:
-
-`party_name,first_name,last_name,party_type,is_child,category,is_invited,email`
-
-A sample line could be:
-
-`Party Name,Phred,McPhredson,formal,n,Groom,y,email@domain.tld`
-
-The import command is:
+Import guests from a CSV file:
 
 ```bash
 python manage.py import_guests guestList.csv
 ```
 
-If you want to add more guests to the list, simply create a new CSV and rerun the command.
+Expected CSV format:
 
-### Other customizations
+```
+party_name,first_name,last_name,party_type,is_child,category,is_invited,email
+Smith Family,John,Smith,formal,n,Friends,y,john@example.com
+```
 
-If you want to use this project for your wedding but need help getting started just [get in touch](http://www.coryzue.com/contact/) or make an issue
-for anything you encounter and I'm happy to help.
+The guest dashboard is at `/dashboard/` — requires a staff or superuser account.
 
-I haven't built out more complete customization docs yet because I wasn't sure anyone would be interested in this,
-but will add to these instructions whenever I get questions!
+---
 
--Cory
+## Sending Email
+
+Save-the-dates and invitations can be sent from the guest management section of the dashboard, or via management commands:
+
+```bash
+python manage.py send_save_the_dates --send --mark-sent
+python manage.py send_invitations --send --mark-sent
+```
+
+Use `-h` on either command for all options. For SMTP, set `EMAIL_HOST` and related variables (see [Environment Variables](#environment-variables)).

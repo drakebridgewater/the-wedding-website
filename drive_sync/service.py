@@ -172,7 +172,7 @@ def _rows_summary():
     no_response = Guest.objects.filter(is_attending__isnull=True).count()
 
     total_parties = Party.objects.count()
-    invited_parties = Party.objects.filter(is_invited=True).count()
+    invited_parties = Party.objects.filter(status='invited').count()
 
     budget_items = list(BudgetLineItem.objects.all())
     est_total = sum(_money(i.estimated_cost) for i in budget_items if i.estimated_cost)
