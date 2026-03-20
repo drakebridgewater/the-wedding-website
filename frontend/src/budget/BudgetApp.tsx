@@ -80,25 +80,25 @@ export function BudgetApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
+    <div className="min-h-screen bg-gray-50 px-4 py-6 sm:py-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Budget</h1>
-            <p className="text-sm text-gray-500 mt-1">Track estimates and log expenses — click ▶ on any row</p>
+            <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">Track estimates and log expenses — tap any row to expand</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setEstimatorOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-200 bg-white text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md border border-gray-200 bg-white text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors"
             >
               <Calculator size={16} />
               Estimate
             </button>
             <button
               onClick={openCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 transition-colors"
             >
               <Plus size={16} />
               Add Item

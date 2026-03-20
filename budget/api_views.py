@@ -5,8 +5,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import BudgetLineItem, Expense
+from .models import BudgetCategory, BudgetLineItem, Expense
 from .serializers import BudgetLineItemSerializer, ExpenseSerializer
+
+
+def _category_label(slug):
+    try:
+        return BudgetCategory.objects.get(slug=slug).label
+    except BudgetCategory.DoesNotExist:
+        return slug.replace('_', ' ').title()
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +147,7 @@ def budget_summary(request):
         if cat not in by_category:
             by_category[cat] = {
                 'category': cat,
-                'label': item.get_category_display(),
+                'label': _category_label(cat),
                 'estimated': 0,
                 'actual': None,
             }
@@ -161,12 +168,18 @@ def budget_summary(request):
 # Budget estimator
 # --------------------------------------------------------------------------- #
 
-CATEGORY_LABELS = dict(BudgetLineItem.CATEGORIES)
+def _get_category_labels():
+    """Return {slug: label} from DB, falling back to DEFAULT_CATEGORIES."""
+    db = dict(BudgetCategory.objects.values_list('slug', 'label'))
+    if db:
+        return db
+    return dict(BudgetCategory.DEFAULT_CATEGORIES)
 
 
 def _calculate_estimate(guest_count: int, tier: str) -> dict:
     per_guest_total = TIER_RATE[tier] * guest_count
     fixed = FIXED_COSTS[tier]
+    labels = _get_category_labels()
 
     breakdown = []
     grand_total = 0
@@ -175,7 +188,7 @@ def _calculate_estimate(guest_count: int, tier: str) -> dict:
         amount = round(per_guest_total * share)
         breakdown.append({
             'category': cat,
-            'label': CATEGORY_LABELS.get(cat, cat.title()),
+            'label': labels.get(cat, cat.title()),
             'amount': amount,
         })
         grand_total += amount
@@ -183,7 +196,7 @@ def _calculate_estimate(guest_count: int, tier: str) -> dict:
     for cat, amount in fixed.items():
         breakdown.append({
             'category': cat,
-            'label': CATEGORY_LABELS.get(cat, cat.title()),
+            'label': labels.get(cat, cat.title()),
             'amount': amount,
         })
         grand_total += amount
@@ -191,7 +204,7 @@ def _calculate_estimate(guest_count: int, tier: str) -> dict:
     gifts_amount = GIFTS_PER_GUEST * guest_count
     breakdown.append({
         'category': 'gifts',
-        'label': CATEGORY_LABELS.get('gifts', 'Gifts & Favors'),
+        'label': labels.get('gifts', 'Gifts & Favors'),
         'amount': gifts_amount,
     })
     grand_total += gifts_amount
@@ -258,3 +271,40 @@ def import_estimate(request):
         'skipped_categories': skipped,
         'items': created_items,
     }, status=status.HTTP_201_CREATED)
+
+
+# --------------------------------------------------------------------------- #
+# Categories
+# --------------------------------------------------------------------------- #
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def category_list(request):
+    if request.method == 'GET':
+        cats = list(BudgetCategory.objects.values('slug', 'label', 'order'))
+        return Response(cats)
+
+    slug = request.data.get('slug', '').strip().lower().replace(' ', '_')
+    label = request.data.get('label', '').strip()
+    if not slug or not label:
+        return Response({'error': 'slug and label are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    cat, created = BudgetCategory.objects.get_or_create(
+        slug=slug, defaults={'label': label, 'order': BudgetCategory.objects.count()}
+    )
+    if not created:
+        cat.label = label
+        cat.save(update_fields=['label'])
+    return Response({'slug': cat.slug, 'label': cat.label, 'order': cat.order},
+                    status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def category_detail(request, slug):
+    try:
+        cat = BudgetCategory.objects.get(slug=slug)
+    except BudgetCategory.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    cat.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

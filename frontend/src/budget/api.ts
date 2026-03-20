@@ -143,3 +143,31 @@ export function useDeleteExpense() {
     onSuccess: () => invalidateAll(qc),
   })
 }
+
+// ── Categories ────────────────────────────────────────────────────────────────
+
+export interface BudgetCategory {
+  slug: string
+  label: string
+  order: number
+}
+
+export function useCategories() {
+  return useQuery<BudgetCategory[]>({
+    queryKey: ['budget-categories'],
+    queryFn: () => apiFetch('/budget/api/categories/'),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useCreateCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { slug: string; label: string }) =>
+      apiFetch<BudgetCategory>('/budget/api/categories/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['budget-categories'] }),
+  })
+}

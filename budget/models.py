@@ -2,8 +2,8 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 
 
-class BudgetLineItem(models.Model):
-    CATEGORIES = [
+class BudgetCategory(models.Model):
+    DEFAULT_CATEGORIES = [
         ('venue', 'Venue'),
         ('catering', 'Catering'),
         ('cake', 'Cake & Desserts'),
@@ -18,7 +18,21 @@ class BudgetLineItem(models.Model):
         ('miscellaneous', 'Miscellaneous'),
     ]
 
-    category = models.CharField(max_length=30, choices=CATEGORIES)
+    slug = models.SlugField(max_length=50, unique=True)
+    label = models.CharField(max_length=100)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'label']
+        verbose_name = 'Budget Category'
+        verbose_name_plural = 'Budget Categories'
+
+    def __str__(self):
+        return self.label
+
+
+class BudgetLineItem(models.Model):
+    category = models.CharField(max_length=50)
     description = models.CharField(max_length=255)
     estimated_cost = MoneyField(max_digits=10, decimal_places=2, default_currency='USD')
     actual_cost = MoneyField(
@@ -35,7 +49,7 @@ class BudgetLineItem(models.Model):
         ordering = ['category', 'description']
 
     def __str__(self):
-        return f"{self.get_category_display()} – {self.description}"
+        return f"{self.category} – {self.description}"
 
 
 class Expense(models.Model):

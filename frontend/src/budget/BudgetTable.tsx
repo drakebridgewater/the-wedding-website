@@ -10,10 +10,11 @@ import {
 import { useState } from 'react'
 import {
   Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown,
-  Check, ChevronRight,
+  Check, ChevronRight, ChevronDown as ChevronDownIcon,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { ExpenseRows } from './ExpenseRows'
+import { MobileExpensePanel } from './MobileExpensePanel'
 import type { BudgetItem } from './api'
 
 const col = createColumnHelper<BudgetItem>()
@@ -39,7 +40,6 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
   }
 
   const columns = [
-    // Expand toggle
     col.display({
       id: 'expand',
       header: '',
@@ -69,7 +69,7 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
     col.accessor('category_display', {
       header: 'Category',
       cell: (info) => (
-        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-rose-50 text-rose-700">
+        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-rose-50 text-rose-700 whitespace-nowrap">
           {info.getValue()}
         </span>
       ),
@@ -157,18 +157,102 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
     getFilteredRowModel: getFilteredRowModel(),
   })
 
+  const filteredItems = table.getFilteredRowModel().rows.map((r) => r.original)
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-100">
+      {/* Search */}
+      <div className="px-4 py-3 border-b border-gray-100">
         <input
           value={globalFilter}
           onChange={(e) => setGlobalFilter(e.target.value)}
           placeholder="Search items…"
-          className="w-64 text-base border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400"
+          className="w-full sm:w-64 text-base border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400"
         />
       </div>
 
-      <div className="overflow-x-auto">
+      {/* ── Mobile card list ─────────────────────────────────── */}
+      <div className="md:hidden divide-y divide-gray-100">
+        {filteredItems.length === 0 ? (
+          <p className="px-4 py-10 text-center text-gray-400">No budget items yet. Add one above.</p>
+        ) : (
+          filteredItems.map((item) => {
+            const expTotal = parseFloat(item.expense_total)
+            const isOpen = expanded.has(item.id)
+            const variance = item.variance ? parseFloat(item.variance) : null
+
+            return (
+              <div key={item.id} className="px-4 py-4">
+                {/* Category + actions */}
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex-1 min-w-0">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 mb-1">
+                      {item.category_display}
+                    </span>
+                    <p className="font-medium text-gray-900 leading-snug">{item.description}</p>
+                    {item.vendor_name && (
+                      <p className="text-sm text-gray-500 mt-0.5">{item.vendor_name}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                    {item.is_paid && <Check size={15} className="text-emerald-500" />}
+                    <button onClick={() => onEdit(item)} className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors">
+                      <Pencil size={15} />
+                    </button>
+                    <button onClick={() => onDelete(item.id)} disabled={isDeleting} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-40">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Costs */}
+                <div className="grid grid-cols-2 gap-3 text-sm mb-2">
+                  <div>
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Estimated</span>
+                    <p className="font-semibold text-gray-900">{formatCurrency(item.estimated_cost)}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Actual</span>
+                    <p className="font-semibold text-gray-900">
+                      {expTotal > 0 ? (
+                        <>{formatCurrency(expTotal)} <span className="text-xs text-gray-400">({item.expenses.length})</span></>
+                      ) : item.actual_cost ? (
+                        formatCurrency(item.actual_cost)
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Variance */}
+                {variance !== null && (
+                  <p className={`text-sm font-medium mb-2 ${variance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {variance >= 0 ? '↓' : '↑'} {formatCurrency(Math.abs(variance))}{' '}
+                    <span className="font-normal text-gray-500">{variance >= 0 ? 'under' : 'over'}</span>
+                  </p>
+                )}
+
+                {/* Expense toggle */}
+                <button
+                  onClick={() => toggleExpand(item.id)}
+                  className="inline-flex items-center gap-1 text-sm text-rose-600 hover:text-rose-800 font-medium transition-colors"
+                >
+                  {isOpen ? <ChevronDownIcon size={14} /> : <ChevronRight size={14} />}
+                  {item.expenses.length > 0
+                    ? `${item.expenses.length} expense${item.expenses.length !== 1 ? 's' : ''}`
+                    : 'Log expense'}
+                </button>
+
+                {isOpen && <MobileExpensePanel item={item} />}
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* ── Desktop table ─────────────────────────────────────── */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-base">
           <thead className="bg-gray-50 text-gray-600 text-sm uppercase tracking-wide">
             {table.getHeaderGroups().map((hg) => (
@@ -222,9 +306,8 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
         </table>
       </div>
 
-      <div className="px-5 py-2 border-t border-gray-100 text-sm text-gray-400">
-        {table.getFilteredRowModel().rows.length} item
-        {table.getFilteredRowModel().rows.length !== 1 ? 's' : ''}
+      <div className="px-4 py-2 border-t border-gray-100 text-sm text-gray-400">
+        {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''}
       </div>
     </div>
   )

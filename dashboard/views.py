@@ -190,4 +190,12 @@ def dashboard(request):
         'total_tasks': total_tasks,
         'completed_tasks': completed_tasks,
         'pending_tasks': pending_tasks,
+
+        # Drive sync
+        'sync_sheet_names': [
+            'Summary', 'Guests', 'Parties', 'Wedding Party',
+            'Budget', 'Expenses', 'Schedule', 'Seating Tables',
+            'Music \u2014 Playlist', 'Music \u2014 Do Not Play',
+            'Venues', 'Caterers', 'Cakes', 'Florists', 'Entertainment',
+        ],
     })

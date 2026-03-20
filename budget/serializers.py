@@ -2,7 +2,14 @@ from decimal import Decimal, InvalidOperation
 
 from rest_framework import serializers
 
-from .models import BudgetLineItem, Expense
+from .models import BudgetCategory, BudgetLineItem, Expense
+
+
+def _category_label(slug):
+    try:
+        return BudgetCategory.objects.get(slug=slug).label
+    except BudgetCategory.DoesNotExist:
+        return slug.replace('_', ' ').title()
 
 
 class ExpenseSerializer(serializers.ModelSerializer):
@@ -32,7 +39,10 @@ class ExpenseSerializer(serializers.ModelSerializer):
 class BudgetLineItemSerializer(serializers.ModelSerializer):
     estimated_cost = serializers.CharField()
     actual_cost = serializers.CharField(allow_null=True, required=False)
-    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    category_display = serializers.SerializerMethodField()
+
+    def get_category_display(self, obj):
+        return _category_label(obj.category)
     variance = serializers.SerializerMethodField()
     expenses = ExpenseSerializer(many=True, read_only=True)
     expense_total = serializers.SerializerMethodField()

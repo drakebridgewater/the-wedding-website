@@ -12,27 +12,73 @@
     </div>
     {% if user.is_authenticated %}
     <div class="sm:ml-auto flex items-center gap-2">
-      <span id="sync-status" class="text-xs text-stone-400 hidden"></span>
       <button id="sync-btn"
         onclick="triggerSync()"
         class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
                bg-white border border-stone-300 text-stone-600 hover:bg-stone-50
                transition-colors disabled:opacity-50">
-        <svg id="sync-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round"
             d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
         </svg>
-        <span id="sync-label">Sync to Google Drive</span>
+        Sync to Google Drive
       </button>
     </div>
+
+    <!-- Sync progress modal -->
+    <div id="sync-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hidden">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+        <div class="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
+          <h2 class="font-semibold text-stone-800">Syncing to Google Drive</h2>
+          <button onclick="closeSyncModal()" id="sync-close-btn" class="text-stone-400 hover:text-stone-600 hidden" aria-label="Close">&times;</button>
+        </div>
+        <ul id="sync-sheet-list" class="px-5 py-3 space-y-2 max-h-80 overflow-y-auto">
+          {% for name in sync_sheet_names %}
+          <li class="sync-sheet-item flex items-center gap-3 text-sm text-stone-600" data-sheet="{{ name }}">
+            <span class="sync-icon w-4 h-4 shrink-0 text-stone-300">
+              <svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>
+            </span>
+            {{ name }}
+          </li>
+          {% endfor %}
+        </ul>
+        <div id="sync-footer" class="px-5 py-3 border-t border-stone-100 text-xs text-stone-400 flex items-center gap-2">
+          <svg id="sync-spinner" class="w-3.5 h-3.5 animate-spin text-stone-400" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+          </svg>
+          <span id="sync-footer-text">Syncing&hellip;</span>
+        </div>
+      </div>
+    </div>
+
     <script>
+    const SHEET_NAMES = [{% for name in sync_sheet_names %}"{{ name }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+
+    function closeSyncModal() {
+      document.getElementById('sync-modal').classList.add('hidden');
+      document.getElementById('sync-btn').disabled = false;
+    }
+
     function triggerSync() {
+      const modal = document.getElementById('sync-modal');
       const btn = document.getElementById('sync-btn');
-      const label = document.getElementById('sync-label');
-      const status = document.getElementById('sync-status');
+      const closeBtn = document.getElementById('sync-close-btn');
+      const footer = document.getElementById('sync-footer-text');
+      const spinner = document.getElementById('sync-spinner');
+
+      // Reset all sheet icons to pending
+      document.querySelectorAll('.sync-sheet-item').forEach(li => {
+        li.querySelector('.sync-icon').innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-stone-300"><circle cx="8" cy="8" r="6" stroke="currentColor" fill="none" stroke-width="1.5"/></svg>';
+        li.classList.remove('text-stone-400', 'text-emerald-700', 'text-red-600');
+        li.classList.add('text-stone-600');
+      });
+
       btn.disabled = true;
-      label.textContent = 'Syncing\u2026';
-      status.className = 'text-xs text-stone-400 hidden';
+      closeBtn.classList.add('hidden');
+      footer.textContent = 'Syncing\u2026';
+      spinner.classList.remove('hidden');
+      modal.classList.remove('hidden');
 
       fetch('/drive/sync/', {
         method: 'POST',
@@ -40,21 +86,47 @@
       })
       .then(r => r.json())
       .then(data => {
-        if (data.url) {
-          status.innerHTML = '<a href="' + data.url + '" target="_blank" class="text-emerald-600 hover:underline">Synced \u2014 Open Sheet \u2197</a>';
-          status.className = 'text-xs';
+        spinner.classList.add('hidden');
+
+        if (data.results) {
+          // Animate revealing each result with a small delay
+          let delay = 0;
+          data.results.forEach(result => {
+            setTimeout(() => {
+              const li = document.querySelector(`.sync-sheet-item[data-sheet="${result.title}"]`);
+              if (!li) return;
+              const icon = li.querySelector('.sync-icon');
+              if (result.success) {
+                icon.innerHTML = '<svg viewBox="0 0 16 16" class="w-4 h-4 text-emerald-500" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm3.03 5.03a.75.75 0 00-1.06-1.06L7 7.94 5.53 6.47a.75.75 0 00-1.06 1.06l2 2a.75.75 0 001.06 0l3.5-3.5z"/></svg>';
+                li.classList.replace('text-stone-600', 'text-emerald-700');
+              } else {
+                icon.innerHTML = '<svg viewBox="0 0 16 16" class="w-4 h-4 text-red-500" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm-1 4a1 1 0 112 0v3a1 1 0 11-2 0V5zm1 7a1 1 0 110-2 1 1 0 010 2z"/></svg>';
+                li.classList.replace('text-stone-600', 'text-red-600');
+                li.title = result.error || 'Unknown error';
+              }
+            }, delay);
+            delay += 80;
+          });
+
+          // After all results shown, update footer
+          setTimeout(() => {
+            const failures = data.results.filter(r => !r.success).length;
+            if (failures) {
+              footer.innerHTML = failures + ' sheet(s) failed. <a href="' + data.url + '" target="_blank" class="underline text-stone-600">Open sheet &nearr;</a>';
+            } else {
+              footer.innerHTML = 'All done! <a href="' + data.url + '" target="_blank" class="underline text-emerald-600">Open sheet &nearr;</a>';
+            }
+            closeBtn.classList.remove('hidden');
+          }, delay + 100);
         } else {
-          status.textContent = 'Error: ' + (data.error ?? 'Unknown error');
-          status.className = 'text-xs text-red-500';
+          footer.textContent = 'Error: ' + (data.error ?? 'Unknown error');
+          closeBtn.classList.remove('hidden');
         }
-        label.textContent = 'Sync to Google Drive';
-        btn.disabled = false;
       })
       .catch(() => {
-        status.textContent = 'Network error';
-        status.className = 'text-xs text-red-500';
-        label.textContent = 'Sync to Google Drive';
-        btn.disabled = false;
+        spinner.classList.add('hidden');
+        footer.textContent = 'Network error — try again';
+        closeBtn.classList.remove('hidden');
       });
     }
     </script>

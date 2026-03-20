@@ -1,25 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { X } from 'lucide-react'
+import { X, Plus, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useCategories, useCreateCategory } from './api'
 import type { BudgetItem, ItemFormData } from './api'
-
-const CATEGORIES = [
-  ['venue', 'Venue'],
-  ['catering', 'Catering'],
-  ['cake', 'Cake & Desserts'],
-  ['flowers', 'Flowers & Décor'],
-  ['entertainment', 'Entertainment'],
-  ['attire', 'Attire'],
-  ['beauty', 'Beauty & Hair'],
-  ['photography', 'Photography & Video'],
-  ['stationery', 'Stationery'],
-  ['transportation', 'Transportation'],
-  ['gifts', 'Gifts & Favors'],
-  ['miscellaneous', 'Miscellaneous'],
-] as const
 
 const schema = z.object({
   category: z.string().min(1, 'Category is required'),
@@ -57,7 +43,12 @@ function inputCls(error?: string) {
 }
 
 export function BudgetForm({ item, onSubmit, onCancel, isPending }: Props) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { data: categories = [], isLoading: catsLoading } = useCategories()
+  const createCategory = useCreateCategory()
+  const [addingCat, setAddingCat] = useState(false)
+  const [newCatLabel, setNewCatLabel] = useState('')
+
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
       category: item?.category ?? '',
@@ -91,10 +82,24 @@ export function BudgetForm({ item, onSubmit, onCancel, isPending }: Props) {
     })
   }
 
+  function handleAddCategory(e: React.FormEvent) {
+    e.preventDefault()
+    const label = newCatLabel.trim()
+    if (!label) return
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+    createCategory.mutate({ slug, label }, {
+      onSuccess: (cat) => {
+        setValue('category', cat.slug)
+        setNewCatLabel('')
+        setAddingCat(false)
+      },
+    })
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">
             {item ? 'Edit Budget Item' : 'Add Budget Item'}
           </h2>
@@ -103,15 +108,59 @@ export function BudgetForm({ item, onSubmit, onCancel, isPending }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(submit)} className="px-6 py-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit(submit)} className="px-6 py-4 space-y-4 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Category" error={errors.category?.message}>
-              <select {...register('category')} className={inputCls(errors.category?.message)}>
-                <option value="">Select…</option>
-                {CATEGORIES.map(([value, label]) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
+              <div className="space-y-1.5">
+                <select
+                  {...register('category')}
+                  className={inputCls(errors.category?.message)}
+                  disabled={catsLoading}
+                >
+                  <option value="">Select…</option>
+                  {categories.map((c) => (
+                    <option key={c.slug} value={c.slug}>{c.label}</option>
+                  ))}
+                </select>
+
+                {addingCat ? (
+                  <div className="flex gap-1.5">
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Category name"
+                      value={newCatLabel}
+                      onChange={(e) => setNewCatLabel(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Escape' && (setAddingCat(false), setNewCatLabel(''))}
+                      className="flex-1 rounded-md border border-gray-300 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCategory}
+                      disabled={createCategory.isPending || !newCatLabel.trim()}
+                      className="px-2.5 py-1.5 rounded-md bg-rose-600 text-white text-xs font-medium hover:bg-rose-700 disabled:opacity-50 transition-colors"
+                    >
+                      {createCategory.isPending ? <Loader2 size={12} className="animate-spin" /> : 'Add'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAddingCat(false); setNewCatLabel('') }}
+                      className="px-2.5 py-1.5 rounded-md border border-gray-300 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAddingCat(true)}
+                    className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 font-medium transition-colors"
+                  >
+                    <Plus size={12} />
+                    New category
+                  </button>
+                )}
+              </div>
             </Field>
 
             <Field label="Estimated Cost ($)" error={errors.estimated_cost?.message}>
@@ -119,6 +168,7 @@ export function BudgetForm({ item, onSubmit, onCancel, isPending }: Props) {
                 {...register('estimated_cost')}
                 className={inputCls(errors.estimated_cost?.message)}
                 placeholder="5000"
+                inputMode="decimal"
               />
             </Field>
           </div>

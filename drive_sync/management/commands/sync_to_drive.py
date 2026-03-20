@@ -17,11 +17,15 @@ class Command(BaseCommand):
 
         self.stdout.write('Syncing to Google Sheets…\n')
 
-        def progress(sheet_name, row_count):
-            self.stdout.write(f'  ✓  {sheet_name:<28} {row_count} rows')
+        def progress(sheet_name, result):
+            icon = '✓' if result['success'] else '✗'
+            rows = result.get('rows', 0)
+            self.stdout.write(f'  {icon}  {sheet_name:<28} {rows} rows')
+            if not result['success']:
+                self.stderr.write(f'      Error: {result.get("error", "")}')
 
         try:
-            url = sync_all(
+            url, results = sync_all(
                 spreadsheet_name=options.get('spreadsheet'),
                 progress=progress,
             )
@@ -29,4 +33,8 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f'\nSync failed: {exc}'))
             raise SystemExit(1)
 
-        self.stdout.write(self.style.SUCCESS(f'\nDone!  {url}'))
+        failures = [r for r in results if not r['success']]
+        if failures:
+            self.stdout.write(self.style.WARNING(f'\nDone with {len(failures)} error(s).  {url}'))
+        else:
+            self.stdout.write(self.style.SUCCESS(f'\nDone!  {url}'))

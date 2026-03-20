@@ -145,11 +145,17 @@ def sync_all(spreadsheet_name=None, progress=None):
         ('Entertainment',         _rows_entertainment),
     ]
 
+    results = []
     for title, fn in sheets:
-        headers, rows = fn()
-        _write_sheet(sh, title, headers, rows)
+        try:
+            headers, rows = fn()
+            _write_sheet(sh, title, headers, rows)
+            results.append({'title': title, 'rows': len(rows), 'success': True})
+        except Exception as exc:
+            log.exception('Failed to sync sheet: %s', title)
+            results.append({'title': title, 'rows': 0, 'success': False, 'error': str(exc)})
         if progress:
-            progress(title, len(rows))
+            progress(title, results[-1])
 
     # Remove the default blank sheet Google creates on new spreadsheets
     try:
@@ -157,7 +163,7 @@ def sync_all(spreadsheet_name=None, progress=None):
     except gspread.WorksheetNotFound:
         pass
 
-    return sh.url
+    return sh.url, results
 
 
 # ── Summary ───────────────────────────────────────────────────────────────────
@@ -307,7 +313,9 @@ def _rows_wedding_party():
 # ── Budget ────────────────────────────────────────────────────────────────────
 
 def _rows_budget():
-    from budget.models import BudgetLineItem
+    from budget.models import BudgetCategory, BudgetLineItem
+
+    cat_labels = dict(BudgetCategory.objects.values_list('slug', 'label'))
 
     headers = [
         'ID', 'Category', 'Description',
@@ -318,7 +326,7 @@ def _rows_budget():
     for item in BudgetLineItem.objects.all():
         rows.append([
             item.id,
-            item.get_category_display(),
+            cat_labels.get(item.category, item.category),
             item.description,
             _money(item.estimated_cost),
             _money(item.actual_cost),
@@ -330,7 +338,9 @@ def _rows_budget():
 
 
 def _rows_expenses():
-    from budget.models import Expense
+    from budget.models import BudgetCategory, Expense
+
+    cat_labels = dict(BudgetCategory.objects.values_list('slug', 'label'))
 
     headers = [
         'ID', 'Budget Category', 'Budget Item',
@@ -343,7 +353,7 @@ def _rows_expenses():
     for e in qs:
         rows.append([
             e.id,
-            e.budget_item.get_category_display(),
+            cat_labels.get(e.budget_item.category, e.budget_item.category),
             e.budget_item.description,
             _money(e.amount),
             e.description,

@@ -16,4 +16,6 @@ urlpatterns = [
     path('api/summary/', api_views.budget_summary, name='api-summary'),
     path('api/estimate/', api_views.budget_estimate, name='api-estimate'),
     path('api/import-estimate/', api_views.import_estimate, name='api-import-estimate'),
+    path('api/categories/', api_views.category_list, name='api-category-list'),
+    path('api/categories/<slug:slug>/', api_views.category_detail, name='api-category-detail'),
 ]
