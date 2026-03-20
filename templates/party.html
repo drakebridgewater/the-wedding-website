@@ -57,6 +57,11 @@
           {# Name #}
           <p class="font-semibold text-stone-800 text-sm mb-1">{{ member.name }}</p>
 
+          {# Role label — shown for honor roles (MoH, Best Man) within a side group #}
+          {% if member.role in section.honor_roles %}
+            <p class="text-xs text-stone-400 italic mb-1">{{ member.role_display }}</p>
+          {% endif %}
+
           {# Bio #}
           <div class="relative group/bio">
             {% if member.bio %}

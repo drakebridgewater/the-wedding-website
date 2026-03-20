@@ -9,11 +9,15 @@ from guests.save_the_date import SAVE_THE_DATE_CONTEXT_MAP
 
 from .models import Question, WeddingSettings
 
-ROLE_ORDER = ['bride', 'groom', 'maid_of_honor', 'best_man', 'bridesmaid', 'groomsman', 'other']
 ROLE_LABELS = {
     'bride': 'Bride', 'groom': 'Groom', 'maid_of_honor': 'Maid of Honor',
     'best_man': 'Best Man', 'bridesmaid': 'Bridesmaid', 'groomsman': 'Groomsman', 'other': 'Other',
 }
+
+SIDE_GROUPS = [
+    {'label': 'Bridal Party',  'roles': ['maid_of_honor', 'bridesmaid'], 'honor_roles': {'maid_of_honor'}},
+    {'label': "Groom's Party", 'roles': ['best_man', 'groomsman'],       'honor_roles': {'best_man'}},
+]
 
 
 def home(request):
@@ -27,12 +31,29 @@ def home(request):
 
 
 def wedding_party(request):
-    members = WeddingPartyMember.objects.all()
+    members = WeddingPartyMember.objects.order_by('order', 'name')
+    by_role = {}
+    for m in members:
+        by_role.setdefault(m.role, []).append(m)
+
     grouped = []
-    for role in ROLE_ORDER:
-        group = [m for m in members if m.role == role]
+
+    for role in ['bride', 'groom']:
+        group = by_role.get(role, [])
         if group:
-            grouped.append({'role': role, 'label': ROLE_LABELS[role], 'members': group})
+            grouped.append({'label': ROLE_LABELS[role], 'members': group, 'honor_roles': set()})
+
+    for side in SIDE_GROUPS:
+        side_members = []
+        for role in side['roles']:
+            side_members.extend(by_role.get(role, []))
+        if side_members:
+            grouped.append({'label': side['label'], 'members': side_members, 'honor_roles': side['honor_roles']})
+
+    other = by_role.get('other', [])
+    if other:
+        grouped.append({'label': ROLE_LABELS['other'], 'members': other, 'honor_roles': set()})
+
     return render(request, 'party.html', {'grouped': grouped})
 
 
