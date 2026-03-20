@@ -67,15 +67,29 @@ function useAddressAutocomplete(ref: React.RefObject<HTMLInputElement>, onSelect
   useEffect(() => {
     const key = document.querySelector<HTMLMetaElement>('meta[name="google-places-key"]')?.content
     if (!key || !ref.current) return
-    import('@googlemaps/js-api-loader').then(({ Loader }) => {
-      new Loader({ apiKey: key, libraries: ['places'], version: 'weekly' }).load().then(() => {
-        const ac = new (window as any).google.maps.places.Autocomplete(ref.current!, { types: ['address'] })
-        ac.addListener('place_changed', () => {
-          const place = ac.getPlace()
-          if (place.formatted_address) onSelect(place.formatted_address)
-        })
+
+    function init() {
+      if (!ref.current || !(window as any).google?.maps?.places) return
+      const ac = new (window as any).google.maps.places.Autocomplete(ref.current, { types: ['address'] })
+      ac.addListener('place_changed', () => {
+        const place = ac.getPlace()
+        if (place.formatted_address) onSelect(place.formatted_address)
       })
-    })
+    }
+
+    if ((window as any).google?.maps?.places) {
+      init()
+    } else {
+      ;(window as any).__gplacesReady = init
+      const scriptId = '__gplaces_loader__'
+      if (!document.getElementById(scriptId)) {
+        const s = document.createElement('script')
+        s.id = scriptId
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=__gplacesReady`
+        s.async = true
+        document.head.appendChild(s)
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }
@@ -1614,7 +1628,7 @@ function UnassignedGuestsSection({ parties }: { parties: Party[] }) {
     try {
       const party = await createParty.mutateAsync({
         name: partyName, type: '', category: '', status: 'planned',
-        rehearsal_dinner: false, comments: '', address: '', side: '',
+        rehearsal_dinner: false, comments: '', address: '', wants_physical_card: false, side: '',
         plus_one_allowed: false, plus_one_count: 0,
       })
       await updateGuest.mutateAsync({ id: guest.id, data: { party_id: party.id } })

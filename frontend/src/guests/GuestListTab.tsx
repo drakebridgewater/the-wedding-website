@@ -823,7 +823,7 @@ function UnassignedGuestsSection({ parties }: { parties: Party[] }) {
     try {
       const party = await createParty.mutateAsync({
         name: partyName, type: '', category: '', status: 'planned',
-        rehearsal_dinner: false, comments: '', address: '', side: '', plus_one_allowed: false, plus_one_count: 0,
+        rehearsal_dinner: false, comments: '', address: '', wants_physical_card: false, side: '', plus_one_allowed: false, plus_one_count: 0,
       })
       await updateGuest.mutateAsync({ id: guest.id, data: { party_id: party.id } })
       toast.success(`Created party "${partyName}"`)
@@ -970,6 +970,7 @@ function PartyModal({
   const [rehearsal, setRehearsal]   = useState(initial?.rehearsal_dinner ?? false)
   const [comments, setComments]     = useState(initial?.comments ?? '')
   const [address, setAddress]       = useState(initial?.address ?? '')
+  const [wantsCard, setWantsCard]   = useState(initial?.wants_physical_card ?? false)
   const [side, setSide]             = useState<PartySide>(initial?.side ?? '')
   const [plusOne, setPlusOne]       = useState(initial?.plus_one_allowed ?? false)
   const [plusOneCount, setPlusOneCount] = useState(initial?.plus_one_count ?? 0)
@@ -1071,6 +1072,11 @@ function PartyModal({
             <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
               placeholder="Street, City, State ZIP"
               className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none" />
+            <label className="flex items-center gap-2 cursor-pointer mt-2">
+              <input type="checkbox" checked={wantsCard} onChange={(e) => setWantsCard(e.target.checked)}
+                className="w-4 h-4 rounded accent-rose-600" />
+              <span className="text-xs text-stone-700">Wants physical card</span>
+            </label>
           </div>
           <div>
             <label className="block text-xs font-medium text-stone-600 mb-1">Comments</label>
@@ -1082,7 +1088,7 @@ function PartyModal({
           <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">Cancel</button>
           <button
             disabled={!name || saving}
-            onClick={() => name && onSave({ name, type, category, status, rehearsal_dinner: rehearsal, comments, address, side, plus_one_allowed: plusOne, plus_one_count: plusOneCount })}
+            onClick={() => name && onSave({ name, type, category, status, rehearsal_dinner: rehearsal, comments, address, wants_physical_card: wantsCard, side, plus_one_allowed: plusOne, plus_one_count: plusOneCount })}
             className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50"
           >
             {saving ? 'Saving…' : initial ? 'Save changes' : 'Add party'}
