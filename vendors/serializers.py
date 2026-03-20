@@ -7,8 +7,8 @@ from .models import (
     CatererOption,
     EntertainmentOption,
     FloristOption,
+    VendorChecklistItem,
     VendorPhoto,
-    VenueChecklistItem,
     VenueOption,
 )
 
@@ -48,6 +48,7 @@ BASE_FIELDS = [
     'rating',
     'address', 'latitude', 'longitude',
     'positives', 'negatives', 'comments',
+    'checklist',
     'photos',
     'created_at', 'updated_at',
 ]
@@ -98,7 +99,6 @@ class VenueSerializer(BaseVendorSerializer):
             'capacity', 'style',
             'has_parking', 'catering_included',
             'accommodation_nearby', 'is_indoor', 'is_outdoor',
-            'checklist',
         ]
         read_only_fields = BASE_READ_ONLY
 
@@ -189,7 +189,7 @@ class EntertainmentSerializer(BaseVendorSerializer):
         read_only_fields = BASE_READ_ONLY
 
 
-class VenueChecklistItemSerializer(serializers.ModelSerializer):
+class VendorChecklistItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VenueChecklistItem
-        fields = ['id', 'category', 'text', 'order']
+        model = VendorChecklistItem
+        fields = ['id', 'vendor_type', 'category', 'text', 'question', 'order']

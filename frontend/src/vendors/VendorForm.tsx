@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import type { AnyVendor, VendorType, VenueVendor } from './types'
 import { PhotoUpload } from './PhotoUpload'
 import { LocationMap } from './LocationMap'
-import { VenueChecklist } from './VenueChecklist'
+import { VendorChecklist } from './VendorChecklist'
 
 // ---- Zod schemas ----
 
@@ -40,7 +40,6 @@ const venueExtension = z.object({
   accommodation_nearby: z.boolean(),
   is_indoor: z.boolean(),
   is_outdoor: z.boolean(),
-  checklist: z.array(z.number()).optional(),
 })
 
 const catererExtension = z.object({
@@ -106,8 +105,9 @@ function getTabsForType(vendorType: VendorType, hasVendor: boolean): { id: FormT
     { id: 'overview', label: 'Overview' },
     { id: 'contact',  label: 'Contact' },
     { id: 'location', label: 'Location' },
-    { id: 'details',  label: 'Details' },
-    { id: 'notes',    label: 'Notes' },
+    { id: 'details',   label: 'Details' },
+    { id: 'notes',     label: 'Notes' },
+    { id: 'checklist', label: 'Checklist' },
     ...photosTab,
   ]
 }
@@ -391,6 +391,8 @@ function EntertainmentDetailSection({ register, errors }: FieldSectionProps) {
 // ---- Defaults builder ----
 
 function buildDefaults(vendorType: VendorType, vendor?: AnyVendor | null): FormValues {
+  const v = vendor as Record<string, unknown> | null | undefined
+
   const base = {
     name: vendor?.name ?? '',
     website: vendor?.website ?? '',
@@ -408,9 +410,8 @@ function buildDefaults(vendorType: VendorType, vendor?: AnyVendor | null): FormV
     positives: vendor?.positives ?? '',
     negatives: vendor?.negatives ?? '',
     comments: vendor?.comments ?? '',
+    checklist: (v?.checklist as number[]) ?? [],
   }
-
-  const v = vendor as Record<string, unknown> | null | undefined
 
   if (vendorType === 'venue') {
     return {
@@ -422,7 +423,6 @@ function buildDefaults(vendorType: VendorType, vendor?: AnyVendor | null): FormV
       accommodation_nearby: v?.accommodation_nearby ?? false,
       is_indoor: v?.is_indoor ?? false,
       is_outdoor: v?.is_outdoor ?? false,
-      checklist: (v?.checklist as number[]) ?? [],
     }
   }
   if (vendorType === 'caterer') {
@@ -710,22 +710,21 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
       </div>
 
       {/* ====================================================
-          CHECKLIST TAB  (venue only)
+          CHECKLIST TAB  (all vendor types)
           ==================================================== */}
-      {isVenue && (
-        <div className={cn(tabHidden('checklist') && 'hidden')}>
-          <Controller
-            control={control}
-            name="checklist"
-            render={({ field }) => (
-              <VenueChecklist
-                checked={(field.value as number[]) ?? []}
-                onChange={field.onChange}
-              />
-            )}
-          />
-        </div>
-      )}
+      <div className={cn(tabHidden('checklist') && 'hidden')}>
+        <Controller
+          control={control}
+          name="checklist"
+          render={({ field }) => (
+            <VendorChecklist
+              vendorType={vendorType}
+              checked={(field.value as number[]) ?? []}
+              onChange={field.onChange}
+            />
+          )}
+        />
+      </div>
 
       {/* ====================================================
           PHOTOS TAB  (edit mode only, all vendor types)

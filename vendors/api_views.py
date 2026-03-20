@@ -10,8 +10,8 @@ from .models import (
     CatererOption,
     EntertainmentOption,
     FloristOption,
+    VendorChecklistItem,
     VendorPhoto,
-    VenueChecklistItem,
     VenueOption,
 )
 from .serializers import (
@@ -19,8 +19,8 @@ from .serializers import (
     CatererSerializer,
     EntertainmentSerializer,
     FloristSerializer,
+    VendorChecklistItemSerializer,
     VendorPhotoSerializer,
-    VenueChecklistItemSerializer,
     VenueSerializer,
 )
 
@@ -117,9 +117,10 @@ def vendor_photo_upload(request, vendor_type, pk):
 
 
 @api_view(['GET'])
-def venue_checklist_items(request):
-    items = VenueChecklistItem.objects.filter(is_active=True)
-    return Response(VenueChecklistItemSerializer(items, many=True).data)
+def vendor_checklist_items(request):
+    vendor_type = request.GET.get('vendor_type', 'venue')
+    items = VendorChecklistItem.objects.filter(vendor_type=vendor_type, is_active=True)
+    return Response(VendorChecklistItemSerializer(items, many=True).data)
 
 
 @api_view(['DELETE'])

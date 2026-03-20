@@ -4,17 +4,33 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 
 
-class VenueChecklistItem(models.Model):
+VENDOR_TYPE_CHOICES = [
+    ('venue',         'Venue'),
+    ('caterer',       'Caterer'),
+    ('cake',          'Cake'),
+    ('florist',       'Florist'),
+    ('entertainment', 'Entertainment'),
+]
+
+
+class VendorChecklistItem(models.Model):
+    vendor_type = models.CharField(
+        max_length=20, choices=VENDOR_TYPE_CHOICES, default='venue', db_index=True,
+    )
     category = models.CharField(max_length=100)
     text = models.CharField(max_length=255)
+    question = models.TextField(
+        blank=True,
+        help_text='The actual question to ask (displayed below the item label).',
+    )
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        ordering = ['order', 'id']
+        ordering = ['vendor_type', 'order', 'id']
 
     def __str__(self):
-        return f"{self.category}: {self.text}"
+        return f"[{self.vendor_type}] {self.category}: {self.text}"
 
 
 class VendorPhoto(models.Model):
@@ -120,6 +136,7 @@ class CatererOption(BaseVendorOption):
     has_gluten_free = models.BooleanField(default=False)
     tasting_scheduled = models.BooleanField(default=False)
     tasting_completed = models.BooleanField(default=False)
+    checklist = models.JSONField(default=list, blank=True)
 
     class Meta(BaseVendorOption.Meta):
         verbose_name = 'Caterer Option'
@@ -135,6 +152,7 @@ class CakeOption(BaseVendorOption):
     custom_design_available = models.BooleanField(default=False)
     tasting_scheduled = models.BooleanField(default=False)
     tasting_completed = models.BooleanField(default=False)
+    checklist = models.JSONField(default=list, blank=True)
 
     class Meta(BaseVendorOption.Meta):
         verbose_name = 'Cake Option'
@@ -158,6 +176,7 @@ class FloristOption(BaseVendorOption):
         max_digits=8, decimal_places=2,
         default_currency='USD', null=True, blank=True,
     )
+    checklist = models.JSONField(default=list, blank=True)
 
     class Meta(BaseVendorOption.Meta):
         verbose_name = 'Florist Option'
@@ -179,6 +198,7 @@ class EntertainmentOption(BaseVendorOption):
     performance_duration_hours = models.DecimalField(
         max_digits=4, decimal_places=1, null=True, blank=True,
     )
+    checklist = models.JSONField(default=list, blank=True)
 
     class Meta(BaseVendorOption.Meta):
         verbose_name = 'Entertainment Option'
