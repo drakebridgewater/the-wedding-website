@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="">
+  {% if GOOGLE_PLACES_API_KEY %}<meta name="google-places-key" content="{{ GOOGLE_PLACES_API_KEY }}">{% endif %}
   <title>{{ couple_name }}'s Big Day</title>
 
   <link rel="shortcut icon" href="{% static 'favicon.ico' %}">

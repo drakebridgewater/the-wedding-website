@@ -54,6 +54,7 @@ export interface Party {
   comments: string
   guests: Guest[]
   address: string
+  wants_physical_card: boolean
   side: PartySide
   plus_one_allowed: boolean
   plus_one_count: number
@@ -110,6 +111,7 @@ export interface PartyFormData {
   rehearsal_dinner: boolean
   comments: string
   address: string
+  wants_physical_card: boolean
   side: PartySide
   plus_one_allowed: boolean
   plus_one_count: number

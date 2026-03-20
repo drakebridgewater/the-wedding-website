@@ -61,6 +61,25 @@ function guestMatchesSearch(guest: Guest, party: Party, query: string): boolean 
   )
 }
 
+// ── Google Places address autocomplete hook ────────────────────────────────────
+
+function useAddressAutocomplete(ref: React.RefObject<HTMLInputElement>, onSelect: (v: string) => void) {
+  useEffect(() => {
+    const key = document.querySelector<HTMLMetaElement>('meta[name="google-places-key"]')?.content
+    if (!key || !ref.current) return
+    import('@googlemaps/js-api-loader').then(({ Loader }) => {
+      new Loader({ apiKey: key, libraries: ['places'], version: 'weekly' }).load().then(() => {
+        const ac = new (window as any).google.maps.places.Autocomplete(ref.current!, { types: ['address'] })
+        ac.addListener('place_changed', () => {
+          const place = ac.getPlace()
+          if (place.formatted_address) onSelect(place.formatted_address)
+        })
+      })
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+}
+
 // ── Enter-to-submit hook ───────────────────────────────────────────────────────
 
 function useEnterSubmit(onSubmit: () => void, disabled?: boolean) {
@@ -948,6 +967,9 @@ function PartyRow({
             {PARTY_SIDE_LABELS[party.side]}
           </span>
         )}
+        {party.wants_physical_card && (
+          <span title="Wants physical card" className="text-sm text-stone-400">✉</span>
+        )}
         {party.plus_one_allowed && (
           <div
             className="flex items-center gap-0.5 text-[10px] rounded-full bg-amber-100 text-amber-700 font-medium hidden sm:flex"
@@ -1716,6 +1738,9 @@ function PartyModal({
   const [rehearsal, setRehearsal]   = useState(initial?.rehearsal_dinner ?? false)
   const [comments, setComments]     = useState(initial?.comments ?? '')
   const [address, setAddress]       = useState(initial?.address ?? '')
+  const [wantsCard, setWantsCard]   = useState(initial?.wants_physical_card ?? false)
+  const addressRef = useRef<HTMLInputElement>(null)
+  useAddressAutocomplete(addressRef, setAddress)
   const [side, setSide]             = useState<PartySide>(initial?.side ?? '')
   const [plusOne, setPlusOne]       = useState(initial?.plus_one_allowed ?? false)
   const [plusOneCount, setPlusOneCount] = useState(initial?.plus_one_count ?? 0)
@@ -1723,7 +1748,7 @@ function PartyModal({
   function doSave() {
     if (!name) return
     onSave({ name, type, category, status, rehearsal_dinner: rehearsal,
-             comments, address, side, plus_one_allowed: plusOne, plus_one_count: plusOneCount })
+             comments, address, wants_physical_card: wantsCard, side, plus_one_allowed: plusOne, plus_one_count: plusOneCount })
   }
 
   useEnterSubmit(doSave, !name || saving)
@@ -1821,9 +1846,14 @@ function PartyModal({
           )}
           <div>
             <label className="block text-xs font-medium text-stone-600 mb-1">Mailing address</label>
-            <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
+            <input ref={addressRef} type="text" value={address} onChange={(e) => setAddress(e.target.value)}
               placeholder="Street, City, State ZIP"
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none" />
+              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
+            <label className="flex items-center gap-2 cursor-pointer mt-2">
+              <input type="checkbox" checked={wantsCard} onChange={(e) => setWantsCard(e.target.checked)}
+                className="w-4 h-4 rounded accent-rose-600" />
+              <span className="text-xs text-stone-700">Wants physical card</span>
+            </label>
           </div>
           <div>
             <label className="block text-xs font-medium text-stone-600 mb-1">Comments</label>

@@ -48,6 +48,10 @@ def invitation(request, invite_id):
         if request.POST.get('comments'):
             comments = request.POST.get('comments')
             party.comments = comments if not party.comments else '{}; {}'.format(party.comments, comments)
+        address = request.POST.get('address', '').strip()
+        if address:
+            party.address = address
+        party.wants_physical_card = request.POST.get('wants_physical_card') == 'on'
         party.is_attending = party.any_guests_attending
         party.rsvp_responded_at = datetime.now(timezone.utc)
         party.save()

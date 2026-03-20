@@ -53,6 +53,7 @@ class Party(models.Model):
     rsvp_responded_at = models.DateTimeField(null=True, blank=True, default=None)
     comments = models.TextField(null=True, blank=True)
     address = models.TextField(blank=True)
+    wants_physical_card = models.BooleanField(default=False)
     side = models.CharField(max_length=10, choices=SIDE_CHOICES, blank=True)
     plus_one_allowed = models.BooleanField(default=False)
     plus_one_count = models.PositiveSmallIntegerField(

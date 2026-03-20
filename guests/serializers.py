@@ -53,7 +53,7 @@ class PartySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'type', 'category', 'status',
             'is_attending', 'rehearsal_dinner', 'comments', 'guests',
-            'address', 'side', 'plus_one_allowed', 'plus_one_count', 'rsvp_responded_at',
+            'address', 'wants_physical_card', 'side', 'plus_one_allowed', 'plus_one_count', 'rsvp_responded_at',
             'invitation_id', 'invitation_sent', 'invitation_opened',
         ]
         read_only_fields = ['rsvp_responded_at', 'invitation_id', 'invitation_sent', 'invitation_opened']

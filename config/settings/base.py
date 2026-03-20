@@ -63,6 +63,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'wedding.context_processors.wedding_settings',
+                'config.context_processors.google_places_key',
             ],
         },
     },
@@ -167,6 +168,7 @@ TICKTICK_SHAWNA_ASSIGNEE = ''
 # -------------------------
 GOOGLE_CREDENTIALS_FILE = str(BASE_DIR / '.google-credentials.json')
 GOOGLE_SPREADSHEET_TITLE = 'Wedding Planning'
+GOOGLE_PLACES_API_KEY = ''  # Set in .env / production settings for address autocomplete
 
 # -------------------------
 # Logging

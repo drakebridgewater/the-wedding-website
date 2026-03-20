@@ -86,6 +86,28 @@
                  placeholder="Optional">
         </div>
 
+        <!-- Mailing address -->
+        <div class="mb-6">
+          <label for="address" class="block text-sm font-medium text-stone-700 mb-1">
+            Mailing address <span class="text-stone-400 font-normal">(optional — for cards or updates)</span>
+          </label>
+          <input type="text" id="address" name="address"
+                 value="{{ party.address }}"
+                 placeholder="Start typing your address…"
+                 autocomplete="street-address"
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base">
+        </div>
+
+        <!-- Physical card request -->
+        <div class="mb-6">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" name="wants_physical_card"
+                   {% if party.wants_physical_card %}checked{% endif %}
+                   class="w-4 h-4 rounded accent-rose-600">
+            <span class="text-sm text-stone-700">I'd like to receive a physical card in the mail</span>
+          </label>
+        </div>
+
         <button type="submit"
                 class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-medium rounded-xl transition-colors text-base">
           Submit Response
@@ -124,4 +146,24 @@
   });
 })();
 </script>
+
+{% if google_places_api_key %}
+<script>
+(function() {
+  var s = document.createElement('script');
+  s.src = 'https://maps.googleapis.com/maps/api/js?key={{ google_places_api_key }}&libraries=places&callback=initAddrAC';
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
+})();
+window.initAddrAC = function() {
+  var el = document.getElementById('address');
+  if (!el || !window.google) return;
+  var ac = new google.maps.places.Autocomplete(el, { types: ['address'] });
+  ac.addListener('place_changed', function() {
+    var p = ac.getPlace();
+    if (p.formatted_address) el.value = p.formatted_address;
+  });
+};
+</script>
+{% endif %}
 {% endblock %}
