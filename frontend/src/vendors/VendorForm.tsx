@@ -529,7 +529,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
     <form onSubmit={handleSubmit(submit)} className="space-y-4">
 
       {/* ---- Tab bar ---- */}
-      <div className="flex border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-x-auto">
+      <div className="flex border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => (
           <button
             key={tab.id}

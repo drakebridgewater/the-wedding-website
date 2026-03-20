@@ -135,7 +135,7 @@ WEDDING_CC_LIST = []
 
 # URL for the self-hosted WeddingShare photo-sharing app
 # Override in production settings or .env to your public-facing URL
-WEDDINGSHARE_URL = 'http://10.0.0.10:5123'
+WEDDINGSHARE_URL = 'https://photoshare.drakebridgewater.com'
 
 # ThingsToGetMe gift registry URL (e.g. https://www.thingstogetme.com/your-name-wedding)
 # Set to your specific registry URL in production settings or .env
