@@ -10,6 +10,55 @@
         {{ couple_name }}{% if wedding_date %} &middot; {{ wedding_date }}{% endif %}{% if wedding_location %} &middot; {{ wedding_location }}{% endif %}
       </p>
     </div>
+    {% if user.is_authenticated %}
+    <div class="sm:ml-auto flex items-center gap-2">
+      <span id="sync-status" class="text-xs text-stone-400 hidden"></span>
+      <button id="sync-btn"
+        onclick="triggerSync()"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
+               bg-white border border-stone-300 text-stone-600 hover:bg-stone-50
+               transition-colors disabled:opacity-50">
+        <svg id="sync-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span id="sync-label">Sync to Google Drive</span>
+      </button>
+    </div>
+    <script>
+    function triggerSync() {
+      const btn = document.getElementById('sync-btn');
+      const label = document.getElementById('sync-label');
+      const status = document.getElementById('sync-status');
+      btn.disabled = true;
+      label.textContent = 'Syncing\u2026';
+      status.className = 'text-xs text-stone-400 hidden';
+
+      fetch('/drive/sync/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.url) {
+          status.innerHTML = '<a href="' + data.url + '" target="_blank" class="text-emerald-600 hover:underline">Synced \u2014 Open Sheet \u2197</a>';
+          status.className = 'text-xs';
+        } else {
+          status.textContent = 'Error: ' + (data.error ?? 'Unknown error');
+          status.className = 'text-xs text-red-500';
+        }
+        label.textContent = 'Sync to Google Drive';
+        btn.disabled = false;
+      })
+      .catch(() => {
+        status.textContent = 'Network error';
+        status.className = 'text-xs text-red-500';
+        label.textContent = 'Sync to Google Drive';
+        btn.disabled = false;
+      });
+    }
+    </script>
+    {% endif %}
   </div>
 
   <!-- RSVP Deadline banner -->
