@@ -61,6 +61,22 @@ function guestMatchesSearch(guest: Guest, party: Party, query: string): boolean 
   )
 }
 
+// ── Enter-to-submit hook ───────────────────────────────────────────────────────
+
+function useEnterSubmit(onSubmit: () => void, disabled?: boolean) {
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key !== 'Enter' || disabled) return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || tag === 'A') return
+      e.preventDefault()
+      onSubmit()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onSubmit, disabled])
+}
+
 // ── Confirm Modal ─────────────────────────────────────────────────────────────
 
 function ConfirmModal({
@@ -69,6 +85,7 @@ function ConfirmModal({
   title: string; message: string; confirmLabel?: string
   onConfirm: () => void; onClose: () => void
 }) {
+  useEnterSubmit(() => { onConfirm(); onClose() })
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
          onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
@@ -108,6 +125,7 @@ function ImportCsvModal({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState<ImportStats | null>(null)
   const [error, setError] = useState<string | null>(null)
   const qc = useQueryClient()
+  useEnterSubmit(() => { if (result) { onClose() } else { handleImport() } }, loading || (!file && !result))
 
   async function handleImport() {
     if (!file) return
@@ -207,24 +225,72 @@ function RoleBadge({
   isPending?: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+
+  // suppress unused warning
+  void guest
 
   useEffect(() => {
     if (!open) return
+    // Position dropdown via portal, flipping above if near bottom
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect()
+      const DROPDOWN_H = 260
+      const spaceBelow = window.innerHeight - rect.bottom
+      const top = spaceBelow >= DROPDOWN_H ? rect.bottom + 2 : Math.max(8, rect.top - DROPDOWN_H)
+      setPos({ top, left: rect.left })
+    }
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const inTrigger = triggerRef.current?.contains(e.target as Node)
+      const inDropdown = dropdownRef.current?.contains(e.target as Node)
+      if (!inTrigger && !inDropdown) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  // suppress unused warning
-  void guest
+  const dropdown = open && pos ? createPortal(
+    <div
+      ref={dropdownRef}
+      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
+      className="bg-white border border-stone-200 rounded-lg shadow-lg min-w-[140px] py-1 text-xs"
+    >
+      {ROLE_ORDER.map((role) => (
+        <button
+          key={role}
+          onClick={() => { onAssign(role, member?.color ?? ROLE_COLORS[role]); setOpen(false) }}
+          className={`w-full text-left px-3 py-1.5 hover:bg-stone-50 transition-colors ${
+            member?.role === role ? 'font-semibold text-stone-900' : 'text-stone-600'
+          }`}
+        >
+          <span
+            className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
+            style={{ backgroundColor: ROLE_COLORS[role] }}
+          />
+          {ROLE_LABELS[role]}
+        </button>
+      ))}
+      {member && (
+        <div className="border-t border-stone-100 mt-1 pt-1">
+          <button
+            onClick={() => { onRemove(); setOpen(false) }}
+            className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-500 transition-colors"
+          >
+            Remove role
+          </button>
+        </div>
+      )}
+    </div>,
+    document.body,
+  ) : null
 
   return (
-    <div className="relative inline-flex" ref={ref}>
+    <div className="inline-flex">
       {member ? (
         <button
+          ref={triggerRef}
           onClick={() => setOpen(!open)}
           style={{ backgroundColor: member.color + '33', borderColor: member.color + '88' }}
           className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity"
@@ -235,6 +301,7 @@ function RoleBadge({
         </button>
       ) : (
         <button
+          ref={triggerRef}
           onClick={() => setOpen(!open)}
           className="text-[9px] px-1.5 py-0.5 rounded-full border border-dashed border-stone-300 text-stone-400 hover:border-stone-500 hover:text-stone-500 transition-colors cursor-pointer"
           disabled={isPending}
@@ -242,38 +309,7 @@ function RoleBadge({
           + role
         </button>
       )}
-      {open && (
-        <div className="absolute left-0 top-full mt-0.5 z-30 bg-white border border-stone-200 rounded-lg shadow-lg min-w-[140px] py-1 text-xs">
-          {ROLE_ORDER.map((role) => (
-            <button
-              key={role}
-              onClick={() => {
-                onAssign(role, member?.color ?? ROLE_COLORS[role])
-                setOpen(false)
-              }}
-              className={`w-full text-left px-3 py-1.5 hover:bg-stone-50 transition-colors ${
-                member?.role === role ? 'font-semibold text-stone-900' : 'text-stone-600'
-              }`}
-            >
-              <span
-                className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
-                style={{ backgroundColor: ROLE_COLORS[role] }}
-              />
-              {ROLE_LABELS[role]}
-            </button>
-          ))}
-          {member && (
-            <div className="border-t border-stone-100 mt-1 pt-1">
-              <button
-                onClick={() => { onRemove(); setOpen(false) }}
-                className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-500 transition-colors"
-              >
-                Remove role
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {dropdown}
     </div>
   )
 }
@@ -1005,6 +1041,8 @@ function GuestEditModal({
     })
   }
 
+  useEnterSubmit(handleSave, !firstName || saving)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
          onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
@@ -1381,7 +1419,12 @@ function PartyPicker({
   useEffect(() => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
-      setDropdownPos({ top: rect.bottom + 2, left: rect.left })
+      const DROPDOWN_H = 228 // max-h-52 (208px) + padding
+      const spaceBelow = window.innerHeight - rect.bottom
+      const top = spaceBelow >= DROPDOWN_H
+        ? rect.bottom + 2
+        : Math.max(8, rect.top - DROPDOWN_H)
+      setDropdownPos({ top, left: rect.left })
     }
   }, [])
 
@@ -1620,6 +1663,14 @@ function PartyModal({
   const [plusOne, setPlusOne]       = useState(initial?.plus_one_allowed ?? false)
   const [plusOneCount, setPlusOneCount] = useState(initial?.plus_one_count ?? 0)
 
+  function doSave() {
+    if (!name) return
+    onSave({ name, type, category, status, rehearsal_dinner: rehearsal,
+             comments, address, side, plus_one_allowed: plusOne, plus_one_count: plusOneCount })
+  }
+
+  useEnterSubmit(doSave, !name || saving)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
          onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
@@ -1727,10 +1778,7 @@ function PartyModal({
           <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">Cancel</button>
           <button
             disabled={!name || saving}
-            onClick={() => name && onSave({
-              name, type, category, status, rehearsal_dinner: rehearsal,
-              comments, address, side, plus_one_allowed: plusOne, plus_one_count: plusOneCount,
-            })}
+            onClick={doSave}
             className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50"
           >
             {saving ? 'Saving…' : initial ? 'Save changes' : 'Add party'}

@@ -5,11 +5,20 @@ from .models import EmailTemplate, Guest, Party, SentEmail, WeddingPartyGroup, W
 
 class WeddingPartyMemberSerializer(serializers.ModelSerializer):
     role_display = serializers.CharField(source='get_role_display', read_only=True)
+    photo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = WeddingPartyMember
-        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'order', 'guest_id']
-        read_only_fields = ['guest_id']
+        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'bio', 'photo_url', 'order', 'guest_id']
+        read_only_fields = ['guest_id', 'photo_url']
+
+    def get_photo_url(self, obj):
+        if obj.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
 
 
 class WeddingPartyGroupSerializer(serializers.ModelSerializer):

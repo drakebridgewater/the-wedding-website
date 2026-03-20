@@ -36,10 +36,41 @@
   </div>
 
   <!-- Right: hero photo -->
-  <div class="md:w-1/2 min-h-72 md:min-h-0 relative order-1 md:order-2">
-    <img src="{% static 'bigday/images/wedding-selfie-better.jpg' %}"
+  <div class="md:w-1/2 min-h-72 md:min-h-0 relative order-1 md:order-2 group/hero">
+    <img id="hero-img"
+         src="{% if hero_photo_url %}{{ hero_photo_url }}{% else %}{% static 'bigday/images/wedding-selfie-better.jpg' %}{% endif %}"
          class="absolute inset-0 w-full h-full object-cover"
          alt="{{ couple_name }}">
+    {% if user.is_authenticated %}
+    <label class="absolute inset-0 flex items-center justify-center
+                  bg-black/0 group-hover/hero:bg-black/30 cursor-pointer transition-colors"
+           title="Click to upload a new hero photo">
+      <span class="opacity-0 group-hover/hero:opacity-100 transition-opacity
+                   bg-black/50 text-white rounded-full p-3">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </span>
+      <input type="file" accept="image/*" class="hidden" id="hero-photo-input">
+    </label>
+    <script>
+    (function() {
+      document.getElementById('hero-photo-input').addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        var form = new FormData();
+        form.append('image', file);
+        var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        fetch('/upload/hero/', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: form })
+          .then(function(r) { return r.json(); })
+          .then(function(d) { if (d.url) document.getElementById('hero-img').src = d.url; })
+          .catch(function() { alert('Failed to upload photo.'); });
+      });
+    })();
+    </script>
+    {% endif %}
   </div>
 
 </section>

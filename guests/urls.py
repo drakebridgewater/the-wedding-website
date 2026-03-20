@@ -15,6 +15,7 @@ urlpatterns = [
     # REST API
     path('guests/api/members/', api_views.members, name='api-members'),
     path('guests/api/members/<int:pk>/', api_views.member_detail, name='api-member-detail'),
+    path('guests/api/members/<int:pk>/photo/', api_views.member_photo, name='api-member-photo'),
     path('guests/api/groups/', api_views.groups, name='api-groups'),
     path('guests/api/groups/<int:pk>/', api_views.group_detail, name='api-group-detail'),
     path('guests/api/parties/', api_views.parties, name='api-parties'),

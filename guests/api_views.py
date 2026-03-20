@@ -28,9 +28,9 @@ def _parse_name(full_name):
 def members(request):
     if request.method == 'GET':
         qs = WeddingPartyMember.objects.all()
-        return Response(WeddingPartyMemberSerializer(qs, many=True).data)
+        return Response(WeddingPartyMemberSerializer(qs, many=True, context={'request': request}).data)
 
-    serializer = WeddingPartyMemberSerializer(data=request.data)
+    serializer = WeddingPartyMemberSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
 
     # Auto-create a Party + Guest so the WP member appears in the full guest list
@@ -46,7 +46,7 @@ def members(request):
         is_attending=True,
     )
     member = serializer.save(guest=guest)
-    return Response(WeddingPartyMemberSerializer(member).data, status=status.HTTP_201_CREATED)
+    return Response(WeddingPartyMemberSerializer(member, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
@@ -58,7 +58,7 @@ def member_detail(request, pk):
         return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        return Response(WeddingPartyMemberSerializer(obj).data)
+        return Response(WeddingPartyMemberSerializer(obj, context={'request': request}).data)
 
     if request.method == 'DELETE':
         linked_guest = obj.guest
@@ -89,7 +89,25 @@ def member_detail(request, pk):
         if guest_fields:
             g.save(update_fields=guest_fields)
 
-    return Response(WeddingPartyMemberSerializer(member).data)
+    return Response(WeddingPartyMemberSerializer(member, context={'request': request}).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def member_photo(request, pk):
+    try:
+        obj = WeddingPartyMember.objects.get(pk=pk)
+    except WeddingPartyMember.DoesNotExist:
+        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+    image = request.FILES.get('image')
+    if not image:
+        return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+    if obj.photo:
+        obj.photo.delete(save=False)
+    obj.photo = image
+    obj.save(update_fields=['photo'])
+    serializer = WeddingPartyMemberSerializer(obj, context={'request': request})
+    return Response({'photo_url': serializer.data['photo_url']})
 
 
 # ── Wedding party groups ───────────────────────────────────────────────────────

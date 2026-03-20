@@ -13,6 +13,8 @@ export interface WeddingPartyMember {
   color: string
   email: string
   phone: string
+  bio: string
+  photo_url: string | null
   order: number
   guest_id: number | null
 }
@@ -88,6 +90,7 @@ export interface MemberFormData {
   color: string
   email: string
   phone: string
+  bio: string
   order: number
 }
 

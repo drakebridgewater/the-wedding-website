@@ -193,6 +193,8 @@ class WeddingPartyMember(models.Model):
     )
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
+    bio = models.TextField(blank=True)
+    photo = models.ImageField(upload_to='wedding_party/', blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
     guest = models.OneToOneField(
         'Guest', null=True, blank=True,

@@ -39,6 +39,10 @@ class WeddingSettings(models.Model):
         null=True, blank=True,
         help_text='Deadline for guests to RSVP. Used to flag overdue responses on the dashboard.',
     )
+    hero_photo = models.ImageField(
+        upload_to='site/', blank=True, null=True,
+        help_text='Hero photo shown on the home page. Overrides the default static image.',
+    )
 
     class Meta:
         verbose_name = 'Wedding Settings'

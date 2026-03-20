@@ -76,6 +76,22 @@ export function useDeleteMember() {
   })
 }
 
+export function useUploadMemberPhoto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const form = new FormData()
+      form.append('image', file)
+      return fetch(`/guests/api/members/${id}/photo/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() },
+        body: form,
+      }).then((r) => r.json())
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.members }),
+  })
+}
+
 // ── Groups ────────────────────────────────────────────────────────────────────
 
 export function useGroups() {

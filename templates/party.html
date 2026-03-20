@@ -1,0 +1,243 @@
+{% extends "base_public.html" %}
+{% load static %}
+
+{% block page_content %}
+
+<section class="py-20 px-4">
+  <div class="max-w-4xl mx-auto">
+
+    <div class="text-center mb-12">
+      <h1 class="font-script text-6xl text-stone-800 mb-4">The Wedding Party</h1>
+      <div class="w-12 h-px bg-stone-300 mx-auto"></div>
+    </div>
+
+    {% if not grouped %}
+      <p class="text-center text-stone-400">No wedding party members yet.</p>
+    {% endif %}
+
+    {% for section in grouped %}
+    <div class="mb-14">
+      <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">
+        {{ section.label }}
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        {% for member in section.members %}
+        <div class="text-center" data-member-id="{{ member.id }}">
+
+          {# Photo area #}
+          <div class="relative inline-block mb-3 group">
+            {% if member.photo %}
+              <img src="{{ member.photo.url }}" alt="{{ member.name }}"
+                class="w-28 h-28 rounded-full object-cover mx-auto border-2 border-stone-100 shadow-sm member-photo">
+            {% else %}
+              <div class="w-28 h-28 rounded-full bg-stone-100 flex items-center justify-center mx-auto border-2 border-stone-100 shadow-sm member-photo-placeholder"
+                   style="border-color: {{ member.color }}22">
+                <span class="font-script text-3xl" style="color: {{ member.color }}88">
+                  {{ member.name|first }}
+                </span>
+              </div>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+            <label class="absolute inset-0 rounded-full flex items-center justify-center
+                          bg-black/0 group-hover:bg-black/40 cursor-pointer transition-colors"
+                   title="Click to upload photo">
+              <svg class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                   fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <input type="file" accept="image/*" class="hidden member-photo-input"
+                     data-member-id="{{ member.id }}">
+            </label>
+            {% endif %}
+          </div>
+
+          {# Name #}
+          <p class="font-semibold text-stone-800 text-sm mb-1">{{ member.name }}</p>
+
+          {# Bio #}
+          <div class="relative group/bio">
+            {% if member.bio %}
+              <p class="text-xs text-stone-500 leading-relaxed member-bio">{{ member.bio }}</p>
+            {% elif user.is_authenticated %}
+              <p class="text-xs text-stone-300 italic member-bio">Add a bio…</p>
+            {% endif %}
+
+            {% if user.is_authenticated %}
+            <button class="edit-bio-btn absolute -top-1 -right-1 opacity-0 group-hover/bio:opacity-100
+                           transition-opacity p-1 rounded bg-white shadow-sm border border-stone-200
+                           hover:bg-stone-50 text-stone-400 hover:text-stone-600"
+                    data-member-id="{{ member.id }}"
+                    data-bio="{{ member.bio|escapejs }}"
+                    title="Edit bio">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+</section>
+
+{# Bio edit modal #}
+{% if user.is_authenticated %}
+<div id="bio-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
+    <div class="flex items-center justify-between px-5 py-4 border-b">
+      <h2 class="text-sm font-semibold text-stone-900">Edit Bio</h2>
+      <button id="bio-modal-close" class="text-stone-400 hover:text-stone-600 text-lg leading-none">&times;</button>
+    </div>
+    <div class="px-5 py-4">
+      <textarea id="bio-textarea" rows="4"
+        placeholder="A short description shown on the wedding party page…"
+        class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none"></textarea>
+    </div>
+    <div class="px-5 py-4 border-t flex justify-end gap-2">
+      <button id="bio-modal-cancel"
+        class="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">
+        Cancel
+      </button>
+      <button id="bio-modal-save"
+        class="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700">
+        Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var csrfToken = '{{ csrf_token }}';
+  var currentMemberId = null;
+
+  // ── Bio editing ──────────────────────────────────────────────────────────
+
+  var modal    = document.getElementById('bio-modal');
+  var textarea = document.getElementById('bio-textarea');
+  var btnSave  = document.getElementById('bio-modal-save');
+  var btnClose = document.getElementById('bio-modal-close');
+  var btnCancel = document.getElementById('bio-modal-cancel');
+
+  function openBioModal(memberId, currentBio) {
+    currentMemberId = memberId;
+    textarea.value = currentBio;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    textarea.focus();
+  }
+
+  function closeBioModal() {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    currentMemberId = null;
+  }
+
+  document.querySelectorAll('.edit-bio-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      openBioModal(btn.dataset.memberId, btn.dataset.bio);
+    });
+  });
+
+  btnClose.addEventListener('click', closeBioModal);
+  btnCancel.addEventListener('click', closeBioModal);
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeBioModal();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && currentMemberId) closeBioModal();
+    if (e.key === 'Enter' && currentMemberId && document.activeElement !== textarea) {
+      e.preventDefault();
+      saveBio();
+    }
+  });
+
+  function saveBio() {
+    if (!currentMemberId) return;
+    var memberId = currentMemberId;
+    var bio = textarea.value;
+    btnSave.disabled = true;
+    btnSave.textContent = 'Saving…';
+
+    fetch('/guests/api/members/' + memberId + '/', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken,
+      },
+      body: JSON.stringify({ bio: bio }),
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      // Update the visible bio on the page
+      var card = document.querySelector('[data-member-id="' + memberId + '"]');
+      if (card) {
+        var bioEl = card.querySelector('.member-bio');
+        var editBtn = card.querySelector('.edit-bio-btn');
+        if (bioEl) bioEl.textContent = bio;
+        if (editBtn) editBtn.dataset.bio = bio;
+        if (!bio && bioEl) bioEl.textContent = 'Add a bio…';
+      }
+      closeBioModal();
+    })
+    .catch(function() { alert('Failed to save bio.'); })
+    .finally(function() {
+      btnSave.disabled = false;
+      btnSave.textContent = 'Save';
+    });
+  }
+
+  btnSave.addEventListener('click', saveBio);
+
+  // ── Photo upload ─────────────────────────────────────────────────────────
+
+  document.querySelectorAll('.member-photo-input').forEach(function(input) {
+    input.addEventListener('change', function() {
+      var file = input.files[0];
+      if (!file) return;
+      var memberId = input.dataset.memberId;
+      var form = new FormData();
+      form.append('image', file);
+
+      fetch('/guests/api/members/' + memberId + '/photo/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: form,
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.photo_url) {
+          var card = document.querySelector('[data-member-id="' + memberId + '"]');
+          if (!card) return;
+          var existing = card.querySelector('.member-photo');
+          var placeholder = card.querySelector('.member-photo-placeholder');
+          if (existing) {
+            existing.src = data.photo_url;
+          } else {
+            // Replace placeholder with <img>
+            var img = document.createElement('img');
+            img.src = data.photo_url;
+            img.alt = '';
+            img.className = 'w-28 h-28 rounded-full object-cover mx-auto border-2 border-stone-100 shadow-sm member-photo';
+            if (placeholder) placeholder.replaceWith(img);
+          }
+        }
+      })
+      .catch(function() { alert('Failed to upload photo.'); });
+    });
+  });
+})();
+</script>
+{% endif %}
+
+{% endblock %}
