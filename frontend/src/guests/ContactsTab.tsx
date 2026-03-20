@@ -1359,6 +1359,88 @@ function AddGuestRow({
   )
 }
 
+// ── Party Picker (searchable combobox) ────────────────────────────────────────
+
+function PartyPicker({
+  parties, onSelect, onNewParty, onCancel,
+}: {
+  parties: Party[]
+  onSelect: (partyId: number) => void
+  onNewParty: () => void
+  onCancel: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { inputRef.current?.focus() }, [])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) onCancel()
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [onCancel])
+
+  const filtered = query
+    ? parties.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
+    : parties
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div className="flex items-center gap-1.5">
+        <div className="relative">
+          <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+          <input
+            ref={inputRef}
+            placeholder="Search parties…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-6 pr-2 py-1 border border-stone-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-stone-400 w-44"
+          />
+        </div>
+        <button onClick={onCancel} className="text-stone-400 hover:text-stone-600 flex-shrink-0">
+          <X size={13} />
+        </button>
+      </div>
+      <div className="absolute left-0 top-full mt-0.5 z-20 bg-white border border-stone-200 rounded-lg shadow-lg w-56 max-h-52 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <p className="px-3 py-2 text-xs text-stone-400 italic">
+            {query ? `No parties match "${query}"` : 'No parties yet'}
+          </p>
+        ) : (
+          filtered.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onSelect(p.id)}
+              className="w-full text-left px-3 py-1.5 text-xs hover:bg-stone-50 text-stone-700 border-b border-stone-50 last:border-0 transition-colors"
+            >
+              {p.name}
+              {p.guests.length > 0 && (
+                <span className="text-stone-400 ml-1.5">({p.guests.length})</span>
+              )}
+            </button>
+          ))
+        )}
+        <button
+          onClick={onNewParty}
+          className="w-full text-left px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border-t border-stone-100 font-medium transition-colors"
+        >
+          + Create solo party
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Unassigned Guests Section ──────────────────────────────────────────────────
 
 function UnassignedGuestsSection({ parties }: { parties: Party[] }) {
@@ -1462,30 +1544,12 @@ function UnassignedGuestsSection({ parties }: { parties: Party[] }) {
                     <td className="px-3 py-2.5 text-stone-400 hidden sm:table-cell">{guest.email || '—'}</td>
                     <td className="px-3 py-2.5">
                       {assigningId === guest.id ? (
-                        <div className="flex items-center gap-1.5">
-                          <select
-                            autoFocus
-                            className="border border-stone-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-stone-400 max-w-[180px]"
-                            defaultValue=""
-                            onChange={(e) => {
-                              if (e.target.value === '__new__') {
-                                setAssigningId(null)
-                                handleNewParty(guest)
-                              } else if (e.target.value) {
-                                handleAssign(guest.id, Number(e.target.value))
-                              }
-                            }}
-                          >
-                            <option value="" disabled>Select party…</option>
-                            {parties.map((p) => (
-                              <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                            <option value="__new__">+ Create solo party</option>
-                          </select>
-                          <button onClick={() => setAssigningId(null)} className="text-stone-400 hover:text-stone-600">
-                            <X size={13} />
-                          </button>
-                        </div>
+                        <PartyPicker
+                          parties={parties}
+                          onSelect={(partyId) => handleAssign(guest.id, partyId)}
+                          onNewParty={() => { setAssigningId(null); handleNewParty(guest) }}
+                          onCancel={() => setAssigningId(null)}
+                        />
                       ) : (
                         <button
                           onClick={() => setAssigningId(guest.id)}
