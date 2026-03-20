@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -1372,12 +1373,23 @@ function PartyPicker({
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
   useEffect(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      setDropdownPos({ top: rect.bottom + 2, left: rect.left })
+    }
+  }, [])
+
+  useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) onCancel()
+      const inContainer = containerRef.current?.contains(e.target as Node)
+      const inDropdown = dropdownRef.current?.contains(e.target as Node)
+      if (!inContainer && !inDropdown) onCancel()
     }
     function handleKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onCancel()
@@ -1394,8 +1406,42 @@ function PartyPicker({
     ? parties.filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
     : parties
 
+  const dropdown = dropdownPos ? createPortal(
+    <div
+      ref={dropdownRef}
+      style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: '14rem', zIndex: 9999 }}
+      className="bg-white border border-stone-200 rounded-lg shadow-lg max-h-52 overflow-y-auto"
+    >
+      {filtered.length === 0 ? (
+        <p className="px-3 py-2 text-xs text-stone-400 italic">
+          {query ? `No parties match "${query}"` : 'No parties yet'}
+        </p>
+      ) : (
+        filtered.map((p) => (
+          <button
+            key={p.id}
+            onClick={() => onSelect(p.id)}
+            className="w-full text-left px-3 py-1.5 text-xs hover:bg-stone-50 text-stone-700 border-b border-stone-50 last:border-0 transition-colors"
+          >
+            {p.name}
+            {p.guests.length > 0 && (
+              <span className="text-stone-400 ml-1.5">({p.guests.length})</span>
+            )}
+          </button>
+        ))
+      )}
+      <button
+        onClick={onNewParty}
+        className="w-full text-left px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border-t border-stone-100 font-medium transition-colors"
+      >
+        + Create solo party
+      </button>
+    </div>,
+    document.body,
+  ) : null
+
   return (
-    <div className="relative" ref={containerRef}>
+    <div ref={containerRef}>
       <div className="flex items-center gap-1.5">
         <div className="relative">
           <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
@@ -1411,32 +1457,7 @@ function PartyPicker({
           <X size={13} />
         </button>
       </div>
-      <div className="absolute left-0 top-full mt-0.5 z-20 bg-white border border-stone-200 rounded-lg shadow-lg w-56 max-h-52 overflow-y-auto">
-        {filtered.length === 0 ? (
-          <p className="px-3 py-2 text-xs text-stone-400 italic">
-            {query ? `No parties match "${query}"` : 'No parties yet'}
-          </p>
-        ) : (
-          filtered.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => onSelect(p.id)}
-              className="w-full text-left px-3 py-1.5 text-xs hover:bg-stone-50 text-stone-700 border-b border-stone-50 last:border-0 transition-colors"
-            >
-              {p.name}
-              {p.guests.length > 0 && (
-                <span className="text-stone-400 ml-1.5">({p.guests.length})</span>
-              )}
-            </button>
-          ))
-        )}
-        <button
-          onClick={onNewParty}
-          className="w-full text-left px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 border-t border-stone-100 font-medium transition-colors"
-        >
-          + Create solo party
-        </button>
-      </div>
+      {dropdown}
     </div>
   )
 }

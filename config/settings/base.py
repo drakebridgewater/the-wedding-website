@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -170,9 +171,18 @@ GOOGLE_SPREADSHEET_TITLE = 'Wedding Planning'
 # -------------------------
 # Logging
 # -------------------------
+class _IgnoreFavicon(logging.Filter):
+    # this is mostly an example to show how to set up logging filters, but it also keeps the logs cleaner by ignoring 404 errors for /favicon.ico
+    def filter(self, record):
+        return '/favicon.ico' not in record.getMessage()
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'filters': {
+        'ignore_favicon': {'()': 'config.settings.base._IgnoreFavicon'},
+    },
     'formatters': {
         'verbose': {
             'format': '[{levelname}] {asctime} {name}: {message}',
@@ -183,6 +193,7 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+            'filters': ['ignore_favicon'],
         },
     },
     'loggers': {
