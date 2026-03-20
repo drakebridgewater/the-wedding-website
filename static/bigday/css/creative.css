@@ -223,7 +223,7 @@ header .header-content .header-content-inner p {
 }
 
 #second-header {
-    background-image: url('../images/chapmans-peak-view.jpg');
+    background-image: url('../images/scenic_view.jpg');
 }
 
 @media(min-width:768px) {
