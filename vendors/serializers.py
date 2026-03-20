@@ -8,6 +8,7 @@ from .models import (
     EntertainmentOption,
     FloristOption,
     VendorPhoto,
+    VenueChecklistItem,
     VenueOption,
 )
 
@@ -186,3 +187,9 @@ class EntertainmentSerializer(BaseVendorSerializer):
             'package_details', 'sample_link', 'performance_duration_hours',
         ]
         read_only_fields = BASE_READ_ONLY
+
+
+class VenueChecklistItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VenueChecklistItem
+        fields = ['id', 'category', 'text', 'order']

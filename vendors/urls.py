@@ -12,6 +12,9 @@ urlpatterns = [
     path('florist/', views.florist_page, name='florist'),
     path('entertainment/', views.entertainment_page, name='entertainment'),
 
+    # Venue checklist items
+    path('api/venue-checklist-items/', api_views.venue_checklist_items, name='api-checklist-items'),
+
     # Photo delete (literal path first to avoid ambiguity)
     path('api/photos/<int:photo_pk>/', api_views.vendor_photo_delete, name='api-photo-delete'),
 

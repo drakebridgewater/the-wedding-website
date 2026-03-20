@@ -4,6 +4,19 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 
 
+class VenueChecklistItem(models.Model):
+    category = models.CharField(max_length=100)
+    text = models.CharField(max_length=255)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"{self.category}: {self.text}"
+
+
 class VendorPhoto(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()

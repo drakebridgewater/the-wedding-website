@@ -7,6 +7,7 @@ from .models import (
     EntertainmentOption,
     FloristOption,
     VendorPhoto,
+    VenueChecklistItem,
     VenueOption,
 )
 
@@ -61,3 +62,11 @@ class EntertainmentAdmin(admin.ModelAdmin):
     list_filter = ['is_chosen', 'is_favorite', 'has_talked_to', 'has_visited', 'type']
     search_fields = ['name', 'genres', 'package_details', 'comments']
     list_editable = ['is_chosen', 'is_favorite']
+
+
+@admin.register(VenueChecklistItem)
+class VenueChecklistItemAdmin(admin.ModelAdmin):
+    list_display = ['category', 'text', 'order', 'is_active']
+    list_editable = ['text', 'order', 'is_active']
+    list_filter = ['category', 'is_active']
+    list_per_page = 100

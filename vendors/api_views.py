@@ -11,6 +11,7 @@ from .models import (
     EntertainmentOption,
     FloristOption,
     VendorPhoto,
+    VenueChecklistItem,
     VenueOption,
 )
 from .serializers import (
@@ -19,6 +20,7 @@ from .serializers import (
     EntertainmentSerializer,
     FloristSerializer,
     VendorPhotoSerializer,
+    VenueChecklistItemSerializer,
     VenueSerializer,
 )
 
@@ -112,6 +114,12 @@ def vendor_photo_upload(request, vendor_type, pk):
         created.append(VendorPhotoSerializer(photo, context={'request': request}).data)
 
     return Response(created, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def venue_checklist_items(request):
+    items = VenueChecklistItem.objects.filter(is_active=True)
+    return Response(VenueChecklistItemSerializer(items, many=True).data)
 
 
 @api_view(['DELETE'])

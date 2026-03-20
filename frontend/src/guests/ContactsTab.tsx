@@ -213,6 +213,49 @@ function ImportCsvModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ── Inline Edit Cell ───────────────────────────────────────────────────────────
+
+function InlineEditCell({ value, onSave, type = 'text' }: {
+  value: string; onSave: (v: string) => Promise<unknown>; type?: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  const [saving, setSaving] = useState(false)
+  const ref = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { if (editing) ref.current?.focus() }, [editing])
+  useEffect(() => { setDraft(value) }, [value])
+
+  async function commit() {
+    if (draft === value) { setEditing(false); return }
+    setSaving(true)
+    try { await onSave(draft); setEditing(false) }
+    catch { toast.error('Failed to save') }
+    finally { setSaving(false) }
+  }
+
+  if (editing) {
+    return (
+      <input ref={ref} type={type} value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); ref.current?.blur() }
+          if (e.key === 'Escape') { setDraft(value); setEditing(false) }
+        }}
+        disabled={saving}
+        className="border-b border-stone-400 bg-transparent focus:outline-none min-w-0"
+      />
+    )
+  }
+  return (
+    <span onClick={() => setEditing(true)}
+      className={`cursor-text rounded hover:bg-stone-100 px-0.5 ${saving ? 'opacity-50' : ''}`}>
+      {value || <span className="text-stone-300">—</span>}
+    </span>
+  )
+}
+
 // ── Role Badge ─────────────────────────────────────────────────────────────────
 
 function RoleBadge({
@@ -756,7 +799,11 @@ function FlatGuestRow({
       )}
       <tr className="hover:bg-stone-50/40 transition-colors">
         <td className="px-4 py-2.5 text-stone-800">
-          {guest.first_name} {guest.last_name}
+          <InlineEditCell value={guest.first_name}
+            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { first_name: v } })} />
+          {' '}
+          <InlineEditCell value={guest.last_name}
+            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { last_name: v } })} />
           {guest.is_child && (
             <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600 font-medium">child</span>
           )}
@@ -772,7 +819,10 @@ function FlatGuestRow({
         </td>
         <td className="px-3 py-2.5 text-stone-500 hidden sm:table-cell">{party.name}</td>
         <td className="px-3 py-2.5 text-stone-400 hidden md:table-cell">{party.category || '—'}</td>
-        <td className="px-3 py-2.5 text-stone-400 hidden sm:table-cell">{guest.email || '—'}</td>
+        <td className="px-3 py-2.5 text-stone-400 hidden sm:table-cell">
+          <InlineEditCell value={guest.email ?? ''} type="email"
+            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { email: v } })} />
+        </td>
         <td className="px-3 py-2.5">
           <button
             onClick={toggleAttending}
@@ -797,9 +847,9 @@ function FlatGuestRow({
             ))}
           </select>
         </td>
-        <td className="px-3 py-2.5 text-stone-400 hidden md:table-cell max-w-[160px] truncate"
-            title={guest.dietary_restrictions || undefined}>
-          {guest.dietary_restrictions || '—'}
+        <td className="px-3 py-2.5 text-stone-400 hidden md:table-cell max-w-[160px]">
+          <InlineEditCell value={guest.dietary_restrictions ?? ''}
+            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { dietary_restrictions: v } })} />
         </td>
         <td className="px-3 py-2.5">
           <div className="flex gap-0.5">
@@ -1206,7 +1256,11 @@ function GuestRow({
       <tr className="border-b border-stone-50 last:border-0 hover:bg-stone-50/40">
         <td className="px-10 py-2 text-stone-700">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {guest.first_name} {guest.last_name}
+            <InlineEditCell value={guest.first_name}
+              onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { first_name: v } })} />
+            {' '}
+            <InlineEditCell value={guest.last_name}
+              onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { last_name: v } })} />
             {guest.is_child && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600 font-medium">child</span>
             )}
@@ -1219,7 +1273,10 @@ function GuestRow({
             />
           </div>
         </td>
-        <td className="px-2 py-2 text-stone-400 hidden sm:table-cell">{guest.email || '—'}</td>
+        <td className="px-2 py-2 text-stone-400 hidden sm:table-cell">
+          <InlineEditCell value={guest.email ?? ''} type="email"
+            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { email: v } })} />
+        </td>
         <td className="px-2 py-2">
           <button
             onClick={toggleAttending}
@@ -1244,9 +1301,9 @@ function GuestRow({
             ))}
           </select>
         </td>
-        <td className="px-2 py-2 hidden md:table-cell text-stone-400 text-[11px] max-w-[140px] truncate"
-            title={guest.dietary_restrictions || undefined}>
-          {guest.dietary_restrictions || '—'}
+        <td className="px-2 py-2 hidden md:table-cell text-stone-400 text-[11px] max-w-[140px]">
+          <InlineEditCell value={guest.dietary_restrictions ?? ''}
+            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { dietary_restrictions: v } })} />
         </td>
         <td className="px-2 py-2">
           <div className="flex gap-0.5">

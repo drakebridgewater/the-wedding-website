@@ -40,7 +40,7 @@ const venueExtension = z.object({
   accommodation_nearby: z.boolean(),
   is_indoor: z.boolean(),
   is_outdoor: z.boolean(),
-  checklist: z.array(z.string()).optional(),
+  checklist: z.array(z.number()).optional(),
 })
 
 const catererExtension = z.object({
@@ -385,7 +385,7 @@ function buildDefaults(vendorType: VendorType, vendor?: AnyVendor | null): FormV
       accommodation_nearby: v?.accommodation_nearby ?? false,
       is_indoor: v?.is_indoor ?? false,
       is_outdoor: v?.is_outdoor ?? false,
-      checklist: (v?.checklist as string[]) ?? [],
+      checklist: (v?.checklist as number[]) ?? [],
     }
   }
   if (vendorType === 'caterer') {
@@ -454,7 +454,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
     reset(buildDefaults(vendorType, vendor))
   }, [vendor, vendorType, reset])
 
-  const checklistValue = (watch('checklist') ?? []) as string[]
+  const checklistValue = (watch('checklist') ?? []) as number[]
 
   const lat = vendor?.latitude ? parseFloat(String(vendor.latitude)) : null
   const lng = vendor?.longitude ? parseFloat(String(vendor.longitude)) : null
@@ -704,7 +704,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
           name="checklist"
           render={({ field }) => (
             <VenueChecklist
-              checked={(field.value as string[]) ?? []}
+              checked={(field.value as number[]) ?? []}
               onChange={field.onChange}
             />
           )}
