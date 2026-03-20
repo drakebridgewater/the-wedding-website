@@ -1,5 +1,6 @@
 *~
 *.sw[op]
+.google-credentials.json
 .idea*
 *.pyc
 localsettings.py
