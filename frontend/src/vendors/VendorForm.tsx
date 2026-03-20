@@ -86,18 +86,31 @@ const SCHEMA_MAP = {
 
 type FormValues = Record<string, unknown>
 
-// ---- Venue tab types ----
+// ---- Tab types ----
 
-type VenueTab = 'overview' | 'contact' | 'location' | 'notes' | 'checklist' | 'photos'
+type FormTab = 'overview' | 'contact' | 'location' | 'details' | 'notes' | 'checklist' | 'photos'
 
-const VENUE_TABS: { id: VenueTab; label: string }[] = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'contact',   label: 'Contact' },
-  { id: 'location',  label: 'Location' },
-  { id: 'notes',     label: 'Notes' },
-  { id: 'checklist', label: 'Checklist' },
-  { id: 'photos',    label: 'Photos' },
-]
+function getTabsForType(vendorType: VendorType, hasVendor: boolean): { id: FormTab; label: string }[] {
+  const photosTab = hasVendor ? [{ id: 'photos' as FormTab, label: 'Photos' }] : []
+  if (vendorType === 'venue') {
+    return [
+      { id: 'overview',  label: 'Overview' },
+      { id: 'contact',   label: 'Contact' },
+      { id: 'location',  label: 'Location' },
+      { id: 'notes',     label: 'Notes' },
+      { id: 'checklist', label: 'Checklist' },
+      ...photosTab,
+    ]
+  }
+  return [
+    { id: 'overview', label: 'Overview' },
+    { id: 'contact',  label: 'Contact' },
+    { id: 'location', label: 'Location' },
+    { id: 'details',  label: 'Details' },
+    { id: 'notes',    label: 'Notes' },
+    ...photosTab,
+  ]
+}
 
 // ---- UI helpers ----
 
@@ -184,7 +197,7 @@ function RatingPicker({ value, onChange }: { value: number | null; onChange: (v:
   )
 }
 
-// ---- Type-specific field sections ----
+// ---- Shared field section props ----
 
 interface FieldSectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -193,9 +206,9 @@ interface FieldSectionProps {
   control: any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errors: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  watch?: any
 }
+
+// ---- Venue feature toggles (Overview tab) ----
 
 function VenueFeatureToggles({ control }: FieldSectionProps) {
   return (
@@ -219,25 +232,89 @@ function VenueFeatureToggles({ control }: FieldSectionProps) {
   )
 }
 
-function CatererFields({ register, control, errors }: FieldSectionProps) {
+// ---- Type-specific Overview fields (key metrics shown at-a-glance) ----
+
+function CatererOverviewFields({ register, errors }: FieldSectionProps) {
   const CUISINES = ['', 'american', 'italian', 'mediterranean', 'asian', 'mexican', 'bbq', 'other']
   const CUISINE_LABELS: Record<string, string> = {
     '': 'Select…', american: 'American', italian: 'Italian', mediterranean: 'Mediterranean',
     asian: 'Asian Fusion', mexican: 'Mexican', bbq: 'BBQ', other: 'Other',
   }
   return (
-    <>
-      <SectionHeader title="Caterer Details" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Price per Head ($)" error={errors.price_per_head?.message as string}>
-          <input {...register('price_per_head')} className={inputCls(errors.price_per_head?.message as string)} placeholder="e.g. 95" />
-        </Field>
-        <Field label="Cuisine Type" error={errors.cuisine_type?.message as string}>
-          <select {...register('cuisine_type')} className={inputCls()}>
-            {CUISINES.map((c) => <option key={c} value={c}>{CUISINE_LABELS[c]}</option>)}
-          </select>
-        </Field>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Field label="Price per Head ($)" error={errors.price_per_head?.message as string}>
+        <input {...register('price_per_head')} className={inputCls(errors.price_per_head?.message as string)} placeholder="e.g. 95" />
+      </Field>
+      <Field label="Cuisine Type">
+        <select {...register('cuisine_type')} className={inputCls()}>
+          {CUISINES.map((c) => <option key={c} value={c}>{CUISINE_LABELS[c]}</option>)}
+        </select>
+      </Field>
+    </div>
+  )
+}
+
+function CakeOverviewFields({ register, errors }: FieldSectionProps) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Field label="Price per Serving ($)" error={errors.price_per_serving?.message as string}>
+        <input {...register('price_per_serving')} className={inputCls(errors.price_per_serving?.message as string)} placeholder="e.g. 12" />
+      </Field>
+      <Field label="Flavors">
+        <input {...register('flavors')} className={inputCls()} placeholder="e.g. Vanilla, Lemon" />
+      </Field>
+    </div>
+  )
+}
+
+function FloristOverviewFields({ register, errors }: FieldSectionProps) {
+  const STYLES = ['', 'romantic', 'modern', 'wildflower', 'tropical', 'minimalist', 'classic', 'other']
+  const STYLE_LABELS: Record<string, string> = {
+    '': 'Select…', romantic: 'Romantic', modern: 'Modern', wildflower: 'Wildflower',
+    tropical: 'Tropical', minimalist: 'Minimalist', classic: 'Classic', other: 'Other',
+  }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Field label="Style">
+        <select {...register('style')} className={inputCls()}>
+          {STYLES.map((s) => <option key={s} value={s}>{STYLE_LABELS[s]}</option>)}
+        </select>
+      </Field>
+      <Field label="Minimum Order ($)" error={errors.minimum_order?.message as string}>
+        <input {...register('minimum_order')} className={inputCls(errors.minimum_order?.message as string)} placeholder="e.g. 500" />
+      </Field>
+    </div>
+  )
+}
+
+function EntertainmentOverviewFields({ register }: FieldSectionProps) {
+  const TYPES = ['', 'dj', 'band', 'both']
+  const TYPE_LABELS: Record<string, string> = { '': 'Select…', dj: 'DJ', band: 'Band', both: 'DJ + Band' }
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Field label="Type">
+        <select {...register('type')} className={inputCls()}>
+          {TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+        </select>
+      </Field>
+      <Field label="Number of Members">
+        <input
+          type="number"
+          {...register('num_members', { valueAsNumber: true, setValueAs: (v: string) => v === '' || isNaN(Number(v)) ? null : Number(v) })}
+          className={inputCls()}
+          placeholder="For bands"
+        />
+      </Field>
+    </div>
+  )
+}
+
+// ---- Type-specific Details tab sections ----
+
+function CatererDetailSection({ control }: FieldSectionProps) {
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Dietary Options" />
       <div className="space-y-0.5 bg-gray-50 rounded-lg p-3">
         <Controller control={control} name="has_vegetarian" render={({ field }) =>
           <ToggleRow label="Vegetarian options" value={!!field.value} onChange={field.onChange} />
@@ -248,33 +325,9 @@ function CatererFields({ register, control, errors }: FieldSectionProps) {
         <Controller control={control} name="has_gluten_free" render={({ field }) =>
           <ToggleRow label="Gluten-free options" value={!!field.value} onChange={field.onChange} />
         } />
-        <Controller control={control} name="tasting_scheduled" render={({ field }) =>
-          <ToggleRow label="Tasting scheduled" value={!!field.value} onChange={field.onChange} />
-        } />
-        <Controller control={control} name="tasting_completed" render={({ field }) =>
-          <ToggleRow label="Tasting completed" value={!!field.value} onChange={field.onChange} />
-        } />
       </div>
-    </>
-  )
-}
-
-function CakeFields({ register, control, errors }: FieldSectionProps) {
-  return (
-    <>
-      <SectionHeader title="Cake Details" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Price per Serving ($)" error={errors.price_per_serving?.message as string}>
-          <input {...register('price_per_serving')} className={inputCls(errors.price_per_serving?.message as string)} placeholder="e.g. 12" />
-        </Field>
-        <Field label="Flavors" error={errors.flavors?.message as string}>
-          <input {...register('flavors')} className={inputCls()} placeholder="e.g. Vanilla, Lemon" />
-        </Field>
-      </div>
+      <SectionHeader title="Tasting" />
       <div className="space-y-0.5 bg-gray-50 rounded-lg p-3">
-        <Controller control={control} name="custom_design_available" render={({ field }) =>
-          <ToggleRow label="Custom design available" value={!!field.value} onChange={field.onChange} />
-        } />
         <Controller control={control} name="tasting_scheduled" render={({ field }) =>
           <ToggleRow label="Tasting scheduled" value={!!field.value} onChange={field.onChange} />
         } />
@@ -282,72 +335,56 @@ function CakeFields({ register, control, errors }: FieldSectionProps) {
           <ToggleRow label="Tasting completed" value={!!field.value} onChange={field.onChange} />
         } />
       </div>
-    </>
+    </div>
   )
 }
 
-function FloristFields({ register, errors }: FieldSectionProps) {
-  const STYLES = ['', 'romantic', 'modern', 'wildflower', 'tropical', 'minimalist', 'classic', 'other']
-  const STYLE_LABELS: Record<string, string> = {
-    '': 'Select…', romantic: 'Romantic', modern: 'Modern', wildflower: 'Wildflower',
-    tropical: 'Tropical', minimalist: 'Minimalist', classic: 'Classic', other: 'Other',
-  }
+function CakeDetailSection({ control }: FieldSectionProps) {
   return (
-    <>
-      <SectionHeader title="Florist Details" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Style" error={errors.style?.message as string}>
-          <select {...register('style')} className={inputCls()}>
-            {STYLES.map((s) => <option key={s} value={s}>{STYLE_LABELS[s]}</option>)}
-          </select>
-        </Field>
-        <Field label="Minimum Order ($)" error={errors.minimum_order?.message as string}>
-          <input {...register('minimum_order')} className={inputCls(errors.minimum_order?.message as string)} placeholder="e.g. 500" />
-        </Field>
-      </div>
-      <Field label="Arrangement Types" error={errors.arrangement_types?.message as string}>
-        <input {...register('arrangement_types')} className={inputCls()} placeholder="e.g. Bouquets, Centerpieces" />
-      </Field>
-    </>
+    <div className="space-y-0.5 bg-gray-50 rounded-lg p-3">
+      <Controller control={control} name="custom_design_available" render={({ field }) =>
+        <ToggleRow label="Custom design available" value={!!field.value} onChange={field.onChange} />
+      } />
+      <Controller control={control} name="tasting_scheduled" render={({ field }) =>
+        <ToggleRow label="Tasting scheduled" value={!!field.value} onChange={field.onChange} />
+      } />
+      <Controller control={control} name="tasting_completed" render={({ field }) =>
+        <ToggleRow label="Tasting completed" value={!!field.value} onChange={field.onChange} />
+      } />
+    </div>
   )
 }
 
-function EntertainmentFields({ register, errors }: FieldSectionProps) {
-  const TYPES = ['', 'dj', 'band', 'both']
-  const TYPE_LABELS: Record<string, string> = { '': 'Select…', dj: 'DJ', band: 'Band', both: 'DJ + Band' }
+function FloristDetailSection({ register }: FieldSectionProps) {
   return (
-    <>
-      <SectionHeader title="Entertainment Details" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Type" error={errors.type?.message as string}>
-          <select {...register('type')} className={inputCls()}>
-            {TYPES.map((t) => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
-          </select>
-        </Field>
-        <Field label="Number of Members" error={errors.num_members?.message as string}>
-          <input
-            type="number"
-            {...register('num_members', { valueAsNumber: true, setValueAs: (v: string) => v === '' || isNaN(Number(v)) ? null : Number(v) })}
-            className={inputCls()}
-            placeholder="For bands"
-          />
-        </Field>
-      </div>
+    <Field label="Arrangement Types">
+      <input
+        {...register('arrangement_types')}
+        className={inputCls()}
+        placeholder="e.g. Bouquets, Centerpieces, Ceremony arch"
+      />
+    </Field>
+  )
+}
+
+function EntertainmentDetailSection({ register, errors }: FieldSectionProps) {
+  return (
+    <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label="Performance Duration (hours)" error={errors.performance_duration_hours?.message as string}>
           <input {...register('performance_duration_hours')} className={inputCls()} placeholder="e.g. 4" />
         </Field>
-        <Field label="Genres" error={errors.genres?.message as string}>
-          <input {...register('genres')} className={inputCls()} placeholder="e.g. Pop, R&amp;B, Jazz" />
+        <Field label="Genres">
+          <input {...register('genres')} className={inputCls()} placeholder="e.g. Pop, R&B, Jazz" />
         </Field>
       </div>
       <Field label="Sample / Demo Link" error={errors.sample_link?.message as string}>
         <input {...register('sample_link')} className={inputCls(errors.sample_link?.message as string)} placeholder="https://…" />
       </Field>
-      <Field label="Package Details" error={errors.package_details?.message as string}>
-        <textarea {...register('package_details')} rows={2} className={inputCls()} placeholder="Describe included services…" />
+      <Field label="Package Details">
+        <textarea {...register('package_details')} rows={4} className={inputCls()} placeholder="Describe included services…" />
       </Field>
-    </>
+    </div>
   )
 }
 
@@ -442,7 +479,14 @@ interface Props {
 
 export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }: Props) {
   const isVenue = vendorType === 'venue'
-  const [activeTab, setActiveTab] = useState<VenueTab>('overview')
+  const [activeTab, setActiveTab] = useState<FormTab>('overview')
+
+  // Reset to overview when switching vendors or vendor types
+  useEffect(() => {
+    setActiveTab('overview')
+  }, [vendor?.id, vendorType])
+
+  const tabs = getTabsForType(vendorType, !!vendor)
 
   const schema = SCHEMA_MAP[vendorType]
   const { register, handleSubmit, reset, control, watch, formState: { errors } } = useForm({
@@ -460,9 +504,8 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
   const lng = vendor?.longitude ? parseFloat(String(vendor.longitude)) : null
   const hasLocation = lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)
 
-  // For venue tabs: hide a section if it's not the active tab. Non-venue: never hide.
-  function tabHidden(tab: VenueTab): boolean {
-    return isVenue && activeTab !== tab
+  function tabHidden(tab: FormTab): boolean {
+    return activeTab !== tab
   }
 
   function submit(values: FormValues) {
@@ -485,34 +528,32 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-4">
 
-      {/* ---- Venue tab bar ---- */}
-      {isVenue && (
-        <div className="flex border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-x-auto">
-          {VENUE_TABS.filter((t) => t.id !== 'photos' || !!vendor).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
-                activeTab === tab.id
-                  ? 'border-rose-500 text-rose-600'
-                  : 'border-transparent text-gray-400 hover:text-gray-600',
-              )}
-            >
-              {tab.label}
-              {tab.id === 'checklist' && checklistValue.length > 0 && (
-                <span className="ml-1.5 text-xs bg-rose-100 text-rose-500 rounded-full px-1.5 py-0.5 font-normal">
-                  {checklistValue.length}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* ---- Tab bar ---- */}
+      <div className="flex border-b border-gray-200 -mx-4 px-4 sm:-mx-6 sm:px-6 overflow-x-auto">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
+              activeTab === tab.id
+                ? 'border-rose-500 text-rose-600'
+                : 'border-transparent text-gray-400 hover:text-gray-600',
+            )}
+          >
+            {tab.label}
+            {tab.id === 'checklist' && checklistValue.length > 0 && (
+              <span className="ml-1.5 text-xs bg-rose-100 text-rose-500 rounded-full px-1.5 py-0.5 font-normal">
+                {checklistValue.length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
       {/* ====================================================
-          OVERVIEW TAB  (also the full form for non-venue)
+          OVERVIEW TAB
           ==================================================== */}
       <div className={cn('space-y-4', tabHidden('overview') && 'hidden')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -520,7 +561,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             <input
               {...register('name')}
               className={inputCls(errors.name?.message as string)}
-              placeholder={isVenue ? 'Venue name' : 'Name'}
+              placeholder="Name"
             />
           </Field>
           <Field label="Price Estimate ($)" error={errors.price_estimate?.message as string}>
@@ -532,7 +573,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
           </Field>
         </div>
 
-        {/* Venue: style + capacity on overview */}
+        {/* Type-specific key metrics */}
         {isVenue && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Style" error={errors.style?.message as string}>
@@ -553,6 +594,10 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             </Field>
           </div>
         )}
+        {vendorType === 'caterer'      && <CatererOverviewFields {...fieldProps} />}
+        {vendorType === 'cake'         && <CakeOverviewFields {...fieldProps} />}
+        {vendorType === 'florist'      && <FloristOverviewFields {...fieldProps} />}
+        {vendorType === 'entertainment' && <EntertainmentOverviewFields {...fieldProps} />}
 
         <SectionHeader title="Rating" />
         <Controller control={control} name="rating" render={({ field }) => (
@@ -582,53 +627,10 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             <VenueFeatureToggles {...fieldProps} />
           </>
         )}
-
-        {/* Non-venue: all sections remain in a flat layout */}
-        {!isVenue && (
-          <>
-            <SectionHeader title="Contact" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Website" error={errors.website?.message as string}>
-                <input {...register('website')} className={inputCls(errors.website?.message as string)} placeholder="https://…" />
-              </Field>
-              <Field label="Phone" error={errors.phone?.message as string}>
-                <input {...register('phone')} className={inputCls()} placeholder="(555) 000-0000" />
-              </Field>
-            </div>
-            <Field label="Email" error={errors.email?.message as string}>
-              <input {...register('email')} className={inputCls(errors.email?.message as string)} placeholder="contact@example.com" />
-            </Field>
-
-            {vendorType === 'caterer' && <CatererFields {...fieldProps} />}
-            {vendorType === 'cake' && <CakeFields {...fieldProps} />}
-            {vendorType === 'florist' && <FloristFields {...fieldProps} />}
-            {vendorType === 'entertainment' && <EntertainmentFields {...fieldProps} />}
-
-            <SectionHeader title="Location" />
-            <Field label="Address" error={errors.address?.message as string}>
-              <input {...register('address')} className={inputCls()} placeholder="Street, City, State ZIP" />
-            </Field>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Latitude" error={errors.latitude?.message as string}>
-                <input {...register('latitude')} className={inputCls()} placeholder="e.g. 40.7128" />
-              </Field>
-              <Field label="Longitude" error={errors.longitude?.message as string}>
-                <input {...register('longitude')} className={inputCls()} placeholder="e.g. -74.0060" />
-              </Field>
-            </div>
-
-            <SectionHeader title="Positives" />
-            <textarea {...register('positives')} rows={3} className={inputCls()} placeholder="What you like…" />
-            <SectionHeader title="Negatives" />
-            <textarea {...register('negatives')} rows={3} className={inputCls()} placeholder="Concerns or drawbacks…" />
-            <SectionHeader title="Comments" />
-            <textarea {...register('comments')} rows={3} className={inputCls()} placeholder="Other notes…" />
-          </>
-        )}
       </div>
 
       {/* ====================================================
-          CONTACT TAB  (venue only)
+          CONTACT TAB
           ==================================================== */}
       <div className={cn('space-y-4', tabHidden('contact') && 'hidden')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -645,7 +647,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
       </div>
 
       {/* ====================================================
-          LOCATION TAB  (venue only)
+          LOCATION TAB
           ==================================================== */}
       <div className={cn('space-y-4', tabHidden('location') && 'hidden')}>
         <Field label="Address" error={errors.address?.message as string}>
@@ -666,7 +668,19 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
       </div>
 
       {/* ====================================================
-          NOTES TAB  (venue only)
+          DETAILS TAB  (non-venue: type-specific toggles/fields)
+          ==================================================== */}
+      {!isVenue && (
+        <div className={cn('space-y-4', tabHidden('details') && 'hidden')}>
+          {vendorType === 'caterer'       && <CatererDetailSection {...fieldProps} />}
+          {vendorType === 'cake'          && <CakeDetailSection {...fieldProps} />}
+          {vendorType === 'florist'       && <FloristDetailSection {...fieldProps} />}
+          {vendorType === 'entertainment' && <EntertainmentDetailSection {...fieldProps} />}
+        </div>
+      )}
+
+      {/* ====================================================
+          NOTES TAB
           ==================================================== */}
       <div className={cn('space-y-4', tabHidden('notes') && 'hidden')}>
         <Field label="Positives" error={undefined}>
@@ -674,7 +688,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             {...register('positives')}
             rows={4}
             className={inputCls()}
-            placeholder="What you like about this venue…"
+            placeholder="What you like…"
           />
         </Field>
         <Field label="Negatives" error={undefined}>
@@ -690,7 +704,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             {...register('comments')}
             rows={4}
             className={inputCls()}
-            placeholder="Other notes, questions asked, visit impressions…"
+            placeholder="Other notes…"
           />
         </Field>
       </div>
@@ -698,26 +712,28 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
       {/* ====================================================
           CHECKLIST TAB  (venue only)
           ==================================================== */}
-      <div className={cn(tabHidden('checklist') && 'hidden')}>
-        <Controller
-          control={control}
-          name="checklist"
-          render={({ field }) => (
-            <VenueChecklist
-              checked={(field.value as number[]) ?? []}
-              onChange={field.onChange}
-            />
-          )}
-        />
-      </div>
+      {isVenue && (
+        <div className={cn(tabHidden('checklist') && 'hidden')}>
+          <Controller
+            control={control}
+            name="checklist"
+            render={({ field }) => (
+              <VenueChecklist
+                checked={(field.value as number[]) ?? []}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </div>
+      )}
 
       {/* ====================================================
-          PHOTOS TAB  (venue only, edit mode)
+          PHOTOS TAB  (edit mode only, all vendor types)
           ==================================================== */}
-      {isVenue && vendor && (
+      {vendor && (
         <div className={cn(tabHidden('photos') && 'hidden')}>
           <PhotoUpload
-            vendorId={(vendor as VenueVendor).id}
+            vendorId={vendor.id}
             vendorType={vendorType}
             photos={(vendor as VenueVendor).photos}
           />
