@@ -77,9 +77,9 @@ export function WeddingPartyTab() {
               <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-2">
                 {ROLE_LABELS[role as MemberRole]}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 justify-items-center">
+              <div className="flex flex-wrap justify-center gap-3">
                 {group.map((m) => (
-                  <div key={m.id} className="flex items-center gap-3 bg-white rounded-xl border border-stone-100 shadow-sm px-4 py-3">
+                  <div key={m.id} className="flex items-center gap-3 bg-white rounded-xl border border-stone-100 shadow-sm px-4 py-3 w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-8px)]">
                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
