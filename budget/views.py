@@ -1,12 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-from .models import BudgetLineItem
+from .models import BudgetCategory
 
 
 @login_required
 def budget_page(request):
-    categories = BudgetLineItem.CATEGORIES
+    categories = list(BudgetCategory.objects.values_list('slug', 'label'))
     return render(request, 'budget/budget.html', {'categories': categories})
 
 
