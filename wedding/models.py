@@ -3,6 +3,19 @@ from __future__ import unicode_literals
 from django.db import models
 
 
+class Theme(models.Model):
+    name = models.CharField(max_length=50, unique=True, help_text='Display name, e.g. "Rose"')
+    accent = models.CharField(max_length=7, help_text='Primary accent color in hex, e.g. #e11d48')
+    accent_hover = models.CharField(max_length=7, help_text='Darker shade used on hover, e.g. #9f1239')
+    accent_light = models.CharField(max_length=7, help_text='Light tint used for backgrounds, e.g. #fce7f3')
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
 class Question(models.Model):
     name = models.CharField(max_length=100, blank=True, help_text="Guest's name (optional)")
     question_text = models.TextField()
@@ -42,6 +55,11 @@ class WeddingSettings(models.Model):
     hero_photo = models.ImageField(
         upload_to='site/', blank=True, null=True,
         help_text='Hero photo shown on the home page. Overrides the default static image.',
+    )
+    theme = models.ForeignKey(
+        'Theme', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='+',
+        help_text='Color theme for the public-facing website. Create new themes in the Themes section.',
     )
 
     class Meta:

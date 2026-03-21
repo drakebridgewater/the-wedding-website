@@ -29,6 +29,19 @@
     {% vite_react_refresh %}
     <style>
         body { padding-top: 70px; }
+        {% if theme %}
+        :root {
+          --accent:       {{ theme.accent }};
+          --accent-hover: {{ theme.accent_hover }};
+          --accent-light: {{ theme.accent_light }};
+        }
+        .theme-link           { color: inherit; transition: color 0.15s; }
+        .theme-link:hover     { color: var(--accent); }
+        .text-accent          { color: var(--accent); }
+        .bg-accent            { background-color: var(--accent); }
+        .bg-accent-light      { background-color: var(--accent-light); }
+        .border-accent        { border-color: var(--accent); }
+        {% endif %}
     </style>
     {% block page_head %}
     {% endblock %}

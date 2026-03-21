@@ -18,6 +18,21 @@
   {% vite_react_refresh %}
   {% vite_asset 'src/public/main.ts' %}
   {% include "partials/google-analytics.html" %}
+  {% if theme %}
+  <style>
+    :root {
+      --accent:       {{ theme.accent }};
+      --accent-hover: {{ theme.accent_hover }};
+      --accent-light: {{ theme.accent_light }};
+    }
+    .theme-link           { color: inherit; transition: color 0.15s; }
+    .theme-link:hover     { color: var(--accent); }
+    .text-accent          { color: var(--accent); }
+    .bg-accent            { background-color: var(--accent); }
+    .bg-accent-light      { background-color: var(--accent-light); }
+    .border-accent        { border-color: var(--accent); }
+  </style>
+  {% endif %}
   {% block page_head %}{% endblock %}
 </head>
 <body class="bg-white text-stone-800 pt-14">
