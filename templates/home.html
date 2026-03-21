@@ -23,8 +23,8 @@
       </p>
 
       <p class="text-stone-400 text-sm leading-relaxed mb-10">
-        We're so glad you're here.<br>
-        Scroll to find everything you need for our big day.
+        A celebration is only as good as the people in it<br> — <br>and we're so glad you're one of them.
+        <!-- We're so glad you're here.<br> Scroll to find everything you need for our big day. -->
       </p>
 
       <a href="#event"
@@ -86,7 +86,7 @@
     <p class="text-stone-500 leading-relaxed mb-4">
       Please see below for all the details regarding
       <a href="#event" class="text-accent hover:underline">the event</a>
-      and <a href="#niagara" class="text-accent hover:underline">getting there</a>.
+      and <a href="#location" class="text-accent hover:underline">getting there</a>.
     </p>
     {% if support_email %}
     <p class="text-stone-500 leading-relaxed">
@@ -99,8 +99,8 @@
 
 {% include 'partials/event.html' %}
 
-<section id="niagara" class="py-20 px-4 bg-accent-light">
-  {% include 'partials/niagara.html' %}
+<section id="location" class="py-20 px-4 bg-accent-light">
+  {% include 'partials/location.html' %}
 </section>
 
 <section id="other-stuff" class="py-20 px-4 bg-white border-t border-stone-100">
@@ -115,20 +115,6 @@
 
 {% include 'partials/questions.html' %}
 
-<!-- Contact -->
-<section id="contact" class="py-20 px-4 bg-accent-light border-t border-stone-100">
-  <div class="max-w-xl mx-auto text-center">
-    <h2 class="font-script text-5xl text-stone-700 mb-4">Get in Touch</h2>
-    <div class="w-12 h-px bg-accent mx-auto mb-8"></div>
-    <p class="text-stone-500 leading-relaxed mb-8">If you have any questions, don't hesitate to reach out.</p>
-    {% if support_email %}
-    <a href="mailto:{{ support_email }}"
-       class="inline-flex items-center gap-2 text-accent hover:text-accent transition-colors font-display italic text-lg">
-      <i class="fa fa-envelope-o"></i>
-      {{ support_email }}
-    </a>
-    {% endif %}
-  </div>
-</section>
+{% include 'partials/contact.html' %}
 
 {% endblock %}
