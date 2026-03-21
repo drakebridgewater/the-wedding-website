@@ -1,128 +1,115 @@
 {% load static %}
-<nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-b border-stone-200 shadow-sm">
-  <div class="max-w-6xl mx-auto px-4">
-    <div class="relative flex items-center justify-end h-14">
 
-      <!-- Brand centered -->
-      <a href="{% url 'home' %}" class="absolute left-1/2 -translate-x-1/2 font-script text-2xl text-stone-800 hover:text-rose-700 transition-colors whitespace-nowrap">
-        {{ couple_name }}
-      </a>
+<!-- Floating menu pill -->
+<button id="menu-btn" aria-label="Open menu" aria-expanded="false"
+        class="fixed top-5 right-5 z-50 flex items-center gap-2 bg-white/90 backdrop-blur border border-stone-200 shadow-md rounded-full px-4 py-2 text-stone-600 hover:text-stone-900 hover:shadow-lg transition-all">
+  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+  </svg>
+  <span class="text-xs font-medium tracking-widest uppercase">Menu</span>
+</button>
 
-      <!-- Single menu button -->
-      <button id="menu-btn" aria-label="Open menu" aria-expanded="false"
-              class="p-2 rounded text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors">
-        <svg id="hamburger-icon" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-        <svg id="close-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
+<!-- Full-screen overlay -->
+<div id="nav-overlay" class="fixed inset-0 z-40 hidden" aria-hidden="true">
 
-    </div>
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-stone-50/98 backdrop-blur-sm"></div>
+
+  <!-- Close button (mirrors the menu pill) -->
+  <button id="close-btn" aria-label="Close menu"
+          class="absolute top-5 right-5 flex items-center gap-2 bg-white border border-stone-200 shadow-md rounded-full px-4 py-2 text-stone-500 hover:text-stone-900 transition-all">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+    <span class="text-xs font-medium tracking-widest uppercase">Close</span>
+  </button>
+
+  <!-- Watermark -->
+  <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+    <span class="font-script text-9xl text-stone-100 leading-tight text-center">{{ couple_name }}</span>
   </div>
 
-  <!-- Nav panel (hidden by default) -->
-  <div id="nav-panel" class="hidden border-t border-stone-100 bg-white shadow-lg max-h-[80vh] overflow-y-auto">
-    <div class="max-w-6xl mx-auto px-6 py-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+  <!-- Nav content -->
+  <div class="relative flex flex-col items-center justify-center h-full gap-1 px-8 overflow-y-auto py-20">
 
-      <!-- Our Wedding -->
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Our Wedding</p>
-        <a href="/#event"    class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">The Event</a>
-        <a href="/#niagara"  class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Location</a>
-        <a href="/#story"    class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Our Story</a>
-        <a href="{% url 'wedding-party' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Wedding Party</a>
-        <a href="/#contact"  class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Contact</a>
-        <a href="/#questions" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Q&amp;A</a>
-      </div>
+    <!-- Public links -->
+    <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Our Wedding</p>
+    <a href="{% url 'home' %}"              class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Home</a>
+    <a href="/#event"                       class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">The Event</a>
+    <a href="/#niagara"                     class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Location</a>
+    <a href="/#story"                       class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Our Story</a>
+    <a href="{% url 'wedding-party' %}"     class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Wedding Party</a>
+    <a href="/#contact"                     class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Contact</a>
+    <a href="/#questions"                   class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Q&amp;A</a>
+    <a href="{% url 'schedule:program' %}"  class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Wedding Program</a>
+    {% if registry_url %}
+    <a href="{{ registry_url }}" target="_blank" rel="noopener"
+       class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Registry ↗</a>
+    {% endif %}
+    {% if weddingshare_url %}
+    <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
+       class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Photos ↗</a>
+    {% endif %}
 
-      <!-- Day Of -->
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Day Of</p>
-        <a href="{% url 'schedule:program' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Wedding Program</a>
-        {% if registry_url %}
-        <a href="{{ registry_url }}" target="_blank" rel="noopener"
-           class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Registry ↗</a>
-        {% endif %}
-        {% if weddingshare_url %}
-        <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
-           class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Photos ↗</a>
-        {% endif %}
-      </div>
-
-      <!-- Planning (authenticated only) -->
-      {% if user.is_authenticated %}
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Planning</p>
-        <a href="{% url 'dashboard' %}"     class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Dashboard</a>
-        <a href="{% url 'manage' %}"        class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Manage Guests</a>
-        <a href="{% url 'invitations' %}"   class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Invitations</a>
-        <a href="{% url 'budget:budget' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Budget</a>
-        <a href="{% url 'todos:todos' %}"   class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">To-Dos</a>
-        <a href="{% url 'seating:seating' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Seating Chart</a>
-        <a href="{% url 'schedule:schedule' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Day-of Schedule</a>
-        <a href="{% url 'music:music' %}"   class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Music</a>
-      </div>
-
-      <!-- Vendors (authenticated only) -->
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-2">Vendors</p>
-        <a href="{% url 'vendors:venue' %}"         class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Venue</a>
-        <a href="{% url 'vendors:caterer' %}"       class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Caterers</a>
-        <a href="{% url 'vendors:cake' %}"          class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Cake &amp; Bakery</a>
-        <a href="{% url 'vendors:florist' %}"       class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Florists</a>
-        <a href="{% url 'vendors:entertainment' %}" class="block py-1.5 text-sm text-stone-700 hover:text-rose-600 transition-colors">Entertainment</a>
-      </div>
-      {% endif %}
-
-    </div>
+    <!-- Authenticated planning links -->
+    {% if user.is_authenticated %}
+    <div class="w-10 border-t border-stone-200 my-5"></div>
+    <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Planning</p>
+    <a href="{% url 'dashboard' %}"           class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Dashboard</a>
+    <a href="{% url 'manage' %}"              class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Guests</a>
+    <a href="{% url 'budget:budget' %}"       class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Budget</a>
+    <a href="{% url 'todos:todos' %}"         class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">To-Dos</a>
+    <a href="{% url 'seating:seating' %}"     class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Seating Chart</a>
+    <a href="{% url 'schedule:schedule' %}"   class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Day-of Schedule</a>
+    <a href="{% url 'music:music' %}"         class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Music</a>
+    <a href="{% url 'vendors:venue' %}"       class="text-xl font-light tracking-wide text-stone-700 hover:text-rose-600 transition-colors py-1">Vendors</a>
+    {% endif %}
 
     <!-- Auth row -->
-    <div class="border-t border-stone-100 px-6 py-3 flex items-center gap-3 max-w-6xl mx-auto">
+    <div class="mt-8 flex items-center gap-4 text-sm text-stone-400">
       {% if user.is_authenticated %}
-      <a href="/admin/" class="text-xs text-stone-500 hover:text-stone-700 transition-colors">Admin</a>
-      <span class="text-stone-200">|</span>
-      <a href="{% url 'logout' %}" class="text-xs text-stone-500 hover:text-stone-700 transition-colors">Logout</a>
+      <a href="/admin/"           class="hover:text-stone-700 transition-colors">Admin</a>
+      <span class="text-stone-200">·</span>
+      <a href="{% url 'logout' %}" class="hover:text-stone-700 transition-colors">Logout</a>
       {% else %}
-      <a href="{% url 'login' %}" class="text-xs text-stone-500 hover:text-stone-700 transition-colors">Login</a>
+      <a href="{% url 'login' %}"  class="hover:text-stone-700 transition-colors">Login</a>
       {% endif %}
     </div>
+
   </div>
-</nav>
+</div>
 
 <script>
 (function() {
-  var btn = document.getElementById('menu-btn');
-  var panel = document.getElementById('nav-panel');
-  var hamburger = document.getElementById('hamburger-icon');
-  var closeIcon = document.getElementById('close-icon');
+  var menuBtn  = document.getElementById('menu-btn');
+  var closeBtn = document.getElementById('close-btn');
+  var overlay  = document.getElementById('nav-overlay');
 
-  btn.addEventListener('click', function() {
-    var open = panel.classList.toggle('hidden');
-    btn.setAttribute('aria-expanded', String(!open));
-    hamburger.classList.toggle('hidden', !open);
-    closeIcon.classList.toggle('hidden', open);
+  function openMenu() {
+    overlay.classList.remove('hidden');
+    overlay.setAttribute('aria-hidden', 'false');
+    menuBtn.setAttribute('aria-expanded', 'true');
+    menuBtn.classList.add('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMenu() {
+    overlay.classList.add('hidden');
+    overlay.setAttribute('aria-hidden', 'true');
+    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtn.classList.remove('hidden');
+    document.body.style.overflow = '';
+  }
+
+  menuBtn.addEventListener('click', openMenu);
+  closeBtn.addEventListener('click', closeMenu);
+
+  overlay.querySelectorAll('a').forEach(function(link) {
+    link.addEventListener('click', closeMenu);
   });
 
-  // Close when clicking a link
-  panel.querySelectorAll('a').forEach(function(link) {
-    link.addEventListener('click', function() {
-      panel.classList.add('hidden');
-      btn.setAttribute('aria-expanded', 'false');
-      hamburger.classList.remove('hidden');
-      closeIcon.classList.add('hidden');
-    });
-  });
-
-  // Close on outside click
-  document.addEventListener('click', function(e) {
-    if (!btn.contains(e.target) && !panel.contains(e.target)) {
-      panel.classList.add('hidden');
-      btn.setAttribute('aria-expanded', 'false');
-      hamburger.classList.remove('hidden');
-      closeIcon.classList.add('hidden');
-    }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMenu();
   });
 })();
 </script>
