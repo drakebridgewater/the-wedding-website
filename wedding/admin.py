@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Question, Theme, WeddingSettings
+from .models import FundMessage, Question, Theme, WeddingSettings
 
 
 class ColorInput(forms.TextInput):
@@ -44,6 +44,15 @@ class ThemeAdmin(admin.ModelAdmin):
         )
 
 
+@admin.register(FundMessage)
+class FundMessageAdmin(admin.ModelAdmin):
+    list_display = ['name', 'message', 'is_approved', 'created_at']
+    list_filter = ['is_approved']
+    list_editable = ['is_approved']
+    search_fields = ['name', 'message']
+    readonly_fields = ['created_at']
+
+
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ['name', 'question_text', 'is_approved', 'created_at']
@@ -64,6 +73,10 @@ class WeddingSettingsAdmin(admin.ModelAdmin):
         }),
         ('Contact & Links', {
             'fields': ('support_email', 'website_url'),
+        }),
+        ('Honeymoon Fund', {
+            'fields': ('venmo_handle', 'zelle_handle', 'cashapp_handle', 'paypal_handle'),
+            'description': 'Payment handles shown on the public Honeymoon Fund page. Leave blank to hide a platform.',
         }),
         ('Appearance', {
             'fields': ('theme', 'hero_photo'),

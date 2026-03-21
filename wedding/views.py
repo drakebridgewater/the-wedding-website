@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 from guests.models import WeddingPartyMember
 from guests.save_the_date import SAVE_THE_DATE_CONTEXT_MAP
 
-from .models import Question, WeddingSettings
+from .models import FundMessage, Question, WeddingSettings
 
 ROLE_LABELS = {
     'bride': 'Bride', 'groom': 'Groom', 'maid_of_honor': 'Maid of Honor',
@@ -80,3 +80,25 @@ def submit_question(request):
             question_text=question_text,
         )
     return redirect('/#questions?submitted=1')
+
+
+def honeymoon_fund(request):
+    ws = WeddingSettings.get()
+    messages = FundMessage.objects.filter(is_approved=True)
+    submitted = request.GET.get('submitted') == '1'
+    return render(request, 'honeymoon.html', {
+        'ws': ws,
+        'fund_messages': messages,
+        'submitted': submitted,
+    })
+
+
+@require_POST
+def submit_fund_message(request):
+    message = request.POST.get('message', '').strip()
+    if message:
+        FundMessage.objects.create(
+            name=request.POST.get('name', '').strip(),
+            message=message,
+        )
+    return redirect('/honeymoon/?submitted=1')

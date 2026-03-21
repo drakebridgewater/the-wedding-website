@@ -30,6 +30,20 @@ class Question(models.Model):
         return f"{self.name or 'Anonymous'}: {self.question_text[:60]}"
 
 
+class FundMessage(models.Model):
+    """Guestbook messages left by honeymoon fund contributors."""
+    name = models.CharField(max_length=100, blank=True, help_text="Contributor's name (optional)")
+    message = models.TextField()
+    is_approved = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name or 'Anonymous'}: {self.message[:60]}"
+
+
 class WeddingSettings(models.Model):
     """Singleton model — only one row (pk=1) should ever exist."""
 
@@ -61,6 +75,12 @@ class WeddingSettings(models.Model):
         related_name='+',
         help_text='Color theme for the public-facing website. Create new themes in the Themes section.',
     )
+
+    # Honeymoon fund payment handles
+    venmo_handle = models.CharField(max_length=100, blank=True, help_text='Venmo username, e.g. @YourName')
+    zelle_handle = models.CharField(max_length=100, blank=True, help_text='Zelle email or phone number')
+    cashapp_handle = models.CharField(max_length=100, blank=True, help_text='Cash App cashtag, e.g. $YourName')
+    paypal_handle = models.CharField(max_length=100, blank=True, help_text='PayPal.me link or username, e.g. YourName')
 
     class Meta:
         verbose_name = 'Wedding Settings'
