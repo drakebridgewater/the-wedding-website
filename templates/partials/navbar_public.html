@@ -15,7 +15,7 @@
   <!-- Backdrop -->
   <div class="absolute inset-0 bg-stone-50"></div>
 
-  <!-- Close button — z-10 to sit above the nav content -->
+  <!-- Close button -->
   <button id="close-btn" aria-label="Close menu"
           class="absolute top-5 right-5 z-10 flex items-center gap-2 bg-white border border-stone-200 shadow-md rounded-full px-4 py-2 text-stone-500 hover:text-stone-900 transition-all">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -30,45 +30,51 @@
   </div>
 
   <!-- Nav content -->
-  <div class="relative flex flex-col items-center justify-center h-full gap-1 px-8 overflow-y-auto py-20">
+  <div class="relative flex flex-col items-center justify-center h-full px-8 overflow-y-auto py-20">
 
-    <!-- Public links -->
-    <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Our Wedding</p>
-    <a href="{% url 'home' %}"              class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Home</a>
-    <a href="/#event"                       class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">The Event</a>
-    <a href="/#niagara"                     class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Location</a>
-    <a href="/#story"                       class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Our Story</a>
-    <a href="{% url 'wedding-party' %}"     class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Wedding Party</a>
-    <a href="/#contact"                     class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Contact</a>
-    <a href="/#questions"                   class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Q&amp;A</a>
-    <a href="{% url 'schedule:program' %}"  class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Wedding Program</a>
-    {% if registry_url %}
-    <a href="{{ registry_url }}" target="_blank" rel="noopener"
-       class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Registry ↗</a>
-    {% endif %}
-    <a href="{% url 'honeymoon-fund' %}"
-       class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Honeymoon Fund</a>
-    {% if weddingshare_url %}
-    <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
-       class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Photos ↗</a>
-    {% endif %}
+    <div class="flex items-start justify-center gap-0 w-full max-w-2xl">
 
-    <!-- Authenticated planning links -->
-    {% if user.is_authenticated %}
-    <div class="w-10 border-t border-stone-200 my-5"></div>
-    <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-4">Planning</p>
-    <a href="{% url 'dashboard' %}"           class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Dashboard</a>
-    <a href="{% url 'manage' %}"              class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Guests</a>
-    <a href="{% url 'budget:budget' %}"       class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Budget</a>
-    <a href="{% url 'todos:todos' %}"         class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">To-Dos</a>
-    <a href="{% url 'seating:seating' %}"     class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Seating Chart</a>
-    <a href="{% url 'schedule:schedule' %}"   class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Day-of Schedule</a>
-    <a href="{% url 'music:music' %}"         class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Music</a>
-    <a href="{% url 'vendors:venue' %}"       class="theme-link text-xl font-light tracking-wide text-stone-700 py-1">Vendors</a>
-    {% endif %}
+      <!-- Our Wedding column -->
+      <div class="flex flex-col items-center gap-0 px-10 sm:px-16">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-5">Our Wedding</p>
+        <a href="{% url 'home' %}"             class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Home</a>
+        <a href="/#event"                      class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">The Event</a>
+        <a href="/#niagara"                    class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Location</a>
+        <a href="{% url 'wedding-party' %}"    class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Wedding Party</a>
+        <a href="{% url 'schedule:program' %}" class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Program</a>
+        {% if registry_url %}
+        <a href="{{ registry_url }}" target="_blank" rel="noopener"
+           class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Registry ↗</a>
+        {% endif %}
+        <a href="{% url 'honeymoon-fund' %}"   class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Honeymoon Fund</a>
+        {% if weddingshare_url %}
+        <a href="{{ weddingshare_url }}" target="_blank" rel="noopener"
+           class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Photos ↗</a>
+        {% endif %}
+      </div>
+
+      {% if user.is_authenticated %}
+      <!-- Vertical divider -->
+      <div class="w-px self-stretch bg-stone-200 mx-2 my-6"></div>
+
+      <!-- Planning column -->
+      <div class="flex flex-col items-center gap-0 px-10 sm:px-16">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-5">Planning</p>
+        <a href="{% url 'dashboard' %}"         class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Dashboard</a>
+        <a href="{% url 'manage' %}"            class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Guests</a>
+        <a href="{% url 'budget:budget' %}"     class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Budget</a>
+        <a href="{% url 'todos:todos' %}"       class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">To-Dos</a>
+        <a href="{% url 'seating:seating' %}"   class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Seating Chart</a>
+        <a href="{% url 'schedule:schedule' %}" class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Day-of Schedule</a>
+        <a href="{% url 'music:music' %}"       class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Music</a>
+        <a href="{% url 'vendors:venue' %}"     class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Vendors</a>
+      </div>
+      {% endif %}
+
+    </div>
 
     <!-- Auth row -->
-    <div class="mt-8 flex items-center gap-4 text-sm text-stone-400">
+    <div class="mt-10 flex items-center gap-4 text-sm text-stone-400">
       {% if user.is_authenticated %}
       <a href="/admin/"            class="theme-link hover:text-stone-700 transition-colors">Admin</a>
       <span class="text-stone-200">·</span>
