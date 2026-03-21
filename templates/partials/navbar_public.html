@@ -1,10 +1,10 @@
 {% load static %}
 <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur border-b border-stone-200 shadow-sm">
   <div class="max-w-6xl mx-auto px-4">
-    <div class="flex items-center justify-between h-14">
+    <div class="relative flex items-center justify-end h-14">
 
-      <!-- Brand -->
-      <a href="{% url 'home' %}" class="font-script text-2xl text-stone-800 hover:text-rose-700 transition-colors whitespace-nowrap">
+      <!-- Brand centered -->
+      <a href="{% url 'home' %}" class="absolute left-1/2 -translate-x-1/2 font-script text-2xl text-stone-800 hover:text-rose-700 transition-colors whitespace-nowrap">
         {{ couple_name }}
       </a>
 
