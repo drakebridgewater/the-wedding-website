@@ -48,6 +48,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Drop the old CharField first to avoid Postgres failing to cast 'rose' → integer
+        migrations.RemoveField(
+            model_name='weddingsettings',
+            name='theme',
+        ),
         migrations.CreateModel(
             name='Theme',
             fields=[
@@ -62,7 +67,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.RunPython(seed_themes, unseed_themes),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='weddingsettings',
             name='theme',
             field=models.ForeignKey(blank=True, help_text='Color theme for the public-facing website. Create new themes in the Themes section.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='wedding.theme'),
