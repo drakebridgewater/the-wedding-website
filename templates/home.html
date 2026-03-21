@@ -22,14 +22,24 @@
         {{ wedding_location }}
       </p>
 
-      <p class="text-stone-400 text-sm leading-relaxed mb-10">
-        A celebration is only as good as the people in it<br> — <br>and we're so glad you're one of them.
-        <!-- We're so glad you're here.<br> Scroll to find everything you need for our big day. -->
+      <p class="text-stone-400 text-sm leading-snug mb-10">
+        A celebration is only as good as the people in it
+        <span class="flex justify-center my-1.5">
+          <svg width="24" height="10" viewBox="0 0 24 10" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-stone-300">
+            <line x1="0" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="0.75"/>
+            <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+            <line x1="16" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="0.75"/>
+          </svg>
+        </span>
+        and we're so glad you're one of them.
       </p>
 
       <a href="#event"
-         class="inline-flex items-center gap-3 px-8 py-3 rounded-full border border-stone-300 text-stone-600 hover:border-accent hover:text-accent transition-colors text-xs tracking-widest uppercase">
-        → Wedding Details
+         class="relative inline-flex items-center justify-center px-8 py-3 rounded-full border border-stone-300 text-stone-600 hover:border-accent hover:text-accent transition-colors text-xs tracking-widest uppercase overflow-hidden group/btn">
+        <svg class="absolute inset-0 w-full h-full opacity-[0.07] group-hover/btn:opacity-[0.13] transition-opacity" viewBox="0 0 80 36" fill="none" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40 4 L40 28 M28 20 L40 32 L52 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="relative">Wedding Details</span>
       </a>
 
     </div>
