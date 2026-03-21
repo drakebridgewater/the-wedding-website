@@ -59,117 +59,129 @@
 {% vite_asset 'src/todos/quick-add-main.tsx' %}
 {% endif %}
 
-<!-- Shared peony SVG definition (vintage botanical engraving style) -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
-  <defs>
-    <g id="peony-bloom">
-      <!-- Stem -->
-      <path d="M110 192 Q109 222 107 258" stroke-width="1.6" stroke-linecap="round"/>
-      <!-- Small branch -->
-      <path d="M108 238 Q90 233 80 222" stroke-width="1" stroke-linecap="round"/>
-      <!-- Left leaf -->
-      <path d="M109 218 Q78 202 70 182 Q90 174 109 196Z" stroke-width="1"/>
-      <path d="M109 218 Q88 199 75 183" stroke-width="0.45"/>
-      <path d="M93 210 Q81 202 74 193" stroke-width="0.35"/>
-      <!-- Right leaf -->
-      <path d="M111 213 Q141 196 148 175 Q129 169 111 191Z" stroke-width="1"/>
-      <path d="M111 213 Q133 195 146 177" stroke-width="0.45"/>
-      <path d="M125 204 Q138 196 144 186" stroke-width="0.35"/>
-      <!-- Small branch leaf -->
-      <path d="M92 232 Q73 228 68 217 Q83 213 92 226Z" stroke-width="0.9"/>
-      <!-- Flower (centered at 110,115) -->
-      <g transform="translate(110,115)">
-        <!-- Outermost 5 petals -->
-        <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(0)"   stroke-width="1.1"/>
-        <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(72)"  stroke-width="1.1"/>
-        <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(144)" stroke-width="1.1"/>
-        <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(216)" stroke-width="1.1"/>
-        <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(288)" stroke-width="1.1"/>
-        <!-- Outer petal veins -->
-        <g stroke-width="0.35">
-          <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(0)"/>
-          <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(0)"/>
-          <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(0)"/>
-          <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(72)"/>
-          <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(72)"/>
-          <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(72)"/>
-          <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(144)"/>
-          <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(144)"/>
-          <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(144)"/>
-          <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(216)"/>
-          <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(216)"/>
-          <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(216)"/>
-          <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(288)"/>
-          <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(288)"/>
-          <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(288)"/>
-        </g>
-        <!-- Second layer 5 petals (offset 36°) -->
-        <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(36)"  stroke-width="0.9"/>
-        <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(108)" stroke-width="0.9"/>
-        <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(180)" stroke-width="0.9"/>
-        <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(252)" stroke-width="0.9"/>
-        <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(324)" stroke-width="0.9"/>
-        <!-- Second layer veins -->
-        <g stroke-width="0.3">
-          <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(36)"/>
-          <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(36)"/>
-          <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(36)"/>
-          <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(108)"/>
-          <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(108)"/>
-          <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(108)"/>
-          <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(180)"/>
-          <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(180)"/>
-          <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(180)"/>
-          <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(252)"/>
-          <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(252)"/>
-          <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(252)"/>
-          <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(324)"/>
-          <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(324)"/>
-          <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(324)"/>
-        </g>
-        <!-- Inner 5 petals -->
-        <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(18)"  stroke-width="0.8"/>
-        <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(90)"  stroke-width="0.8"/>
-        <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(162)" stroke-width="0.8"/>
-        <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(234)" stroke-width="0.8"/>
-        <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(306)" stroke-width="0.8"/>
-        <!-- Innermost cup petals -->
-        <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(0)"   stroke-width="0.7"/>
-        <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(72)"  stroke-width="0.7"/>
-        <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(144)" stroke-width="0.7"/>
-        <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(216)" stroke-width="0.7"/>
-        <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(288)" stroke-width="0.7"/>
-        <!-- Center stamens -->
-        <circle cx="0" cy="0" r="7.5" stroke-width="0.55"/>
-        <circle cx="0" cy="0" r="4"   stroke-width="0.4"/>
-        <g stroke-width="0.5" stroke-linecap="round">
-          <line x1="0" y1="0" x2="0"    y2="-5.5"/>
-          <line x1="0" y1="0" x2="4.8"  y2="-2.7"/>
-          <line x1="0" y1="0" x2="4.8"  y2="2.7"/>
-          <line x1="0" y1="0" x2="0"    y2="5.5"/>
-          <line x1="0" y1="0" x2="-4.8" y2="2.7"/>
-          <line x1="0" y1="0" x2="-4.8" y2="-2.7"/>
-        </g>
-      </g>
-    </g>
-  </defs>
-</svg>
-
-<!-- Bottom-right peony -->
+<!-- Bottom-right peony (inline SVG — vintage botanical engraving) -->
 <div class="fixed pointer-events-none" aria-hidden="true"
-     style="bottom:-50px;right:-40px;width:220px;height:280px;z-index:0">
+     style="bottom:-50px;right:-40px;width:220px;height:280px;z-index:5">
   <svg viewBox="0 0 220 280" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
        style="color:var(--accent,#e11d48);opacity:0.13;width:100%;height:100%">
-    <use href="#peony-bloom"/>
+    <path d="M110 192 Q109 222 107 258" stroke-width="1.6"/>
+    <path d="M108 238 Q90 233 80 222" stroke-width="1"/>
+    <path d="M109 218 Q78 202 70 182 Q90 174 109 196Z" stroke-width="1"/>
+    <path d="M109 218 Q88 199 75 183" stroke-width="0.45"/>
+    <path d="M93 210 Q81 202 74 193" stroke-width="0.35"/>
+    <path d="M111 213 Q141 196 148 175 Q129 169 111 191Z" stroke-width="1"/>
+    <path d="M111 213 Q133 195 146 177" stroke-width="0.45"/>
+    <path d="M125 204 Q138 196 144 186" stroke-width="0.35"/>
+    <path d="M92 232 Q73 228 68 217 Q83 213 92 226Z" stroke-width="0.9"/>
+    <g transform="translate(110,115)">
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(0)"   stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(72)"  stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(144)" stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(216)" stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(288)" stroke-width="1.1"/>
+      <g stroke-width="0.35">
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(0)"/>  <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(0)"/>  <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(0)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(72)"/> <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(72)"/> <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(72)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(144)"/><path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(144)"/><path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(144)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(216)"/><path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(216)"/><path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(216)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(288)"/><path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(288)"/><path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(288)"/>
+      </g>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(36)"  stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(108)" stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(180)" stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(252)" stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(324)" stroke-width="0.9"/>
+      <g stroke-width="0.3">
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(36)"/>  <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(36)"/>  <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(36)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(108)"/> <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(108)"/> <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(108)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(180)"/><path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(180)"/><path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(180)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(252)"/><path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(252)"/><path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(252)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(324)"/><path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(324)"/><path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(324)"/>
+      </g>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(18)"  stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(90)"  stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(162)" stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(234)" stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(306)" stroke-width="0.8"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(0)"   stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(72)"  stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(144)" stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(216)" stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(288)" stroke-width="0.7"/>
+      <circle cx="0" cy="0" r="7.5" stroke-width="0.55"/>
+      <circle cx="0" cy="0" r="4"   stroke-width="0.4"/>
+      <g stroke-width="0.5">
+        <line x1="0" y1="0" x2="0"    y2="-5.5"/>
+        <line x1="0" y1="0" x2="4.8"  y2="-2.7"/>
+        <line x1="0" y1="0" x2="4.8"  y2="2.7"/>
+        <line x1="0" y1="0" x2="0"    y2="5.5"/>
+        <line x1="0" y1="0" x2="-4.8" y2="2.7"/>
+        <line x1="0" y1="0" x2="-4.8" y2="-2.7"/>
+      </g>
+    </g>
   </svg>
 </div>
 
-<!-- Bottom-left peony (mirrored) -->
+<!-- Bottom-left peony (mirrored via CSS) -->
 <div class="fixed pointer-events-none" aria-hidden="true"
-     style="bottom:-50px;left:-40px;width:220px;height:280px;z-index:0;transform:scaleX(-1)">
+     style="bottom:-50px;left:-40px;width:220px;height:280px;z-index:5;transform:scaleX(-1)">
   <svg viewBox="0 0 220 280" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
        style="color:var(--accent,#e11d48);opacity:0.13;width:100%;height:100%">
-    <use href="#peony-bloom"/>
+    <path d="M110 192 Q109 222 107 258" stroke-width="1.6"/>
+    <path d="M108 238 Q90 233 80 222" stroke-width="1"/>
+    <path d="M109 218 Q78 202 70 182 Q90 174 109 196Z" stroke-width="1"/>
+    <path d="M109 218 Q88 199 75 183" stroke-width="0.45"/>
+    <path d="M93 210 Q81 202 74 193" stroke-width="0.35"/>
+    <path d="M111 213 Q141 196 148 175 Q129 169 111 191Z" stroke-width="1"/>
+    <path d="M111 213 Q133 195 146 177" stroke-width="0.45"/>
+    <path d="M125 204 Q138 196 144 186" stroke-width="0.35"/>
+    <path d="M92 232 Q73 228 68 217 Q83 213 92 226Z" stroke-width="0.9"/>
+    <g transform="translate(110,115)">
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(0)"   stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(72)"  stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(144)" stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(216)" stroke-width="1.1"/>
+      <path d="M0,0 C-23,-16 -30,-57 0,-74 C30,-57 23,-16 0,0" transform="rotate(288)" stroke-width="1.1"/>
+      <g stroke-width="0.35">
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(0)"/>  <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(0)"/>  <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(0)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(72)"/> <path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(72)"/> <path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(72)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(144)"/><path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(144)"/><path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(144)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(216)"/><path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(216)"/><path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(216)"/>
+        <path d="M0,-6 C0,-28 0,-52 0,-69" transform="rotate(288)"/><path d="M0,-18 C-9,-33 -16,-48 -20,-61" transform="rotate(288)"/><path d="M0,-18 C9,-33 16,-48 20,-61" transform="rotate(288)"/>
+      </g>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(36)"  stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(108)" stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(180)" stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(252)" stroke-width="0.9"/>
+      <path d="M0,0 C-17,-13 -21,-44 0,-57 C21,-44 17,-13 0,0" transform="rotate(324)" stroke-width="0.9"/>
+      <g stroke-width="0.3">
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(36)"/>  <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(36)"/>  <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(36)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(108)"/> <path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(108)"/> <path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(108)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(180)"/><path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(180)"/><path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(180)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(252)"/><path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(252)"/><path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(252)"/>
+        <path d="M0,-5 C0,-22 0,-40 0,-53" transform="rotate(324)"/><path d="M0,-14 C-6,-26 -11,-38 -15,-50" transform="rotate(324)"/><path d="M0,-14 C6,-26 11,-38 15,-50" transform="rotate(324)"/>
+      </g>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(18)"  stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(90)"  stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(162)" stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(234)" stroke-width="0.8"/>
+      <path d="M0,0 C-12,-9 -14,-31 0,-41 C14,-31 12,-9 0,0" transform="rotate(306)" stroke-width="0.8"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(0)"   stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(72)"  stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(144)" stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(216)" stroke-width="0.7"/>
+      <path d="M0,0 C-7,-5 -9,-21 0,-28 C9,-21 7,-5 0,0" transform="rotate(288)" stroke-width="0.7"/>
+      <circle cx="0" cy="0" r="7.5" stroke-width="0.55"/>
+      <circle cx="0" cy="0" r="4"   stroke-width="0.4"/>
+      <g stroke-width="0.5">
+        <line x1="0" y1="0" x2="0"    y2="-5.5"/>
+        <line x1="0" y1="0" x2="4.8"  y2="-2.7"/>
+        <line x1="0" y1="0" x2="4.8"  y2="2.7"/>
+        <line x1="0" y1="0" x2="0"    y2="5.5"/>
+        <line x1="0" y1="0" x2="-4.8" y2="2.7"/>
+        <line x1="0" y1="0" x2="-4.8" y2="-2.7"/>
+      </g>
+    </g>
   </svg>
 </div>
 
