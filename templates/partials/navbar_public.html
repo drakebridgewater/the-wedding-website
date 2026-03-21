@@ -12,8 +12,9 @@
 <!-- Full-screen overlay -->
 <div id="nav-overlay" class="fixed inset-0 z-40 hidden" aria-hidden="true">
 
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-stone-50"></div>
+  <!-- Backdrop: warm stone + faint accent blush -->
+  <div class="absolute inset-0 bg-stone-200"></div>
+  <div class="absolute inset-0" style="background-color:var(--accent,#e11d48);opacity:0.07;"></div>
 
   <!-- Close button -->
   <button id="close-btn" aria-label="Close menu"
@@ -26,7 +27,7 @@
 
   <!-- Watermark -->
   <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-    <span class="font-script text-9xl text-stone-100 leading-tight text-center">{{ couple_name }}</span>
+    <span class="font-script text-9xl text-stone-300 leading-tight text-center">{{ couple_name }}</span>
   </div>
 
   <!-- Nav content -->
@@ -55,7 +56,7 @@
 
       {% if user.is_authenticated %}
       <!-- Vertical divider -->
-      <div class="w-px self-stretch bg-stone-200 mx-2 my-6"></div>
+      <div class="w-px self-stretch bg-stone-400 mx-2 my-6"></div>
 
       <!-- Planning column -->
       <div class="flex flex-col items-center gap-0 px-10 sm:px-16">
@@ -74,7 +75,7 @@
     </div>
 
     <!-- Auth row -->
-    <div class="mt-10 flex items-center gap-4 text-sm text-stone-400">
+    <div class="mt-10 flex items-center gap-4 text-sm text-stone-500">
       {% if user.is_authenticated %}
       <a href="/admin/"            class="theme-link hover:text-stone-700 transition-colors">Admin</a>
       <span class="text-stone-200">·</span>
