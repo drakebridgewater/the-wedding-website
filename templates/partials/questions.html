@@ -1,9 +1,9 @@
 {% url 'submit-question' as submit_url %}
-<section id="questions" class="py-20 px-4 bg-stone-50 border-t border-stone-100">
+<section id="questions" class="py-20 px-4 bg-accent-light border-t border-stone-100">
   <div class="max-w-2xl mx-auto">
 
     <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Ask Us Anything</h2>
-    <div class="w-12 h-px bg-stone-300 mx-auto mb-4"></div>
+    <div class="w-12 h-px bg-accent mx-auto mb-4"></div>
     <p class="text-stone-500 text-center text-sm mb-12">Have a question about the wedding? Ask below — we'll answer soon.</p>
 
     <!-- Approved Q&As -->
@@ -44,19 +44,19 @@
             Your name <span class="font-normal normal-case tracking-normal">(optional)</span>
           </label>
           <input type="text" id="q-name" name="name" maxlength="100" autocomplete="name"
-                 class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-300 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 text-sm"
+                 class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-300 input-focus text-sm"
                  placeholder="Jane Smith">
         </div>
         <div class="mb-6">
           <label for="q-text" class="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
-            Your question <span class="text-rose-400">*</span>
+            Your question <span class="text-accent">*</span>
           </label>
           <textarea id="q-text" name="question_text" rows="3" required
-                    class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-300 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 text-sm resize-none"
+                    class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-300 input-focus text-sm resize-none"
                     placeholder="What time does the ceremony start?"></textarea>
         </div>
         <button type="submit"
-                class="px-8 py-3 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-sm tracking-wide transition-colors">
+                class="px-8 py-3 rounded-full bg-accent hover:bg-accent-hover text-white text-sm tracking-wide transition-colors">
           Submit Question
         </button>
       </form>
