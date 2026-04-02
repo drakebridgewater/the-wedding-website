@@ -3,8 +3,6 @@ services:
   wedding:
     container_name: wedding
     build: .
-    env_file:
-      - .env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
     ports:
