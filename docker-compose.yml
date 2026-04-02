@@ -1,11 +1,11 @@
 services:
   # WARNING: If you want to use this docker-compose file in production, you need to backup your database!
-  db:
+  wedding-db:
     image: postgres:16
     container_name: wedding_db
     env_file: .env.dockhand
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   wedding:
@@ -14,15 +14,13 @@ services:
     env_file: .env.dockhand
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
-      - POSTGRES_SERVER=db
+      - POSTGRES_SERVER=wedding-db
       - POSTGRES_PORT=5432
     ports:
       - "${APP_PORT:-8080}:8080"
     volumes:
       - ./media:/app/media
     depends_on:
-      - db
+      - wedding-db
     restart: unless-stopped
 
-volumes:
-  postgres_data:
