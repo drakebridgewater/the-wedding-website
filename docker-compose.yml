@@ -7,7 +7,7 @@ services:
     ports:
       - "${DB_PORT:-5434}:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ${DATA_DIR}/postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   wedding:
@@ -21,7 +21,7 @@ services:
     ports:
       - "${APP_PORT:-8080}:8080"
     volumes:
-      - ./media:/app/media
+      - ${DATA_DIR}/media:/app/media
     depends_on:
       - wedding-db
     restart: unless-stopped
