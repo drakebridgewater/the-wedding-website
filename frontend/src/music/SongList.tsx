@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Sparkles, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import type { CreateSongData, ListType, Moment, Song } from './types'
 import { MOMENT_LABELS, MOMENT_ORDER } from './types'
 import { useSongs } from './api'
@@ -25,12 +25,24 @@ function SuggestionPanel({ moment, onAdd }: { moment: Moment; onAdd: (prefill: P
               <p className="text-sm font-medium text-stone-700 truncate">{s.title}</p>
               <p className="text-xs text-stone-400 truncate">{s.artist}</p>
             </div>
-            <button
-              onClick={() => onAdd({ title: s.title, artist: s.artist, moment })}
-              className="flex-shrink-0 flex items-center gap-0.5 px-2 py-1 rounded-full bg-stone-100 text-stone-500 text-xs font-medium hover:bg-rose-100 hover:text-rose-600 transition-colors"
-            >
-              <Plus size={10} /> Add
-            </button>
+            <div className="flex-shrink-0 flex items-center gap-1">
+              <a
+                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(`${s.title} ${s.artist}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-6 h-6 rounded-full text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                title="Search on YouTube"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink size={11} />
+              </a>
+              <button
+                onClick={() => onAdd({ title: s.title, artist: s.artist, moment })}
+                className="flex items-center gap-0.5 px-2 py-1 rounded-full bg-stone-100 text-stone-500 text-xs font-medium hover:bg-rose-100 hover:text-rose-600 transition-colors"
+              >
+                <Plus size={10} /> Add
+              </button>
+            </div>
           </div>
         ))}
       </div>
