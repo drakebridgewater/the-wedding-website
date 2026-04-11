@@ -60,7 +60,10 @@ def vendor_list(request, vendor_type):
 
     serializer = Serializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
-    serializer.save()
+    instance = serializer.save()
+    if instance.website:
+        from .scraper import launch_scrape
+        launch_scrape(Model, instance.pk, instance.website)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -80,10 +83,14 @@ def vendor_detail(request, vendor_type, pk):
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    old_website = instance.website
     partial = request.method == 'PATCH'
     serializer = Serializer(instance, data=request.data, partial=partial, context={'request': request})
     serializer.is_valid(raise_exception=True)
     serializer.save()
+    if instance.website and instance.website != old_website:
+        from .scraper import launch_scrape
+        launch_scrape(Model, instance.pk, instance.website)
     # Re-fetch to get fresh prefetched photos
     refreshed = _qs(Model).get(pk=instance.pk)
     return Response(Serializer(refreshed, context={'request': request}).data)

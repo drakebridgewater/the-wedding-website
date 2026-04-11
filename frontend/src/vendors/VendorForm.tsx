@@ -114,12 +114,32 @@ function getTabsForType(vendorType: VendorType, hasVendor: boolean): { id: FormT
 
 // ---- UI helpers ----
 
+function AlertIcon() {
+  return (
+    <svg
+      className="inline w-3.5 h-3.5 text-red-500 ml-1 align-text-bottom"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+      aria-hidden="true"
+    >
+      <path
+        fillRule="evenodd"
+        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 10-2 0v4a1 1 0 102 0V6zm-1 8a1 1 0 100-2 1 1 0 000 2z"
+        clipRule="evenodd"
+      />
+    </svg>
+  )
+}
+
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+        {error && <AlertIcon />}
+      </label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-500 font-medium">{error}</p>}
     </div>
   )
 }
@@ -127,8 +147,25 @@ function Field({ label, error, children }: { label: string; error?: string; chil
 function inputCls(error?: string) {
   return cn(
     'w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 text-sm',
-    error ? 'border-red-300 focus:ring-red-400' : 'border-gray-300 focus:ring-rose-400',
+    error
+      ? 'border-red-400 focus:ring-red-400 input-error-glow'
+      : 'border-gray-300 focus:ring-rose-400',
   )
+}
+
+// Fields that live on each tab — used to show a red dot on tabs with errors
+const TAB_ERROR_FIELDS: Partial<Record<FormTab, string[]>> = {
+  overview: ['name', 'price_estimate', 'price_per_head', 'price_per_serving', 'minimum_order', 'capacity'],
+  contact:  ['website', 'phone', 'email'],
+  location: ['address', 'latitude', 'longitude'],
+  details:  ['performance_duration_hours', 'sample_link'],
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function tabHasErrors(tabId: FormTab, errors: any): boolean {
+  const fields = TAB_ERROR_FIELDS[tabId]
+  if (!fields) return false
+  return fields.some((f) => f in errors)
 }
 
 function SectionHeader({ title }: { title: string }) {
@@ -547,6 +584,9 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
               <span className="ml-1.5 text-xs bg-rose-100 text-rose-500 rounded-full px-1.5 py-0.5 font-normal">
                 {checklistValue.length}
               </span>
+            )}
+            {tabHasErrors(tab.id, errors) && (
+              <span className="ml-1.5 inline-block w-1.5 h-1.5 bg-red-500 rounded-full align-middle" />
             )}
           </button>
         ))}
