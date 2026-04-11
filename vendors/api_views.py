@@ -123,6 +123,22 @@ def vendor_photo_upload(request, vendor_type, pk):
     return Response(created, status=status.HTTP_201_CREATED)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def vendor_photo_scrape(request, vendor_type, pk):
+    Model, _, err = _resolve(vendor_type)
+    if err:
+        return err
+
+    instance = get_object_or_404(Model, pk=pk)
+    if not instance.website:
+        return Response({'error': 'No website URL set for this vendor.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    from .scraper import run_scrape_sync
+    count = run_scrape_sync(Model, pk, instance.website)
+    return Response({'scraped': count})
+
+
 @api_view(['GET'])
 def vendor_checklist_items(request):
     vendor_type = request.GET.get('vendor_type', 'venue')

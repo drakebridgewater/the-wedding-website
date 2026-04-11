@@ -47,6 +47,13 @@ def launch_scrape(model_class, vendor_id: int, website_url: str) -> None:
     t.start()
 
 
+def run_scrape_sync(model_class, vendor_id: int, website_url: str) -> int:
+    """Scrape synchronously (blocks until done); returns number of photos saved."""
+    if not website_url:
+        return 0
+    return _do_scrape(model_class, vendor_id, website_url)
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -62,7 +69,7 @@ def _scrape_safe(model_class, vendor_id: int, website_url: str) -> None:
         connection.close()
 
 
-def _do_scrape(model_class, vendor_id: int, website_url: str) -> None:
+def _do_scrape(model_class, vendor_id: int, website_url: str) -> int:
     from django.contrib.contenttypes.models import ContentType
     from .models import VendorPhoto
 
@@ -72,12 +79,12 @@ def _do_scrape(model_class, vendor_id: int, website_url: str) -> None:
         resp.raise_for_status()
     except requests.RequestException as exc:
         logger.warning('Could not fetch %s: %s', website_url, exc)
-        return
+        return 0
 
     image_urls = _extract_image_urls(resp.text, resp.url)
     if not image_urls:
         logger.info('No images found on %s', website_url)
-        return
+        return 0
 
     ct = ContentType.objects.get_for_model(model_class)
 
@@ -119,6 +126,7 @@ def _do_scrape(model_class, vendor_id: int, website_url: str) -> None:
         'Scraped %d photo(s) for %s #%s from %s',
         saved, model_class.__name__, vendor_id, website_url,
     )
+    return saved
 
 
 def _extract_image_urls(html: str, base_url: str) -> list[str]:

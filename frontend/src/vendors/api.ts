@@ -95,6 +95,15 @@ export function useUploadPhotos(vendorType: VendorType) {
   })
 }
 
+export function useScrapePhotos(vendorType: VendorType) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch<{ scraped: number }>(`/vendors/api/${vendorType}/${id}/scrape/`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
+  })
+}
+
 export function useDeletePhoto(vendorType: VendorType) {
   const qc = useQueryClient()
   return useMutation({

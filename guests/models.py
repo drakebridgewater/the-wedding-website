@@ -61,6 +61,12 @@ class Party(models.Model):
         help_text='Number of unnamed +1 guests attending with this party.',
     )
 
+    def save(self, *args, **kwargs):
+        # A plus one can only attend if the party itself is attending.
+        if self.is_attending is False:
+            self.plus_one_count = 0
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return 'Party: {}'.format(self.name)
 

@@ -775,6 +775,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             vendorId={vendor.id}
             vendorType={vendorType}
             photos={(vendor as VenueVendor).photos}
+            vendorWebsite={vendor.website || undefined}
           />
         </div>
       )}

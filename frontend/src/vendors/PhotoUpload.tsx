@@ -1,20 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, Upload } from 'lucide-react'
+import { X, Upload, Globe } from 'lucide-react'
 import type { VendorPhoto } from './types'
 import type { VendorType } from './types'
-import { useDeletePhoto, useUploadPhotos } from './api'
+import { useDeletePhoto, useScrapePhotos, useUploadPhotos } from './api'
 
 interface Props {
   vendorId: number
   vendorType: VendorType
   photos: VendorPhoto[]
+  vendorWebsite?: string
 }
 
-export function PhotoUpload({ vendorId, vendorType, photos }: Props) {
+export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Props) {
   const [previews, setPreviews] = useState<{ file: File; url: string }[]>([])
+  const [scrapeStatus, setScrapeStatus] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const uploadMutation = useUploadPhotos(vendorType)
   const deleteMutation = useDeletePhoto(vendorType)
+  const scrapeMutation = useScrapePhotos(vendorType)
 
   useEffect(() => {
     return () => {
@@ -44,6 +47,21 @@ export function PhotoUpload({ vendorId, vendorType, photos }: Props) {
     )
   }
 
+  function scrapeFromWebsite() {
+    setScrapeStatus(null)
+    scrapeMutation.mutate(vendorId, {
+      onSuccess: (data) => {
+        const n = data.scraped
+        setScrapeStatus(n > 0 ? `${n} photo${n !== 1 ? 's' : ''} imported` : 'No photos found on the site')
+        setTimeout(() => setScrapeStatus(null), 5000)
+      },
+      onError: () => {
+        setScrapeStatus('Could not fetch photos — check the website URL')
+        setTimeout(() => setScrapeStatus(null), 5000)
+      },
+    })
+  }
+
   return (
     <div className="space-y-3">
       {/* Existing photos */}
@@ -55,6 +73,7 @@ export function PhotoUpload({ vendorId, vendorType, photos }: Props) {
                 src={photo.url}
                 alt={photo.caption || 'Vendor photo'}
                 className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                title={photo.caption || undefined}
               />
               <button
                 onClick={() => deleteMutation.mutate(photo.id)}
@@ -97,8 +116,8 @@ export function PhotoUpload({ vendorId, vendorType, photos }: Props) {
         </div>
       )}
 
-      {/* File picker */}
-      <div>
+      {/* Action buttons row */}
+      <div className="flex flex-wrap items-center gap-2">
         <input
           ref={inputRef}
           type="file"
@@ -115,6 +134,22 @@ export function PhotoUpload({ vendorId, vendorType, photos }: Props) {
           <Upload size={14} />
           Add photos
         </button>
+
+        {vendorWebsite && (
+          <button
+            type="button"
+            onClick={scrapeFromWebsite}
+            disabled={scrapeMutation.isPending}
+            className="flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-dashed border-gray-300 text-gray-500 hover:border-rose-400 hover:text-rose-600 transition-colors disabled:opacity-50"
+          >
+            <Globe size={14} />
+            {scrapeMutation.isPending ? 'Fetching…' : 'Fetch from website'}
+          </button>
+        )}
+
+        {scrapeStatus && (
+          <span className="text-xs text-gray-500 italic">{scrapeStatus}</span>
+        )}
       </div>
     </div>
   )
