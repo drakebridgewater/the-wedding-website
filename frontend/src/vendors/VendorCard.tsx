@@ -95,7 +95,7 @@ function TypeSpecificChips({ vendor, vendorType, visibleFields }: {
 
 export function VendorCard({ vendor, vendorType, visibleFields, onClick, listView = false }: Props) {
   const updateMutation = useUpdateVendor(vendorType)
-  const firstPhoto = vendor.photos[0]
+  const firstPhoto = vendor.photos.find((p) => p.is_primary) ?? vendor.photos[0]
 
   function toggleFavorite(e: React.MouseEvent) {
     e.stopPropagation()

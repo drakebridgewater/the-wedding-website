@@ -18,7 +18,7 @@ class VendorPhotoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VendorPhoto
-        fields = ['id', 'url', 'caption', 'order', 'uploaded_at']
+        fields = ['id', 'url', 'caption', 'is_primary', 'order', 'uploaded_at']
         read_only_fields = ['id', 'url', 'uploaded_at']
 
     def get_url(self, obj):

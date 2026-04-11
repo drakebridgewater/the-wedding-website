@@ -146,10 +146,17 @@ def vendor_checklist_items(request):
     return Response(VendorChecklistItemSerializer(items, many=True).data)
 
 
-@api_view(['DELETE'])
+@api_view(['DELETE', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def vendor_photo_delete(request, photo_pk):
     photo = get_object_or_404(VendorPhoto, pk=photo_pk)
+
+    if request.method == 'PATCH':
+        if 'is_primary' in request.data:
+            photo.is_primary = bool(request.data['is_primary'])
+            photo.save()
+        return Response(VendorPhotoSerializer(photo, context={'request': request}).data)
+
     photo.image.delete(save=False)
     photo.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)

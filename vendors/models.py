@@ -39,11 +39,22 @@ class VendorPhoto(models.Model):
     vendor = GenericForeignKey('content_type', 'object_id')
     image = models.ImageField(upload_to='vendors/%Y/%m/')
     caption = models.CharField(max_length=255, blank=True)
+    is_primary = models.BooleanField(default=False, help_text='Show this photo on the vendor card.')
     order = models.PositiveSmallIntegerField(default=0)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['order', 'uploaded_at']
+        ordering = ['-is_primary', 'order', 'uploaded_at']
+
+    def save(self, *args, **kwargs):
+        if self.is_primary:
+            # Only one photo per vendor can be primary
+            VendorPhoto.objects.filter(
+                content_type=self.content_type,
+                object_id=self.object_id,
+                is_primary=True,
+            ).exclude(pk=self.pk).update(is_primary=False)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Photo {self.pk} ({self.content_type} #{self.object_id})"

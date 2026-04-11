@@ -104,6 +104,18 @@ export function useScrapePhotos(vendorType: VendorType) {
   })
 }
 
+export function useSetPrimaryPhoto(vendorType: VendorType) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (photoId: number) =>
+      apiFetch(`/vendors/api/photos/${photoId}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_primary: true }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
+  })
+}
+
 export function useDeletePhoto(vendorType: VendorType) {
   const qc = useQueryClient()
   return useMutation({

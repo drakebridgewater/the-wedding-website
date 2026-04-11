@@ -4,6 +4,7 @@ export interface VendorPhoto {
   id: number
   url: string
   caption: string
+  is_primary: boolean
   order: number
   uploaded_at: string
 }

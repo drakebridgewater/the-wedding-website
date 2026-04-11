@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, Upload, Globe } from 'lucide-react'
+import { X, Upload, Globe, ImageIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { VendorPhoto } from './types'
 import type { VendorType } from './types'
-import { useDeletePhoto, useScrapePhotos, useUploadPhotos } from './api'
+import { useDeletePhoto, useSetPrimaryPhoto, useScrapePhotos, useUploadPhotos } from './api'
 
 interface Props {
   vendorId: number
@@ -17,6 +18,7 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
   const inputRef = useRef<HTMLInputElement>(null)
   const uploadMutation = useUploadPhotos(vendorType)
   const deleteMutation = useDeletePhoto(vendorType)
+  const primaryMutation = useSetPrimaryPhoto(vendorType)
   const scrapeMutation = useScrapePhotos(vendorType)
 
   useEffect(() => {
@@ -72,12 +74,38 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
               <img
                 src={photo.url}
                 alt={photo.caption || 'Vendor photo'}
-                className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                className={cn(
+                  'h-20 w-20 object-cover rounded-lg border-2',
+                  photo.is_primary ? 'border-rose-500' : 'border-gray-200',
+                )}
                 title={photo.caption || undefined}
               />
+
+              {/* Current cover badge */}
+              {photo.is_primary && (
+                <span className="absolute bottom-0 inset-x-0 text-center text-[10px] font-semibold bg-rose-500 text-white rounded-b-lg py-0.5 leading-none pointer-events-none">
+                  Cover
+                </span>
+              )}
+
+              {/* Set as cover — appears on hover for non-primary photos */}
+              {!photo.is_primary && (
+                <button
+                  onClick={() => primaryMutation.mutate(photo.id)}
+                  disabled={primaryMutation.isPending}
+                  title="Set as cover photo"
+                  className="absolute bottom-0 inset-x-0 text-center text-[10px] font-medium bg-black/55 text-white rounded-b-lg py-0.5 leading-none opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30 flex items-center justify-center gap-0.5"
+                >
+                  <ImageIcon size={9} />
+                  Set cover
+                </button>
+              )}
+
+              {/* Delete */}
               <button
                 onClick={() => deleteMutation.mutate(photo.id)}
                 disabled={deleteMutation.isPending}
+                title="Delete photo"
                 className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X size={10} />
@@ -151,6 +179,10 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
           <span className="text-xs text-gray-500 italic">{scrapeStatus}</span>
         )}
       </div>
+
+      {photos.length > 1 && (
+        <p className="text-xs text-gray-400">Hover a photo and click "Set cover" to use it on the vendor card.</p>
+      )}
     </div>
   )
 }
