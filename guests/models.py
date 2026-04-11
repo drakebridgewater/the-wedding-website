@@ -119,6 +119,7 @@ class Guest(models.Model):
     meal = models.CharField(max_length=20, choices=MEALS, null=True, blank=True)
     is_child = models.BooleanField(default=False)
     dietary_restrictions = models.TextField(blank=True)
+    is_plus_one = models.BooleanField(default=False)
     seating_table = models.ForeignKey(
         'seating.SeatingTable',
         null=True, blank=True,

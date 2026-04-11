@@ -41,6 +41,7 @@ export interface Guest {
   meal: Meal
   is_child: boolean
   dietary_restrictions: string
+  is_plus_one: boolean
 }
 
 export interface Party {
@@ -114,7 +115,7 @@ export interface PartyFormData {
   wants_physical_card: boolean
   side: PartySide
   plus_one_allowed: boolean
-  plus_one_count: number
+  plus_one_count?: number
 }
 
 export interface GuestFormData {
@@ -123,6 +124,7 @@ export interface GuestFormData {
   email: string
   is_child: boolean
   dietary_restrictions: string
+  is_plus_one?: boolean
 }
 
 export const ROLE_ORDER: MemberRole[] = [

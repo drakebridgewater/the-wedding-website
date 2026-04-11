@@ -545,7 +545,7 @@ export function ContactsTab() {
     }
   }
 
-  const attending = parties.reduce((n, p) => n + p.guests.filter((g) => g.is_attending).length + p.plus_one_count, 0)
+  const attending = parties.reduce((n, p) => n + p.guests.filter((g) => g.is_attending).length, 0)
 
   if (isLoading) return <div className="text-sm text-stone-400">Loading…</div>
 
@@ -934,10 +934,15 @@ function PartyRow({
     catch { toast.error('Failed to update') }
   }
 
-  async function setPlusOneCount(delta: number) {
-    const next = Math.max(0, party.plus_one_count + delta)
-    try { await updateParty.mutateAsync({ id: party.id, data: { plus_one_count: next } }) }
-    catch { toast.error('Failed to update') }
+  async function addPlusOne() {
+    try {
+      await addGuest.mutateAsync({
+        partyId: party.id,
+        data: { first_name: '+1', last_name: '', email: '', is_child: false, dietary_restrictions: '', is_plus_one: true },
+      })
+    } catch {
+      toast.error('Failed to add +1')
+    }
   }
 
   // When filters are active, show only matching guests; otherwise show all
@@ -951,8 +956,8 @@ function PartyRow({
     : party.guests
   const hiddenCount = party.guests.length - visibleGuests.length
 
-  const attendingCount = party.guests.filter((g) => g.is_attending).length + party.plus_one_count
-  const totalCount = party.guests.length + party.plus_one_count
+  const attendingCount = party.guests.filter((g) => g.is_attending).length
+  const totalCount = party.guests.length
 
   return (
     <div className="bg-white rounded-xl border border-stone-100 shadow-sm overflow-hidden">
@@ -985,23 +990,9 @@ function PartyRow({
           <span title="Wants physical card" className="text-sm text-stone-400">✉</span>
         )}
         {party.plus_one_allowed && (
-          <div
-            className="flex items-center gap-0.5 text-[10px] rounded-full bg-amber-100 text-amber-700 font-medium hidden sm:flex"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setPlusOneCount(-1)}
-              disabled={party.plus_one_count === 0}
-              className="px-1.5 py-0.5 rounded-l-full hover:bg-amber-200 disabled:opacity-30 transition-colors"
-              title="Remove a +1"
-            >−</button>
-            <span className="px-1">{party.plus_one_count > 0 ? `+${party.plus_one_count}` : '+1?'}</span>
-            <button
-              onClick={() => setPlusOneCount(1)}
-              className="px-1.5 py-0.5 rounded-r-full hover:bg-amber-200 transition-colors"
-              title="Add a +1"
-            >+</button>
-          </div>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium hidden sm:inline">
+            +1 ok
+          </span>
         )}
         <select
           value={party.status}
@@ -1026,7 +1017,7 @@ function PartyRow({
       {/* Expanded guest rows */}
       {expanded && (
         <div className="border-t border-stone-50">
-          {visibleGuests.length === 0 && party.plus_one_count === 0 && !showAddGuest ? (
+          {visibleGuests.length === 0 && !showAddGuest ? (
             <div className="px-10 py-3 text-xs text-stone-400 italic">
               {hiddenCount > 0 ? `${hiddenCount} guest${hiddenCount !== 1 ? 's' : ''} hidden by filter` : 'No guests yet'}
             </div>
@@ -1060,17 +1051,6 @@ function PartyRow({
                     </td>
                   </tr>
                 )}
-                {/* Phantom rows for unnamed +1s */}
-                {Array.from({ length: party.plus_one_count }).map((_, i) => (
-                  <tr key={`plus-one-${i}`} className="border-b border-stone-50 last:border-0">
-                    <td className="px-10 py-2 text-stone-400 italic">+1 (unnamed)</td>
-                    <td className="px-2 py-2 hidden sm:table-cell" />
-                    <td className="px-2 py-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">Yes</span>
-                    </td>
-                    <td colSpan={3} />
-                  </tr>
-                ))}
                 {showAddGuest && (
                   <AddGuestRow
                     partyId={party.id}
@@ -1081,13 +1061,21 @@ function PartyRow({
               </tbody>
             </table>
           )}
-          <div className="px-10 py-2 border-t border-stone-50">
+          <div className="px-10 py-2 border-t border-stone-50 flex gap-4">
             <button
               onClick={() => setShowAddGuest(true)}
               className="flex items-center gap-1 text-xs text-stone-400 hover:text-rose-600 transition-colors"
             >
               <UserPlus size={12} /> Add guest
             </button>
+            {party.plus_one_allowed && (
+              <button
+                onClick={addPlusOne}
+                className="flex items-center gap-1 text-xs text-stone-400 hover:text-amber-600 transition-colors"
+              >
+                <UserPlus size={12} /> Add +1
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1115,9 +1103,11 @@ function GuestEditModal({
   )
   const [meal, setMeal]               = useState(guest.meal ?? '')
 
+  const isPlusOne = guest.is_plus_one
+
   function handleSave() {
     onSave({
-      first_name: firstName,
+      first_name: firstName || (isPlusOne ? '+1' : firstName),
       last_name: lastName,
       email,
       is_child: isChild,
@@ -1127,20 +1117,20 @@ function GuestEditModal({
     })
   }
 
-  useEnterSubmit(handleSave, !firstName || saving)
+  useEnterSubmit(handleSave, (!firstName && !isPlusOne) || saving)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
          onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
         <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="text-sm font-semibold text-stone-900">Edit Guest</h2>
+          <h2 className="text-sm font-semibold text-stone-900">{isPlusOne ? 'Edit +1 Guest' : 'Edit Guest'}</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 text-lg leading-none">&times;</button>
         </div>
         <div className="px-5 py-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">First name *</label>
+              <label className="block text-xs font-medium text-stone-600 mb-1">First name{!isPlusOne && ' *'}</label>
               <input
                 autoFocus
                 value={firstName}
@@ -1216,7 +1206,7 @@ function GuestEditModal({
             Cancel
           </button>
           <button
-            disabled={!firstName || saving}
+            disabled={(!firstName && !isPlusOne) || saving}
             onClick={handleSave}
             className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50"
           >
@@ -1297,6 +1287,9 @@ function GuestRow({
             {' '}
             <InlineEditCell value={guest.last_name}
               onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { last_name: v } })} />
+            {guest.is_plus_one && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">+1</span>
+            )}
             {guest.is_child && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600 font-medium">child</span>
             )}
@@ -1757,12 +1750,11 @@ function PartyModal({
   useAddressAutocomplete(addressRef, setAddress)
   const [side, setSide]             = useState<PartySide>(initial?.side ?? '')
   const [plusOne, setPlusOne]       = useState(initial?.plus_one_allowed ?? false)
-  const [plusOneCount, setPlusOneCount] = useState(initial?.plus_one_count ?? 0)
 
   function doSave() {
     if (!name) return
     onSave({ name, type, category, status, rehearsal_dinner: rehearsal,
-             comments, address, wants_physical_card: wantsCard, side, plus_one_allowed: plusOne, plus_one_count: plusOneCount })
+             comments, address, wants_physical_card: wantsCard, side, plus_one_allowed: plusOne })
   }
 
   useEnterSubmit(doSave, !name || saving)
@@ -1832,32 +1824,11 @@ function PartyModal({
               Rehearsal dinner
             </label>
             <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-              <input type="checkbox" checked={plusOne} onChange={(e) => {
-                setPlusOne(e.target.checked)
-                if (!e.target.checked) setPlusOneCount(0)
-              }} className="w-4 h-4 rounded border-stone-300" />
+              <input type="checkbox" checked={plusOne} onChange={(e) => setPlusOne(e.target.checked)}
+                className="w-4 h-4 rounded border-stone-300" />
               +1 allowed
             </label>
           </div>
-          {plusOne && (
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">
-                Unnamed +1s attending
-                <span className="ml-1 font-normal text-stone-400">(seats reserved for unknown guests)</span>
-              </label>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setPlusOneCount(Math.max(0, plusOneCount - 1))}
-                  className="w-7 h-7 rounded border border-stone-300 text-stone-500 hover:bg-stone-50 text-sm font-medium disabled:opacity-30"
-                  disabled={plusOneCount === 0}>−</button>
-                <span className="w-6 text-center text-sm font-medium text-stone-800">{plusOneCount}</span>
-                <button type="button" onClick={() => setPlusOneCount(plusOneCount + 1)}
-                  className="w-7 h-7 rounded border border-stone-300 text-stone-500 hover:bg-stone-50 text-sm font-medium">+</button>
-                {plusOneCount > 0 && (
-                  <span className="text-xs text-amber-600 ml-1">{plusOneCount} seat{plusOneCount !== 1 ? 's' : ''} reserved</span>
-                )}
-              </div>
-            </div>
-          )}
           <div>
             <label className="block text-xs font-medium text-stone-600 mb-1">Mailing address</label>
             <input ref={addressRef} type="text" value={address} onChange={(e) => setAddress(e.target.value)}
