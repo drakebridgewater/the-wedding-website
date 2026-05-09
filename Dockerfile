@@ -8,7 +8,7 @@ COPY frontend/package.json frontend/package-lock.json ./frontend/
 RUN npm --prefix frontend install
 # Copy full project so Tailwind can scan Django templates
 COPY . .
-RUN npm --prefix frontend run build
+RUN --network=none npm --prefix frontend run build
 
 # ---- App stage ----
 FROM python:3.12
