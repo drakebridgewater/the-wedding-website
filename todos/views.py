@@ -1,18 +1,20 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+from . import provider
+
 
 @login_required
 def todos_page(request):
-    from .ticktick_client import get_config
     try:
-        cfg = get_config()
-        drake_assignee = cfg['drake_assignee']
-        shawna_assignee = cfg['shawna_assignee']
+        cfg = provider.get_config()
+        drake_assignee = cfg.get('drake_assignee', '') or ''
+        shawna_assignee = cfg.get('shawna_assignee', '') or ''
     except Exception:
         drake_assignee = ''
         shawna_assignee = ''
     return render(request, 'todos/todos.html', {
         'drake_assignee': drake_assignee,
         'shawna_assignee': shawna_assignee,
+        'todo_provider': provider.get_active_provider(),
     })

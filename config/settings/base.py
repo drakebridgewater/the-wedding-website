@@ -147,11 +147,18 @@ DEFAULT_WEDDING_TEST_EMAIL = DEFAULT_WEDDING_FROM_EMAIL
 DEFAULT_WEDDING_REPLY_EMAIL = DEFAULT_WEDDING_EMAIL
 
 # -------------------------
-# TickTick integration
-# Set these in local.py or via environment variables.
-# Run `python manage.py ticktick_auth` once to complete OAuth setup.
+# Todo provider integration
+#
+# The todos app can sync against either TickTick or Todoist. Pick which one
+# is active with TODO_PROVIDER ('ticktick' | 'todoist'). Settings for each
+# provider live below; only the active one needs to be filled in.
 # -------------------------
 
+TODO_PROVIDER = 'todoist'  # 'ticktick' or 'todoist'
+
+# --- TickTick ---
+# OAuth2: register an app at https://developer.ticktick.com, then run
+# `python manage.py ticktick_auth` once to complete the browser flow.
 TICKTICK_CLIENT_ID = 'REDACTED_TICKTICK_CLIENT_ID'
 TICKTICK_CLIENT_SECRET = 'REDACTED_TICKTICK_CLIENT_SECRET'
 TICKTICK_USERNAME = 'drake.bridgewater@gmail.com'
@@ -162,6 +169,17 @@ TICKTICK_TOKEN_PATH = str(BASE_DIR / '.token-oauth')
 # project tasks and find the value in the `assignee` field for each person.
 TICKTICK_DRAKE_ASSIGNEE = ''
 TICKTICK_SHAWNA_ASSIGNEE = ''
+
+# --- Todoist ---
+# Long-lived personal API token. Get one at:
+#   Todoist → Settings → Integrations → Developer → "API token"
+# No OAuth dance, no refresh — just paste the token.
+TODOIST_API_TOKEN = 'REDACTED_TODOIST_API_TOKEN'
+TODOIST_PROJECT_NAME = 'Wedding'
+# Todoist user (collaborator) IDs for the assignee filter. Run
+# `python manage.py todoist_setup` after configuring the token to list them.
+TODOIST_DRAKE_ASSIGNEE = ''
+TODOIST_SHAWNA_ASSIGNEE = ''
 
 # -------------------------
 # Google Drive / Sheets sync

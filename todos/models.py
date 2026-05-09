@@ -1,10 +1,28 @@
 from django.db import models
 
 
-class Task(models.Model):
-    """Local mirror of a TickTick task. Populated by the sync endpoint."""
+PROVIDER_TICKTICK = 'ticktick'
+PROVIDER_TODOIST = 'todoist'
+PROVIDER_CHOICES = [
+    (PROVIDER_TICKTICK, 'TickTick'),
+    (PROVIDER_TODOIST, 'Todoist'),
+]
 
-    ticktick_id = models.CharField(max_length=200, unique=True)
+
+class Task(models.Model):
+    """Local mirror of a remote task. Populated by the sync endpoint.
+
+    `provider` identifies the source system; `external_id` is that system's
+    task id. The pair is unique. Priority is normalised to TickTick's scale
+    (0/1/3/5) at serialize time so the frontend can stay provider-agnostic.
+    """
+
+    provider = models.CharField(
+        max_length=20,
+        choices=PROVIDER_CHOICES,
+        default=PROVIDER_TODOIST,
+    )
+    external_id = models.CharField(max_length=200)
     project_id = models.CharField(max_length=200, blank=True)
     title = models.CharField(max_length=500)
     content = models.TextField(blank=True)
@@ -20,13 +38,20 @@ class Task(models.Model):
 
     class Meta:
         ordering = ['due_date', 'title']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['provider', 'external_id'],
+                name='todos_task_unique_provider_external_id',
+            ),
+        ]
 
     def __str__(self):
         return self.title
 
     def to_dict(self) -> dict:
         return {
-            'id': self.ticktick_id,
+            'id': self.external_id,
+            'provider': self.provider,
             'title': self.title,
             'content': self.content,
             'priority': self.priority,
@@ -70,6 +95,48 @@ class TickTickSettings(models.Model):
 
     def __str__(self):
         return 'TickTick Settings'
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class TodoistSettings(models.Model):
+    """Singleton model — only one row (pk=1) should ever exist.
+
+    Todoist uses a long-lived personal API token (Settings → Integrations →
+    Developer in the Todoist app), so there's no client_id/secret/refresh
+    flow to worry about.
+    """
+
+    api_token = models.CharField(
+        max_length=200, blank=True,
+        help_text=(
+            'Todoist API token. Get one at Todoist → Settings → Integrations → '
+            'Developer → "API token". Stored in the database — ensure your '
+            'admin is accessed over HTTPS in production.'
+        ),
+    )
+    project_name = models.CharField(
+        max_length=100, default='Wedding',
+        help_text='Name of the Todoist project to sync (case-insensitive).',
+    )
+    drake_assignee_id = models.CharField(
+        max_length=200, blank=True,
+        help_text='Todoist user (collaborator) ID for Drake. Run `manage.py todoist_setup` to find this value.',
+    )
+    shawna_assignee_id = models.CharField(
+        max_length=200, blank=True,
+        help_text='Todoist user (collaborator) ID for Shawna. Run `manage.py todoist_setup` to find this value.',
+    )
+
+    class Meta:
+        verbose_name = 'Todoist Settings'
+        verbose_name_plural = 'Todoist Settings'
+
+    def __str__(self):
+        return 'Todoist Settings'
 
     @classmethod
     def get(cls):

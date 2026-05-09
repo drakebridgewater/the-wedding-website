@@ -237,7 +237,7 @@ def sync_tasks_to_db(project_id: str) -> dict:
 
     Returns a dict with counts: {'updated': N, 'created': N, 'total': N}.
     """
-    from todos.models import Task
+    from todos.models import Task, PROVIDER_TICKTICK
 
     tasks = get_tasks(project_id)
     created_count = 0
@@ -258,7 +258,8 @@ def sync_tasks_to_db(project_id: str) -> dict:
             'modified_time': task.get('modifiedTime') or '',
         }
         _, created = Task.objects.update_or_create(
-            ticktick_id=task['id'],
+            provider=PROVIDER_TICKTICK,
+            external_id=task['id'],
             defaults=defaults,
         )
         if created:

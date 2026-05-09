@@ -23,7 +23,7 @@ export function TodosApp({ drakeEmail, shawnaEmail }: Props) {
   const sync = useSyncTodos()
   const { data: tasks, isLoading, isError, error } = useTodos(filters)
 
-  // Sync with TickTick on page load
+  // Sync with the active task provider on page load
   useEffect(() => { sync.mutate() }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
@@ -37,7 +37,7 @@ export function TodosApp({ drakeEmail, shawnaEmail }: Props) {
           <button
             onClick={() => sync.mutate()}
             disabled={sync.isPending}
-            title="Sync with TickTick"
+            title="Sync now"
             className="p-1 text-gray-400 hover:text-indigo-500 disabled:opacity-40 transition-colors"
           >
             <RefreshCw size={15} className={sync.isPending ? 'animate-spin' : ''} />

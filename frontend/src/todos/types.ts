@@ -1,7 +1,11 @@
 export type Priority = 0 | 1 | 3 | 5   // none / low / medium / high
 export type TaskStatus = 0 | 2           // active / completed
 
-export interface TickTickTask {
+export type TodoProvider = 'ticktick' | 'todoist'
+
+// Provider-agnostic task shape. The backend normalises Todoist's 1..4
+// priority scale onto the TickTick-style 0/1/3/5 used here.
+export interface TodoTask {
   id: string
   title: string
   content: string
@@ -13,7 +17,11 @@ export interface TickTickTask {
   tags: string[]
   created_time: string | null
   modified_time: string | null
+  provider?: TodoProvider
 }
+
+// Back-compat alias — old code references this name. Drop once nothing imports it.
+export type TickTickTask = TodoTask
 
 export type SortBy = 'due' | 'priority' | 'created'
 export type StatusFilter = 'active' | 'completed' | 'all'

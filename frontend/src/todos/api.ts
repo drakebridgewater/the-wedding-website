@@ -40,7 +40,7 @@ export function useTodos(filters: TodoFilters) {
   return useQuery<TickTickTask[]>({
     queryKey: ['todos', filters],
     queryFn: () => apiFetch(`/todos/api/?${params}`),
-    staleTime: 30_000,  // treat fresh for 30s to avoid hammering TickTick
+    staleTime: 30_000,  // treat fresh for 30s to avoid hammering the provider
   })
 }
 

@@ -5,19 +5,20 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from . import provider
 from .models import Task
 
 logger = logging.getLogger(__name__)
 
 
 def _get_project_id():
-    from .ticktick_client import get_wedding_project_id, _get_config
-    project_id = get_wedding_project_id()
+    project_id = provider.get_wedding_project_id()
     if project_id is None:
-        cfg = _get_config()
+        cfg = provider.get_config()
         raise RuntimeError(
-            f'TickTick project "{cfg["project_name"]}" not found. '
-            'Check TICKTICK_PROJECT_NAME in settings.'
+            f'{provider.get_active_provider().title()} project '
+            f'"{cfg.get("project_name", "")}" not found. '
+            f'Check the project name in admin / settings.'
         )
     return project_id
 
@@ -25,16 +26,16 @@ def _get_project_id():
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def todo_sync(request):
-    """Pull all tasks from TickTick and upsert them into the local DB."""
-    from .ticktick_client import sync_tasks_to_db
+    """Pull all tasks from the active provider and upsert them into the local DB."""
     try:
         project_id = _get_project_id()
-        result = sync_tasks_to_db(project_id)
+        result = provider.sync_tasks_to_db(project_id)
     except RuntimeError as e:
         return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
     except Exception as e:
-        logger.error('TickTick sync failed: %s', e, exc_info=True)
+        logger.error('Todo sync failed: %s', e, exc_info=True)
         return Response({'error': 'Sync failed', 'detail': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+    result['provider'] = provider.get_active_provider()
     return Response(result)
 
 
@@ -42,7 +43,7 @@ def todo_sync(request):
 @permission_classes([IsAuthenticated])
 def todo_list(request):
     """Return tasks from the local DB (populated by /sync/)."""
-    qs = Task.objects.all()
+    qs = Task.objects.filter(provider=provider.get_active_provider())
 
     status_filter = request.query_params.get('status', 'active')
     if status_filter == 'active':
@@ -71,7 +72,6 @@ def todo_list(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def todo_create(request):
-    from .ticktick_client import create_task, serialize_task
     try:
         project_id = _get_project_id()
     except RuntimeError as e:
@@ -85,6 +85,9 @@ def todo_create(request):
     if request.data.get('content'):
         kwargs['content'] = request.data['content']
     if request.data.get('due_date'):
+        # The TickTick client expects camelCase `dueDate`; the Todoist client
+        # accepts the same kwarg and translates internally, so we pass the
+        # TickTick-shaped key here for compatibility with both.
         kwargs['dueDate'] = request.data['due_date']
     if request.data.get('priority') is not None:
         kwargs['priority'] = int(request.data['priority'])
@@ -92,14 +95,18 @@ def todo_create(request):
         kwargs['assignee'] = request.data['assignee']
 
     try:
-        created = create_task(title, project_id, **kwargs)
+        created = provider.create_task(title, project_id, **kwargs)
     except Exception as e:
-        logger.error('TickTick task create failed: %s', e, exc_info=True)
-        return Response({'error': 'Failed to create task in TickTick'}, status=status.HTTP_502_BAD_GATEWAY)
+        logger.error('Todo task create failed: %s', e, exc_info=True)
+        return Response(
+            {'error': f'Failed to create task in {provider.get_active_provider()}'},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
 
-    serialized = serialize_task(created)
+    serialized = provider.serialize_task(created)
     Task.objects.update_or_create(
-        ticktick_id=serialized['id'],
+        provider=provider.get_active_provider(),
+        external_id=serialized['id'],
         defaults={
             'project_id': serialized['project_id'] or '',
             'title': serialized['title'],
@@ -120,15 +127,20 @@ def todo_create(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def todo_complete(request, task_id):
-    from .ticktick_client import complete_task, serialize_task
     try:
         project_id = _get_project_id()
-        result = complete_task(project_id, task_id)
+        result = provider.complete_task(project_id, task_id)
     except RuntimeError as e:
         return Response({'error': str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
     except Exception as e:
-        logger.error('TickTick task complete failed: %s', e, exc_info=True)
-        return Response({'error': 'Failed to complete task in TickTick'}, status=status.HTTP_502_BAD_GATEWAY)
+        logger.error('Todo task complete failed: %s', e, exc_info=True)
+        return Response(
+            {'error': f'Failed to complete task in {provider.get_active_provider()}'},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
 
-    Task.objects.filter(ticktick_id=task_id).update(status=2)
-    return Response(serialize_task(result) if isinstance(result, dict) else {'status': 'completed'})
+    Task.objects.filter(
+        provider=provider.get_active_provider(),
+        external_id=task_id,
+    ).update(status=2)
+    return Response(provider.serialize_task(result) if isinstance(result, dict) else {'status': 'completed'})
