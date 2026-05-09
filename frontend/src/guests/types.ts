@@ -17,6 +17,7 @@ export interface WeddingPartyMember {
   photo_url: string | null
   order: number
   guest_id: number | null
+  is_informed: boolean
 }
 
 export interface WeddingPartyGroup {
@@ -94,6 +95,7 @@ export interface MemberFormData {
   phone: string
   bio: string
   order: number
+  is_informed: boolean
 }
 
 export interface GroupFormData {

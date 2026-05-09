@@ -209,6 +209,11 @@ class WeddingPartyMember(models.Model):
         on_delete=models.SET_NULL,
         related_name='wedding_party_info',
     )
+    is_informed = models.BooleanField(
+        default=False,
+        help_text='Has this person been informed that they are in the wedding party? '
+                  'Only informed members appear on the public wedding party page.',
+    )
 
     class Meta:
         ordering = ['order', 'name']

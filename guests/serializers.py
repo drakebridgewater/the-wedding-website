@@ -9,7 +9,7 @@ class WeddingPartyMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WeddingPartyMember
-        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'bio', 'photo_url', 'order', 'guest_id']
+        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'bio', 'photo_url', 'order', 'guest_id', 'is_informed']
         read_only_fields = ['guest_id', 'photo_url']
 
     def get_photo_url(self, obj):

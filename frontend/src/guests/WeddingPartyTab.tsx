@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { Pencil, Trash2, Plus, Camera } from 'lucide-react'
+import { Pencil, Trash2, Plus, Camera, BellOff, BellRing } from 'lucide-react'
 import { useMembers, useCreateMember, useUpdateMember, useDeleteMember, useUploadMemberPhoto } from './api'
 import type { MemberFormData, MemberRole, WeddingPartyMember } from './types'
 import { ROLE_LABELS, ROLE_ORDER } from './types'
@@ -31,6 +31,15 @@ export function WeddingPartyTab() {
       closeModal()
     } catch {
       toast.error('Failed to save member')
+    }
+  }
+
+  async function handleToggleInformed(m: WeddingPartyMember) {
+    try {
+      await updateMember.mutateAsync({ id: m.id, data: { ...m, is_informed: !m.is_informed } })
+      toast.success(m.is_informed ? `${m.name} marked as not yet informed` : `${m.name} marked as informed`)
+    } catch {
+      toast.error('Failed to update')
     }
   }
 
@@ -82,15 +91,27 @@ export function WeddingPartyTab() {
                   <div key={m.id} className="flex items-center gap-3 bg-white rounded-xl border border-stone-100 shadow-sm px-4 py-3 w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-8px)]">
                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.color }} />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-medium text-stone-800 truncate">{m.name}</p>
                         {m.guest_id && (
                           <span className="flex-shrink-0 rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-700">Guest ✓</span>
+                        )}
+                        {m.is_informed ? (
+                          <span className="flex-shrink-0 rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700">Informed ✓</span>
+                        ) : (
+                          <span className="flex-shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">Not informed</span>
                         )}
                       </div>
                       {m.email && <p className="text-xs text-stone-400 truncate">{m.email}</p>}
                     </div>
                     <div className="flex gap-1">
+                      <button
+                        onClick={() => handleToggleInformed(m)}
+                        title={m.is_informed ? 'Mark as not yet informed' : 'Mark as informed'}
+                        className={`p-1.5 rounded transition-colors ${m.is_informed ? 'text-blue-400 hover:bg-blue-50 hover:text-blue-600' : 'text-amber-400 hover:bg-amber-50 hover:text-amber-600'}`}
+                      >
+                        {m.is_informed ? <BellRing size={13} /> : <BellOff size={13} />}
+                      </button>
                       <button onClick={() => openEdit(m)} className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors">
                         <Pencil size={13} />
                       </button>
@@ -175,13 +196,14 @@ function MemberModal({
   saving: boolean
 }) {
   const [form, setForm] = useState<MemberFormData>({
-    name:  initial?.name  ?? '',
-    role:  initial?.role  ?? 'other',
-    color: initial?.color ?? '#6366f1',
-    email: initial?.email ?? '',
-    phone: initial?.phone ?? '',
-    bio:   initial?.bio   ?? '',
-    order: initial?.order ?? 0,
+    name:        initial?.name        ?? '',
+    role:        initial?.role        ?? 'other',
+    color:       initial?.color       ?? '#6366f1',
+    email:       initial?.email       ?? '',
+    phone:       initial?.phone       ?? '',
+    bio:         initial?.bio         ?? '',
+    order:       initial?.order       ?? 0,
+    is_informed: initial?.is_informed ?? false,
   })
   const photoRef = useRef<HTMLInputElement>(null)
   const uploadPhoto = useUploadMemberPhoto()
@@ -275,6 +297,18 @@ function MemberModal({
               placeholder="A short description shown on the wedding party page…"
               className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none" />
           </div>
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.is_informed}
+              onChange={(e) => set('is_informed', e.target.checked)}
+              className="w-4 h-4 rounded border-stone-300 text-blue-600 focus:ring-blue-400"
+            />
+            <span className="text-sm text-stone-700">
+              Informed
+              <span className="ml-1 text-xs text-stone-400">(shows on public wedding party page)</span>
+            </span>
+          </label>
         </div>
         <div className="px-5 py-4 border-t flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">Cancel</button>
