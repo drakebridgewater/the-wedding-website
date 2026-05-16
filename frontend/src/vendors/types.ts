@@ -13,6 +13,7 @@ export interface BaseVendor {
   id: number
   name: string
   website: string
+  google_drive_url: string
   phone: string
   email: string
   is_chosen: boolean

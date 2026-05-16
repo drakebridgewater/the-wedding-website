@@ -63,6 +63,7 @@ class VendorPhoto(models.Model):
 class BaseVendorOption(models.Model):
     name = models.CharField(max_length=255)
     website = models.URLField(blank=True)
+    google_drive_url = models.URLField(blank=True, help_text='Link to a Google Drive document (contract, quote, etc.)')
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
 

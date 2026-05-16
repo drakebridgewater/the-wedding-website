@@ -42,7 +42,7 @@ def _validate_money(value):
 
 
 BASE_FIELDS = [
-    'id', 'name', 'website', 'phone', 'email',
+    'id', 'name', 'website', 'google_drive_url', 'phone', 'email',
     'is_chosen', 'is_favorite', 'has_talked_to', 'has_visited',
     'price_estimate',
     'rating',

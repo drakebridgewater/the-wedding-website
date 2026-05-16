@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { ExternalLink, Mail, Phone, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AnyVendor, VendorType, VenueVendor } from './types'
 import { PhotoUpload } from './PhotoUpload'
@@ -16,6 +17,7 @@ const optionalMoney = moneyField.optional().nullable()
 const baseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   website: z.string().url('Must be a valid URL').or(z.literal('')),
+  google_drive_url: z.string().url('Must be a valid URL').or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   email: z.string().email('Must be a valid email').or(z.literal('')),
   is_chosen: z.boolean(),
@@ -675,14 +677,69 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
       <div className={cn('space-y-4', tabHidden('contact') && 'hidden')}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Website" error={errors.website?.message as string}>
-            <input {...register('website')} className={inputCls(errors.website?.message as string)} placeholder="https://…" />
+            <div className="flex gap-1">
+              <input {...register('website')} className={cn(inputCls(errors.website?.message as string), 'flex-1 min-w-0')} placeholder="https://…" />
+              {!!(watch('website') as string) && !errors.website && (
+                <a
+                  href={watch('website') as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Visit website"
+                  className="flex-shrink-0 flex items-center justify-center w-10 rounded-md border border-gray-300 text-gray-500 hover:border-rose-400 hover:text-rose-600 transition-colors"
+                >
+                  <ExternalLink size={15} />
+                </a>
+              )}
+            </div>
           </Field>
           <Field label="Phone" error={errors.phone?.message as string}>
-            <input {...register('phone')} className={inputCls()} placeholder="(555) 000-0000" />
+            <div className="flex gap-1">
+              <input {...register('phone')} className={cn(inputCls(), 'flex-1 min-w-0')} placeholder="(555) 000-0000" />
+              {!!(watch('phone') as string) && (
+                <a
+                  href={`tel:${watch('phone') as string}`}
+                  title="Call"
+                  className="flex-shrink-0 flex items-center justify-center w-10 rounded-md border border-gray-300 text-gray-500 hover:border-rose-400 hover:text-rose-600 transition-colors"
+                >
+                  <Phone size={15} />
+                </a>
+              )}
+            </div>
           </Field>
         </div>
         <Field label="Email" error={errors.email?.message as string}>
-          <input {...register('email')} className={inputCls(errors.email?.message as string)} placeholder="contact@example.com" />
+          <div className="flex gap-1">
+            <input {...register('email')} className={cn(inputCls(errors.email?.message as string), 'flex-1 min-w-0')} placeholder="contact@example.com" />
+            {!!(watch('email') as string) && !errors.email && (
+              <a
+                href={`mailto:${watch('email') as string}`}
+                title="Send email"
+                className="flex-shrink-0 flex items-center justify-center w-10 rounded-md border border-gray-300 text-gray-500 hover:border-rose-400 hover:text-rose-600 transition-colors"
+              >
+                <Mail size={15} />
+              </a>
+            )}
+          </div>
+        </Field>
+        <Field label="Google Drive Document" error={errors.google_drive_url?.message as string}>
+          <div className="flex gap-1">
+            <input
+              {...register('google_drive_url')}
+              className={cn(inputCls(errors.google_drive_url?.message as string), 'flex-1 min-w-0')}
+              placeholder="https://drive.google.com/…"
+            />
+            {!!(watch('google_drive_url') as string) && !errors.google_drive_url && (
+              <a
+                href={watch('google_drive_url') as string}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open in Google Drive"
+                className="flex-shrink-0 flex items-center justify-center w-10 rounded-md border border-gray-300 text-gray-500 hover:border-rose-400 hover:text-rose-600 transition-colors"
+              >
+                <FileText size={15} />
+              </a>
+            )}
+          </div>
         </Field>
       </div>
 
@@ -775,7 +832,7 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             vendorId={vendor.id}
             vendorType={vendorType}
             photos={(vendor as VenueVendor).photos}
-            vendorWebsite={vendor.website || undefined}
+            vendorWebsite={(watch('website') as string) || undefined}
           />
         </div>
       )}

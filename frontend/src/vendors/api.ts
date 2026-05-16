@@ -107,8 +107,11 @@ export function useUploadPhotos(vendorType: VendorType) {
 export function useScrapePhotos(vendorType: VendorType) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) =>
-      apiFetch<{ scraped: number }>(`/vendors/api/${vendorType}/${id}/scrape/`, { method: 'POST' }),
+    mutationFn: ({ id, url }: { id: number; url?: string }) =>
+      apiFetch<{ scraped: number }>(`/vendors/api/${vendorType}/${id}/scrape/`, {
+        method: 'POST',
+        body: JSON.stringify({ url }),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
   })
 }

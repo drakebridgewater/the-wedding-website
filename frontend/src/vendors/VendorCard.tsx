@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react'
+import { Star, Globe, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AnyVendor, VendorType } from './types'
 import { useUpdateVendor } from './api'
@@ -93,6 +93,40 @@ function TypeSpecificChips({ vendor, vendorType, visibleFields }: {
   )
 }
 
+function QuickLinks({ vendor }: { vendor: AnyVendor }) {
+  if (!vendor.website && !vendor.google_drive_url) return null
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      {vendor.website && (
+        <a
+          href={vendor.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Visit website"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 px-2 py-1 rounded-full transition-colors"
+        >
+          <Globe size={11} />
+          Website
+        </a>
+      )}
+      {vendor.google_drive_url && (
+        <a
+          href={vendor.google_drive_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open Google Drive document"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 px-2 py-1 rounded-full transition-colors"
+        >
+          <FileText size={11} />
+          Drive doc
+        </a>
+      )}
+    </div>
+  )
+}
+
 export function VendorCard({ vendor, vendorType, visibleFields, onClick, listView = false }: Props) {
   const updateMutation = useUpdateVendor(vendorType)
   const firstPhoto = vendor.photos.find((p) => p.is_primary) ?? vendor.photos[0]
@@ -140,6 +174,7 @@ export function VendorCard({ vendor, vendorType, visibleFields, onClick, listVie
             )}
           </div>
           <TypeSpecificChips vendor={vendor} vendorType={vendorType} visibleFields={visibleFields} />
+          <QuickLinks vendor={vendor} />
         </div>
 
         <button
@@ -213,6 +248,7 @@ export function VendorCard({ vendor, vendorType, visibleFields, onClick, listVie
           </div>
         )}
         <TypeSpecificChips vendor={vendor} vendorType={vendorType} visibleFields={visibleFields} />
+        <QuickLinks vendor={vendor} />
       </div>
     </div>
   )

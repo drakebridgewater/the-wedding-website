@@ -1,4 +1,4 @@
-import { Printer, X } from 'lucide-react'
+import { ExternalLink, Printer, X } from 'lucide-react'
 import type { AnyVendor, VendorType } from './types'
 import { VENDOR_LABELS } from './types'
 import { useCreateVendor, useUpdateVendor, useDeleteVendor, useChecklistItems } from './api'
@@ -53,17 +53,28 @@ export function VendorModal({ vendorType, vendor, onClose }: Props) {
           <h2 className="text-lg font-semibold text-gray-900">
             {isEdit ? vendor!.name : `Add ${VENDOR_LABELS[vendorType]}`}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {isEdit && vendor?.website && (
+              <a
+                href={vendor.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Visit website"
+                className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <ExternalLink size={18} />
+              </a>
+            )}
             {isEdit && (
               <button
                 onClick={handlePrint}
                 title="Print visit sheet / Export PDF"
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <Printer size={18} />
               </button>
             )}
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors">
               <X size={20} />
             </button>
           </div>

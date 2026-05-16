@@ -131,11 +131,12 @@ def vendor_photo_scrape(request, vendor_type, pk):
         return err
 
     instance = get_object_or_404(Model, pk=pk)
-    if not instance.website:
+    url = request.data.get('url') or instance.website
+    if not url:
         return Response({'error': 'No website URL set for this vendor.'}, status=status.HTTP_400_BAD_REQUEST)
 
     from .scraper import run_scrape_sync
-    count = run_scrape_sync(Model, pk, instance.website)
+    count = run_scrape_sync(Model, pk, url)
     return Response({'scraped': count})
 
 

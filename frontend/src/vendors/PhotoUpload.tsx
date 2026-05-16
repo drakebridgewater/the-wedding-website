@@ -51,7 +51,7 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
 
   function scrapeFromWebsite() {
     setScrapeStatus(null)
-    scrapeMutation.mutate(vendorId, {
+    scrapeMutation.mutate({ id: vendorId, url: vendorWebsite }, {
       onSuccess: (data) => {
         const n = data.scraped
         setScrapeStatus(n > 0 ? `${n} photo${n !== 1 ? 's' : ''} imported` : 'No photos found on the site')
