@@ -12,3 +12,18 @@
 .input-error-glow {
   animation: error-glow-in 0.45s ease-out forwards;
 }
+
+/* Vendor print / PDF export */
+@media print {
+  body.vendor-print-mode * { visibility: hidden; }
+  body.vendor-print-mode .vendor-print-content,
+  body.vendor-print-mode .vendor-print-content * { visibility: visible; }
+  body.vendor-print-mode .vendor-print-content {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem;
+  }
+}

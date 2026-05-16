@@ -1,6 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AnyVendor, VendorType } from './types'
 
+export interface ChecklistItem {
+  id: number
+  vendor_type: string
+  category: string
+  text: string
+  question: string
+  order: number
+}
+
 function getCsrf(): string {
   return (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? ''
 }
@@ -113,6 +122,15 @@ export function useSetPrimaryPhoto(vendorType: VendorType) {
         body: JSON.stringify({ is_primary: true }),
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
+  })
+}
+
+export function useChecklistItems(vendorType: VendorType) {
+  return useQuery<ChecklistItem[]>({
+    queryKey: ['checklist-items', vendorType],
+    queryFn: () =>
+      fetch(`/vendors/api/checklist-items/?vendor_type=${vendorType}`).then((r) => r.json()),
+    staleTime: Infinity,
   })
 }
 
