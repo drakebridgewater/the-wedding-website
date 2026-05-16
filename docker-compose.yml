@@ -12,4 +12,5 @@ services:
       - "${APP_PORT:-8080}:8080"
     volumes:
       - ${DATA_DIR}/media:/app/media
+      - ${DATA_DIR}/data:/app/data
     restart: unless-stopped
