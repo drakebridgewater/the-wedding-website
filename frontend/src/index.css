@@ -20,10 +20,10 @@
   body.vendor-print-mode .vendor-print-content * { visibility: visible; }
   body.vendor-print-mode .vendor-print-content {
     display: block !important;
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    padding: 1.5rem;
+    padding: 0.75rem 1.25rem;
   }
 }
