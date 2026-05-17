@@ -41,7 +41,7 @@ export function NotesApp() {
       {/* FAB */}
       <button
         onClick={() => setEditingNote('new')}
-        className="fixed bottom-6 right-6 z-10 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center justify-center transition-colors active:scale-95"
+        className="fixed bottom-6 right-24 z-10 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center justify-center transition-colors active:scale-95"
         aria-label="Add note"
       >
         <Plus size={26} />
