@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { StickyNote } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Note, useNotes } from './api'
 import { NoteCard } from './NoteCard'
 import { NoteModal } from './NoteModal'
@@ -9,43 +9,38 @@ export function NotesApp() {
   const [editingNote, setEditingNote] = useState<Note | null | 'new'>(null)
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-
-      <div className="max-w-5xl mx-auto px-3 py-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 px-1">Notes</h1>
-
-        {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-gray-200 animate-pulse rounded-xl min-h-[140px]" />
-            ))}
-          </div>
-        ) : notes && notes.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {notes.map((note) => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onClick={() => setEditingNote(note)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-24 text-gray-400">
-            <p className="text-lg">No notes yet.</p>
-            <p className="text-sm mt-1">Tap the + button to add one.</p>
-          </div>
-        )}
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Notes</h1>
+        <button
+          onClick={() => setEditingNote('new')}
+          className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
+        >
+          <Plus size={16} />
+          New Note
+        </button>
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => setEditingNote('new')}
-        className="fixed bottom-6 right-24 z-10 w-14 h-14 rounded-full bg-amber-400 hover:bg-amber-500 text-white shadow-lg flex items-center justify-center transition-colors active:scale-95"
-        aria-label="Add note"
-      >
-        <StickyNote size={22} />
-      </button>
+      {isLoading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-gray-200 animate-pulse rounded-xl min-h-[140px]" />
+          ))}
+        </div>
+      ) : notes && notes.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {notes.map((note) => (
+            <NoteCard
+              key={note.id}
+              note={note}
+              onClick={() => setEditingNote(note)}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-gray-400 py-12">No notes yet.</p>
+      )}
 
       {editingNote !== null && (
         <NoteModal
