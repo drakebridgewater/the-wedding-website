@@ -5,7 +5,7 @@ GUNICORN := .venv/bin/gunicorn
 DEV_SETTINGS ?= config.settings.local
 PROD_SETTINGS ?= config.settings.production
 
-.PHONY: dev prod
+.PHONY: dev prod redeploy
 
 dev:
 	@trap 'kill 0' SIGINT; \
@@ -13,6 +13,10 @@ dev:
 	$(NPM) --prefix frontend run dev & \
 	DJANGO_SETTINGS_MODULE=$(DEV_SETTINGS) $(PYTHON) manage.py runserver 8002 & \
 	wait
+
+redeploy:
+	docker compose up --build --force-recreate -d
+	docker image prune -f
 
 prod:
 	$(PIP) install -r requirements/production.txt

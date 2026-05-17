@@ -4,6 +4,7 @@ services:
     container_name: wedding
     build: .
     image: ghcr.io/drakebridgewater/the-wedding-website:latest
+    pull_policy: always
     env_file: .env.dockhand
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
