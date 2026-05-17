@@ -1,6 +1,6 @@
 # Wedding Website & Planning Platform
 
-A full wedding planning platform built on Django. Includes a public wedding website, guest management with RSVP tracking, budget tracking, vendor comparisons, seating chart, to-dos, music lists, day-of schedule, and Google Sheets sync so a non-technical partner always has access to current data.
+A full wedding planning platform built on Django. Includes a public wedding website, guest management with RSVP tracking, budget tracking, vendor comparisons, seating chart, to-dos, music lists, day-of schedule, notes, and Google Sheets sync so a non-technical partner always has access to current data.
 
 ---
 
@@ -11,9 +11,10 @@ A full wedding planning platform built on Django. Includes a public wedding webs
 - [Docker](#docker)
 - [Environment Variables](#environment-variables)
 - [Customization](#customization)
-- [Google Drive Sync](#google-drive--sheets-sync)
+- [Google Drive / Sheets Sync](#google-drive--sheets-sync)
 - [Guest Management](#guest-management)
 - [Sending Email](#sending-email)
+- [Task Provider Integration](#task-provider-integration)
 
 ---
 
@@ -23,14 +24,16 @@ A full wedding planning platform built on Django. Includes a public wedding webs
 |---------|-----|
 | Public wedding website | `/` |
 | Wedding dashboard | `/dashboard/` |
-| Guest management | `/guests/` |
+| Guest management | `/guests/manage/` |
 | Budget tracker | `/budget/` |
 | Budget estimator | `/budget/estimator/` |
 | Vendor comparisons (venue, caterer, cake, florist, entertainment) | `/vendors/<type>/` |
 | Seating chart | `/seating/` |
 | To-do list | `/todos/` |
+| Notes | `/notes/` |
 | Music playlist & do-not-play | `/music/` |
 | Day-of schedule | `/schedule/` |
+| Public day-of program | `/schedule/program/` |
 | Django admin | `/admin/` |
 
 ---
@@ -192,9 +195,20 @@ By default, local dev uses SQLite. To use Postgres locally, set any of these (th
 | `PGPASSWORD` or `DB_PASSWORD` | _(empty)_ | Password |
 | `PGPORT` or `DB_PORT` | `5432` | Port |
 
+### Todoist Integration
+
+Optional. Syncs tasks from a Todoist project. Set `TODO_PROVIDER=todoist` (this is the default). Get a personal API token from Todoist → Settings → Integrations → Developer. Run `python manage.py todoist_setup` to verify and list collaborator IDs.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TODOIST_API_TOKEN` | _(unset)_ | Personal API token from Todoist |
+| `TODOIST_PROJECT_NAME` | `Wedding` | Name of the Todoist project to sync |
+| `TODOIST_DRAKE_ASSIGNEE` | _(unset)_ | Collaborator ID for Drake (for filtering) |
+| `TODOIST_SHAWNA_ASSIGNEE` | _(unset)_ | Collaborator ID for Shawna (for filtering) |
+
 ### TickTick Integration
 
-Optional. Syncs tasks from a TickTick project into the to-do list. Run `python manage.py ticktick_auth` once to complete OAuth setup.
+Optional. Alternative task provider. Set `TODO_PROVIDER=ticktick` and run `python manage.py ticktick_auth` once to complete OAuth setup.
 
 | Variable | Description |
 |----------|-------------|
@@ -248,11 +262,21 @@ python manage.py sync_to_drive --spreadsheet "My Wedding"
 
 To change the default spreadsheet title, set `GOOGLE_SPREADSHEET_TITLE` in `config/settings/base.py` or `local.py`.
 
+The sync writes these tabs: `Summary`, `Guests`, `Parties`, `Wedding Party`, `Budget`, `Expenses`, `Schedule`, `Seating Tables`, `Music — Playlist`, `Music — Do Not Play`, `Venues`, `Caterers`, `Cakes`, `Florists`, `Entertainment`.
+
+Sync can also be triggered from the dashboard via the **Sync to Drive** button (`POST /drive/sync/`, login required).
+
 ---
 
 ## Guest Management
 
-Import guests from a CSV file:
+The guest management app lives at `/guests/manage/` and has three tabs.
+
+### Contacts tab
+
+Lists all parties and guests. Supports filtering by status (planned / invited / not invited), category, and side (bride/groom/both). Guest details include name, email, meal choice, dietary restrictions, RSVP status, and seating table assignment.
+
+**Import guests from CSV:**
 
 ```bash
 python manage.py import_guests guestList.csv
@@ -265,17 +289,87 @@ party_name,first_name,last_name,party_type,is_child,category,is_invited,email
 Smith Family,John,Smith,formal,n,Friends,y,john@example.com
 ```
 
-The guest dashboard is at `/dashboard/` — requires a staff or superuser account.
+Alternatively, upload a CSV directly from the Contacts tab in the UI.
+
+**Export guest list:**
+
+```bash
+# CLI
+python manage.py export_guests
+
+# Or download from: /guests/export
+```
+
+### Emails tab
+
+Create and manage rich-text email templates for invitations and other communications. Templates support:
+
+- Rich text body (Tiptap editor — bold, italic, links, lists)
+- Optional header image upload
+- Merge fields: `{{party_name}}`, `{{first_name}}`, `{{rsvp_link}}`, `{{couple}}`
+
+Send a template to any subset of parties from the checklist. Each send is logged in the sent-email history (visible per-party and globally).
+
+API endpoints:
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET/POST` | `/guests/api/email-templates/` | List or create templates |
+| `GET/PUT/DELETE` | `/guests/api/email-templates/<pk>/` | Retrieve, update, or delete a template |
+| `POST` | `/guests/api/email-templates/<pk>/preview/` | Preview rendered with dummy data |
+| `POST` | `/guests/api/email-templates/<pk>/send/` | Send to `{ "party_ids": [...] }` |
+| `POST` | `/guests/api/email-templates/<pk>/upload-image/` | Upload header image |
+| `GET` | `/guests/api/sent-emails/` | Full send log (filter by `?party=<id>`) |
+
+### Save the Date tab
+
+Dedicated send flow for save-the-date emails. Customize the email appearance before sending:
+
+- Upload a header photo
+- Pick background and text colors
+- Select parties from the checklist (shows prior send date per party)
+- Sent history is tracked and displayed
+
+The save-the-date email template lives in `guests/templates/guests/email_templates/save_the_date.html`. Appearance settings (image, colors) are persisted to `SaveTheDateSettings` in the database and managed through the UI.
+
+Send via management command (no appearance customization):
+
+```bash
+python manage.py send_save_the_dates --send --mark-sent
+```
 
 ---
 
 ## Sending Email
 
-Save-the-dates and invitations can be sent from the guest management section of the dashboard, or via management commands:
+Invitations can be sent from the **Emails tab** of the guest management app, or via the management command:
 
 ```bash
-python manage.py send_save_the_dates --send --mark-sent
 python manage.py send_invitations --send --mark-sent
 ```
 
-Use `-h` on either command for all options. For SMTP, set `EMAIL_HOST` and related variables (see [Environment Variables](#environment-variables)).
+Use `-h` on either command for all options.
+
+Each invitation uses a unique per-party link (`/invite/<id>/`). Guests RSVP at that URL and their response is recorded.
+
+For SMTP, set `EMAIL_HOST` and related variables (see [Environment Variables](#environment-variables)). Without it, all email is logged to the console.
+
+---
+
+## Task Provider Integration
+
+The to-do list at `/todos/` syncs tasks from an external task manager into the local `Task` model. Set the active provider with `TODO_PROVIDER` in your environment or settings.
+
+**Todoist** (default, `TODO_PROVIDER=todoist`)
+
+1. Get a personal API token from Todoist → Settings → Integrations → Developer.
+2. Set `TODOIST_API_TOKEN` in your environment.
+3. Run `python manage.py todoist_setup` to verify connectivity and get collaborator IDs.
+
+**TickTick** (`TODO_PROVIDER=ticktick`)
+
+1. Register an app at developer.ticktick.com.
+2. Set `TICKTICK_CLIENT_ID` and `TICKTICK_CLIENT_SECRET`.
+3. Run `python manage.py ticktick_auth` once to complete the browser-based OAuth flow.
+
+**Refreshing from the UI:** The React app calls `POST /todos/api/sync/` on page load to pull the latest tasks. You can also call it manually to force a refresh.
