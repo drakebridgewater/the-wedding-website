@@ -1,0 +1,10 @@
+{% extends "base_public.html" %}
+{% load django_vite %}
+
+{% block page_head %}
+{% vite_asset 'src/notes/main.tsx' %}
+{% endblock %}
+
+{% block page_content %}
+<div id="notes-root"></div>
+{% endblock %}

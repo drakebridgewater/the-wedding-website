@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'todos.apps.TodosConfig',
     'vendors.apps.VendorsConfig',
     'music.apps.MusicConfig',
+    'notes.apps.NotesConfig',
     'drive_sync.apps.DriveSyncConfig',
     'dashboard.apps.DashboardConfig',
 ]
