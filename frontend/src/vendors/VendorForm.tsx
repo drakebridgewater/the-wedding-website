@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ExternalLink, Mail, Phone, FileText } from 'lucide-react'
+import { ExternalLink, Mail, Phone } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AnyVendor, VendorType, VenueVendor } from './types'
 import { PhotoUpload } from './PhotoUpload'
+import { DocumentManager } from './DocumentManager'
 import { LocationMap } from './LocationMap'
 import { VendorChecklist } from './VendorChecklist'
 
@@ -17,7 +18,6 @@ const optionalMoney = moneyField.optional().nullable()
 const baseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   website: z.string().url('Must be a valid URL').or(z.literal('')),
-  google_drive_url: z.string().url('Must be a valid URL').or(z.literal('')),
   phone: z.string().optional().or(z.literal('')),
   email: z.string().email('Must be a valid email').or(z.literal('')),
   is_chosen: z.boolean(),
@@ -89,10 +89,12 @@ type FormValues = Record<string, unknown>
 
 // ---- Tab types ----
 
-type FormTab = 'overview' | 'contact' | 'location' | 'details' | 'notes' | 'checklist' | 'photos'
+type FormTab = 'overview' | 'contact' | 'location' | 'details' | 'notes' | 'checklist' | 'photos' | 'documents'
 
 function getTabsForType(vendorType: VendorType, hasVendor: boolean): { id: FormTab; label: string }[] {
-  const photosTab = hasVendor ? [{ id: 'photos' as FormTab, label: 'Photos' }] : []
+  const editTabs = hasVendor
+    ? [{ id: 'photos' as FormTab, label: 'Photos' }, { id: 'documents' as FormTab, label: 'Documents' }]
+    : []
   if (vendorType === 'venue') {
     return [
       { id: 'overview',  label: 'Overview' },
@@ -100,7 +102,7 @@ function getTabsForType(vendorType: VendorType, hasVendor: boolean): { id: FormT
       { id: 'location',  label: 'Location' },
       { id: 'notes',     label: 'Notes' },
       { id: 'checklist', label: 'Checklist' },
-      ...photosTab,
+      ...editTabs,
     ]
   }
   return [
@@ -110,7 +112,7 @@ function getTabsForType(vendorType: VendorType, hasVendor: boolean): { id: FormT
     { id: 'details',   label: 'Details' },
     { id: 'notes',     label: 'Notes' },
     { id: 'checklist', label: 'Checklist' },
-    ...photosTab,
+    ...editTabs,
   ]
 }
 
@@ -721,26 +723,6 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             )}
           </div>
         </Field>
-        <Field label="Google Drive Document" error={errors.google_drive_url?.message as string}>
-          <div className="flex gap-1">
-            <input
-              {...register('google_drive_url')}
-              className={cn(inputCls(errors.google_drive_url?.message as string), 'flex-1 min-w-0')}
-              placeholder="https://drive.google.com/…"
-            />
-            {!!(watch('google_drive_url') as string) && !errors.google_drive_url && (
-              <a
-                href={watch('google_drive_url') as string}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Open in Google Drive"
-                className="flex-shrink-0 flex items-center justify-center w-10 rounded-md border border-gray-300 text-gray-500 hover:border-rose-400 hover:text-rose-600 transition-colors"
-              >
-                <FileText size={15} />
-              </a>
-            )}
-          </div>
-        </Field>
       </div>
 
       {/* ====================================================
@@ -833,6 +815,19 @@ export function VendorForm({ vendorType, vendor, onSubmit, onDelete, isPending }
             vendorType={vendorType}
             photos={(vendor as VenueVendor).photos}
             vendorWebsite={(watch('website') as string) || undefined}
+          />
+        </div>
+      )}
+
+      {/* ====================================================
+          DOCUMENTS TAB  (edit mode only, all vendor types)
+          ==================================================== */}
+      {vendor && (
+        <div className={cn(tabHidden('documents') && 'hidden')}>
+          <DocumentManager
+            vendorId={vendor.id}
+            vendorType={vendorType}
+            documents={vendor.documents}
           />
         </div>
       )}

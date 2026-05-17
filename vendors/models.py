@@ -60,10 +60,30 @@ class VendorPhoto(models.Model):
         return f"Photo {self.pk} ({self.content_type} #{self.object_id})"
 
 
+def _vendor_doc_path(instance, filename):
+    return f'vendor_docs/{instance.content_type.model}/{instance.object_id}/{filename}'
+
+
+class VendorDocument(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    vendor = GenericForeignKey('content_type', 'object_id')
+    name = models.CharField(max_length=255)
+    document = models.FileField(upload_to=_vendor_doc_path)
+    mime_type = models.CharField(max_length=100, blank=True)
+    file_size = models.PositiveIntegerField(null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['uploaded_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.content_type} #{self.object_id})"
+
+
 class BaseVendorOption(models.Model):
     name = models.CharField(max_length=255)
     website = models.URLField(blank=True)
-    google_drive_url = models.URLField(blank=True, help_text='Link to a Google Drive document (contract, quote, etc.)')
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
 
@@ -90,6 +110,7 @@ class BaseVendorOption(models.Model):
     comments = models.TextField(blank=True)
 
     photos = GenericRelation(VendorPhoto)
+    documents = GenericRelation(VendorDocument)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

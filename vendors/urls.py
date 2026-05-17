@@ -18,9 +18,14 @@ urlpatterns = [
     # Photo delete (literal path first to avoid ambiguity)
     path('api/photos/<int:photo_pk>/', api_views.vendor_photo_delete, name='api-photo-delete'),
 
+    # Document endpoints (literal paths first)
+    path('api/documents/<int:pk>/file/', api_views.vendor_document_file, name='api-document-file'),
+    path('api/documents/<int:pk>/', api_views.vendor_document_detail, name='api-document-detail'),
+
     # Generic vendor API
     path('api/<str:vendor_type>/', api_views.vendor_list, name='api-list'),
     path('api/<str:vendor_type>/<int:pk>/', api_views.vendor_detail, name='api-detail'),
     path('api/<str:vendor_type>/<int:pk>/photos/', api_views.vendor_photo_upload, name='api-photo-upload'),
     path('api/<str:vendor_type>/<int:pk>/scrape/', api_views.vendor_photo_scrape, name='api-photo-scrape'),
+    path('api/<str:vendor_type>/<int:pk>/documents/', api_views.vendor_document_upload, name='api-document-upload'),
 ]

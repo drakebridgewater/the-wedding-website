@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, Upload, Globe, ImageIcon } from 'lucide-react'
+import { X, Upload, Globe, ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { VendorPhoto } from './types'
 import type { VendorType } from './types'
@@ -12,9 +12,91 @@ interface Props {
   vendorWebsite?: string
 }
 
+function Lightbox({
+  photos,
+  initialIndex,
+  onClose,
+}: {
+  photos: VendorPhoto[]
+  initialIndex: number
+  onClose: () => void
+}) {
+  const [index, setIndex] = useState(initialIndex)
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowRight') setIndex((i) => (i + 1) % photos.length)
+      if (e.key === 'ArrowLeft') setIndex((i) => (i - 1 + photos.length) % photos.length)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [photos.length, onClose])
+
+  const photo = photos[index]
+
+  return (
+    <div
+      className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/80"
+      onClick={onClose}
+    >
+      {/* Close */}
+      <button
+        className="absolute top-3 right-3 p-2 text-white/70 hover:text-white transition-colors"
+        onClick={onClose}
+      >
+        <X size={24} />
+      </button>
+
+      {/* Counter */}
+      {photos.length > 1 && (
+        <span className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm">
+          {index + 1} / {photos.length}
+        </span>
+      )}
+
+      {/* Prev */}
+      {photos.length > 1 && (
+        <button
+          className="absolute left-2 sm:left-4 p-2 text-white/70 hover:text-white transition-colors"
+          onClick={(e) => { e.stopPropagation(); setIndex((i) => (i - 1 + photos.length) % photos.length) }}
+        >
+          <ChevronLeft size={32} />
+        </button>
+      )}
+
+      {/* Image */}
+      <img
+        src={photo.url}
+        alt={photo.caption || 'Vendor photo'}
+        className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {/* Next */}
+      {photos.length > 1 && (
+        <button
+          className="absolute right-2 sm:right-4 p-2 text-white/70 hover:text-white transition-colors"
+          onClick={(e) => { e.stopPropagation(); setIndex((i) => (i + 1) % photos.length) }}
+        >
+          <ChevronRight size={32} />
+        </button>
+      )}
+
+      {/* Caption */}
+      {photo.caption && (
+        <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/80 text-sm text-center px-4">
+          {photo.caption}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Props) {
   const [previews, setPreviews] = useState<{ file: File; url: string }[]>([])
   const [scrapeStatus, setScrapeStatus] = useState<string | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const uploadMutation = useUploadPhotos(vendorType)
   const deleteMutation = useDeletePhoto(vendorType)
@@ -66,19 +148,29 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
 
   return (
     <div className="space-y-3">
+      {/* Lightbox */}
+      {lightboxIndex !== null && (
+        <Lightbox
+          photos={photos}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
+
       {/* Existing photos */}
       {photos.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {photos.map((photo) => (
+          {photos.map((photo, idx) => (
             <div key={photo.id} className="relative group">
               <img
                 src={photo.url}
                 alt={photo.caption || 'Vendor photo'}
+                onClick={() => setLightboxIndex(idx)}
                 className={cn(
-                  'h-20 w-20 object-cover rounded-lg border-2',
+                  'h-20 w-20 object-cover rounded-lg border-2 cursor-pointer hover:opacity-90 transition-opacity',
                   photo.is_primary ? 'border-rose-500' : 'border-gray-200',
                 )}
-                title={photo.caption || undefined}
+                title={photo.caption || 'Click to enlarge'}
               />
 
               {/* Current cover badge */}
@@ -91,7 +183,7 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
               {/* Set as cover — appears on hover for non-primary photos */}
               {!photo.is_primary && (
                 <button
-                  onClick={() => primaryMutation.mutate(photo.id)}
+                  onClick={(e) => { e.stopPropagation(); primaryMutation.mutate(photo.id) }}
                   disabled={primaryMutation.isPending}
                   title="Set as cover photo"
                   className="absolute bottom-0 inset-x-0 text-center text-[10px] font-medium bg-black/55 text-white rounded-b-lg py-0.5 leading-none opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-30 flex items-center justify-center gap-0.5"
@@ -103,7 +195,7 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
 
               {/* Delete */}
               <button
-                onClick={() => deleteMutation.mutate(photo.id)}
+                onClick={(e) => { e.stopPropagation(); deleteMutation.mutate(photo.id) }}
                 disabled={deleteMutation.isPending}
                 title="Delete photo"
                 className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -181,7 +273,10 @@ export function PhotoUpload({ vendorId, vendorType, photos, vendorWebsite }: Pro
       </div>
 
       {photos.length > 1 && (
-        <p className="text-xs text-gray-400">Hover a photo and click "Set cover" to use it on the vendor card.</p>
+        <p className="text-xs text-gray-400">Click a photo to enlarge · Hover and click "Set cover" to use it on the vendor card.</p>
+      )}
+      {photos.length === 1 && (
+        <p className="text-xs text-gray-400">Click the photo to enlarge.</p>
       )}
     </div>
   )

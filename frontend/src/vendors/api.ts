@@ -145,3 +145,47 @@ export function useDeletePhoto(vendorType: VendorType) {
     onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
   })
 }
+
+async function apiUploadDocument(url: string, file: File, name: string) {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('name', name)
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrf() },
+    credentials: 'same-origin',
+    body: form,
+  })
+  if (!res.ok) throw new Error(`Upload error ${res.status}`)
+  return res.json()
+}
+
+export function useUploadDocument(vendorType: VendorType) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, file, name }: { id: number; file: File; name: string }) =>
+      apiUploadDocument(`/vendors/api/${vendorType}/${id}/documents/`, file, name),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
+  })
+}
+
+export function useDeleteDocument(vendorType: VendorType) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (docId: number) =>
+      apiFetch<void>(`/vendors/api/documents/${docId}/`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
+  })
+}
+
+export function useRenameDocument(vendorType: VendorType) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) =>
+      apiFetch(`/vendors/api/documents/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk(vendorType) }),
+  })
+}

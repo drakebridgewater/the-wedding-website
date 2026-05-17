@@ -8,6 +8,7 @@ from .models import (
     EntertainmentOption,
     FloristOption,
     VendorChecklistItem,
+    VendorDocument,
     VendorPhoto,
     VenueOption,
 )
@@ -41,8 +42,22 @@ def _validate_money(value):
         raise serializers.ValidationError('Enter a valid dollar amount.')
 
 
+class VendorDocumentSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VendorDocument
+        fields = ['id', 'name', 'url', 'mime_type', 'file_size', 'uploaded_at']
+        read_only_fields = ['id', 'url', 'mime_type', 'file_size', 'uploaded_at']
+
+    def get_url(self, obj):
+        request = self.context.get('request')
+        path = f'/vendors/api/documents/{obj.pk}/file/'
+        return request.build_absolute_uri(path) if request else path
+
+
 BASE_FIELDS = [
-    'id', 'name', 'website', 'google_drive_url', 'phone', 'email',
+    'id', 'name', 'website', 'phone', 'email',
     'is_chosen', 'is_favorite', 'has_talked_to', 'has_visited',
     'price_estimate',
     'rating',
@@ -50,15 +65,17 @@ BASE_FIELDS = [
     'positives', 'negatives', 'comments',
     'checklist',
     'photos',
+    'documents',
     'created_at', 'updated_at',
 ]
 
-BASE_READ_ONLY = ['id', 'photos', 'created_at', 'updated_at']
+BASE_READ_ONLY = ['id', 'photos', 'documents', 'created_at', 'updated_at']
 
 
 class BaseVendorSerializer(serializers.ModelSerializer):
     price_estimate = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     photos = VendorPhotoSerializer(many=True, read_only=True)
+    documents = VendorDocumentSerializer(many=True, read_only=True)
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)

@@ -1,4 +1,4 @@
-import { Star, Globe, FileText } from 'lucide-react'
+import { Star, Globe } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AnyVendor, VendorType } from './types'
 import { useUpdateVendor } from './api'
@@ -94,35 +94,20 @@ function TypeSpecificChips({ vendor, vendorType, visibleFields }: {
 }
 
 function QuickLinks({ vendor }: { vendor: AnyVendor }) {
-  if (!vendor.website && !vendor.google_drive_url) return null
+  if (!vendor.website) return null
   return (
     <div className="flex gap-1.5 flex-wrap">
-      {vendor.website && (
-        <a
-          href={vendor.website}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Visit website"
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 px-2 py-1 rounded-full transition-colors"
-        >
-          <Globe size={11} />
-          Website
-        </a>
-      )}
-      {vendor.google_drive_url && (
-        <a
-          href={vendor.google_drive_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Open Google Drive document"
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 px-2 py-1 rounded-full transition-colors"
-        >
-          <FileText size={11} />
-          Drive doc
-        </a>
-      )}
+      <a
+        href={vendor.website}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Visit website"
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 hover:bg-rose-50 hover:text-rose-600 px-2 py-1 rounded-full transition-colors"
+      >
+        <Globe size={11} />
+        Website
+      </a>
     </div>
   )
 }

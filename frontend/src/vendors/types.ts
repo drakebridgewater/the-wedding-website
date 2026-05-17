@@ -9,11 +9,19 @@ export interface VendorPhoto {
   uploaded_at: string
 }
 
+export interface VendorDocument {
+  id: number
+  name: string
+  url: string
+  mime_type: string
+  file_size: number | null
+  uploaded_at: string
+}
+
 export interface BaseVendor {
   id: number
   name: string
   website: string
-  google_drive_url: string
   phone: string
   email: string
   is_chosen: boolean
@@ -29,6 +37,7 @@ export interface BaseVendor {
   negatives: string
   comments: string
   photos: VendorPhoto[]
+  documents: VendorDocument[]
   created_at: string
   updated_at: string
 }

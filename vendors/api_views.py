@@ -1,4 +1,7 @@
+import os
+
 from django.contrib.contenttypes.models import ContentType
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -11,6 +14,7 @@ from .models import (
     EntertainmentOption,
     FloristOption,
     VendorChecklistItem,
+    VendorDocument,
     VendorPhoto,
     VenueOption,
 )
@@ -20,6 +24,7 @@ from .serializers import (
     EntertainmentSerializer,
     FloristSerializer,
     VendorChecklistItemSerializer,
+    VendorDocumentSerializer,
     VendorPhotoSerializer,
     VenueSerializer,
 )
@@ -160,4 +165,62 @@ def vendor_photo_delete(request, photo_pk):
 
     photo.image.delete(save=False)
     photo.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def vendor_document_upload(request, vendor_type, pk):
+    Model, _, err = _resolve(vendor_type)
+    if err:
+        return err
+
+    instance = get_object_or_404(Model, pk=pk)
+    uploaded = request.FILES.get('file')
+    if not uploaded:
+        return Response({'error': 'No file provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    name = request.data.get('name', '') or os.path.splitext(uploaded.name)[0]
+    ct = ContentType.objects.get_for_model(instance)
+    doc = VendorDocument.objects.create(
+        content_type=ct,
+        object_id=instance.pk,
+        name=name,
+        document=uploaded,
+        mime_type=uploaded.content_type or '',
+        file_size=uploaded.size,
+    )
+    return Response(
+        VendorDocumentSerializer(doc, context={'request': request}).data,
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def vendor_document_file(request, pk):
+    doc = get_object_or_404(VendorDocument, pk=pk)
+    filename = os.path.basename(doc.document.name)
+    response = FileResponse(
+        doc.document.open('rb'),
+        content_type=doc.mime_type or 'application/octet-stream',
+    )
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
+
+
+@api_view(['DELETE', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def vendor_document_detail(request, pk):
+    doc = get_object_or_404(VendorDocument, pk=pk)
+
+    if request.method == 'PATCH':
+        name = request.data.get('name')
+        if name:
+            doc.name = name
+            doc.save()
+        return Response(VendorDocumentSerializer(doc, context={'request': request}).data)
+
+    doc.document.delete(save=False)
+    doc.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
