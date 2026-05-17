@@ -48,6 +48,15 @@ def send_template_email(template, party, user=None, test_only=False, recipients=
     context['couple'] = getattr(settings, 'BRIDE_AND_GROOM', '')
     context['custom_body'] = rendered_body
 
+    # Attach the template's uploaded image if present
+    if template.main_image:
+        image_filename = os.path.basename(template.main_image.name)
+        context['main_image_filename'] = image_filename
+        context['main_image_url'] = site_url.rstrip('/') + template.main_image.url
+    else:
+        context['main_image_filename'] = None
+        context['main_image_url'] = None
+
     template_html = render_to_string(INVITATION_TEMPLATE, context=context)
     template_text = (
         f"{rendered_subject}\n\nPlease visit {site_url} to RSVP online."
@@ -60,14 +69,12 @@ def send_template_email(template, party, user=None, test_only=False, recipients=
         reply_to=[settings.DEFAULT_WEDDING_REPLY_EMAIL],
     )
     msg.attach_alternative(template_html, 'text/html')
-    msg.mixed_subtype = 'related'
-    for filename in (context['main_image'],):
-        attachment_path = os.path.join(
-            os.path.dirname(__file__), 'static', 'invitation', 'images', filename
-        )
-        with open(attachment_path, 'rb') as image_file:
+
+    if template.main_image:
+        msg.mixed_subtype = 'related'
+        with open(template.main_image.path, 'rb') as image_file:
             msg_img = MIMEImage(image_file.read())
-            msg_img.add_header('Content-ID', f'<{filename}>')
+            msg_img.add_header('Content-ID', f'<{context["main_image_filename"]}>')
             msg.attach(msg_img)
 
     print(f'sending template "{template.name}" to {party.name} ({", ".join(recipients)})')
@@ -97,13 +104,14 @@ def guess_party_by_invite_id_or_404(invite_id):
 
 
 def get_invitation_context(party):
+    couple = getattr(settings, 'BRIDE_AND_GROOM', 'Drake & Shawna')
     return {
-        'title': "Lion's Head",
-        'main_image': 'bride-groom.png',
         'main_color': '#fff3e8',
         'font_color': '#666666',
-        'page_title': "Drake and Shawna - You're Invited!",
+        'page_title': f"{couple} - You're Invited!",
         'preheader_text': "You are invited!",
+        'main_image_filename': None,
+        'main_image_url': None,
         'invitation_id': party.invitation_id,
         'party': party,
         'meals': MEALS,

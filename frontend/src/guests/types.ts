@@ -71,8 +71,22 @@ export interface EmailTemplate {
   name: string
   subject: string
   body_html: string
+  image_url: string | null
   created_at: string
   updated_at: string
+}
+
+export interface SaveTheDateSettings {
+  id: number
+  background_color: string
+  font_color: string
+  image_url: string | null
+}
+
+export interface SaveTheDateSentParty {
+  id: number
+  name: string
+  save_the_date_sent: string
 }
 
 export interface SentEmail {

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
   EmailTemplate, Guest, GuestFormData, GroupFormData, MemberFormData, MemberRole,
-  Party, PartyFormData, SentEmail, WeddingPartyGroup, WeddingPartyMember,
+  Party, PartyFormData, SaveTheDateSettings, SaveTheDateSentParty, SentEmail,
+  WeddingPartyGroup, WeddingPartyMember,
 } from './types'
 
 function getCsrf(): string {
@@ -30,6 +31,8 @@ const QK = {
   unassigned:     ['guests', 'unassigned']     as const,
   emailTemplates: ['guests', 'emailTemplates'] as const,
   sentEmails:     ['guests', 'sentEmails']     as const,
+  stdSettings:    ['guests', 'stdSettings']    as const,
+  stdSent:        ['guests', 'stdSent']        as const,
 }
 
 // ── Members ───────────────────────────────────────────────────────────────────
@@ -283,11 +286,104 @@ export function useSendEmailTemplate() {
   })
 }
 
+export function useUploadEmailTemplateImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => {
+      const form = new FormData()
+      form.append('image', file)
+      return fetch(`/guests/api/email-templates/${id}/upload-image/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() },
+        body: form,
+      }).then((r) => r.json() as Promise<EmailTemplate>)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
+  })
+}
+
+export function useRemoveEmailTemplateImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch<EmailTemplate>(`/guests/api/email-templates/${id}/upload-image/`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
+  })
+}
+
 // ── Sent emails log ───────────────────────────────────────────────────────────
 
 export function useSentEmails(partyId?: number) {
   return useQuery<SentEmail[]>({
     queryKey: partyId ? [...QK.sentEmails, partyId] : QK.sentEmails,
     queryFn: () => apiFetch(partyId ? `/guests/api/sent-emails/?party=${partyId}` : '/guests/api/sent-emails/'),
+  })
+}
+
+// ── Save the date ─────────────────────────────────────────────────────────────
+
+export function useSaveTheDateSettings() {
+  return useQuery<SaveTheDateSettings>({
+    queryKey: QK.stdSettings,
+    queryFn: () => apiFetch('/guests/api/save-the-date/settings/'),
+  })
+}
+
+export function useUpdateSaveTheDateSettings() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Partial<Pick<SaveTheDateSettings, 'background_color' | 'font_color'>>) =>
+      apiFetch<SaveTheDateSettings>('/guests/api/save-the-date/settings/', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.stdSettings }),
+  })
+}
+
+export function useUploadSaveTheDateImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (file: File) => {
+      const form = new FormData()
+      form.append('image', file)
+      return fetch('/guests/api/save-the-date/settings/upload-image/', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrf() },
+        body: form,
+      }).then((r) => r.json() as Promise<SaveTheDateSettings>)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.stdSettings }),
+  })
+}
+
+export function useRemoveSaveTheDateImage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<SaveTheDateSettings>('/guests/api/save-the-date/settings/upload-image/', { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.stdSettings }),
+  })
+}
+
+export function useSendSaveTheDates() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (partyIds: number[]) =>
+      apiFetch<{ sent: number; errors: string[] }>('/guests/api/save-the-date/send/', {
+        method: 'POST',
+        body: JSON.stringify({ party_ids: partyIds }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.stdSent })
+      qc.invalidateQueries({ queryKey: QK.parties })
+    },
+  })
+}
+
+export function useSaveTheDateSentList() {
+  return useQuery<SaveTheDateSentParty[]>({
+    queryKey: QK.stdSent,
+    queryFn: () => apiFetch('/guests/api/save-the-date/sent/'),
   })
 }

@@ -14,8 +14,7 @@ from guests import csv_import
 from guests.invitation import get_invitation_context, INVITATION_TEMPLATE, guess_party_by_invite_id_or_404, \
     send_invitation_email
 from guests.models import Guest, MEALS, Party
-from guests.save_the_date import get_save_the_date_context, send_save_the_date_email, SAVE_THE_DATE_TEMPLATE, \
-    SAVE_THE_DATE_CONTEXT_MAP
+from guests.save_the_date import get_save_the_date_context_from_settings, send_save_the_date_email, SAVE_THE_DATE_TEMPLATE
 
 
 class GuestListView(ListView):
@@ -115,19 +114,18 @@ def invitation_email_test(request, invite_id):
 
 
 def save_the_date_random(request):
-    template_id = random.choice(list(SAVE_THE_DATE_CONTEXT_MAP.keys()))
-    return save_the_date_preview(request, template_id)
+    return save_the_date_preview(request, template_id=None)
 
 
-def save_the_date_preview(request, template_id):
-    context = get_save_the_date_context(template_id)
+def save_the_date_preview(request, template_id=None):
+    context = get_save_the_date_context_from_settings()
     context['email_mode'] = False
     return render(request, SAVE_THE_DATE_TEMPLATE, context=context)
 
 
 @login_required
-def test_email(request, template_id):
-    context = get_save_the_date_context(template_id)
+def test_email(request, template_id=None):
+    context = get_save_the_date_context_from_settings()
     send_save_the_date_email(context, [settings.DEFAULT_WEDDING_TEST_EMAIL])
     return HttpResponse('sent!')
 

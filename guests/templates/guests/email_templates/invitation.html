@@ -20,13 +20,12 @@
     </tr>
 {% endblock %}
 {% block main_image %}
-    {% with "invitation/images/"|add:main_image as main_static_url %}
-    <img src="{% if email_mode %}cid:{{ main_image }}{% else %}{% static main_static_url %}{% endif %}"
+    {% if main_image_filename %}
+    <img src="{% if email_mode %}cid:{{ main_image_filename }}{% else %}{{ main_image_url }}{% endif %}"
          alt="{{ couple }}"
-         style="display: block; padding: 0; color: #666666;"
-         class="img-max" border="0"
-         height="512" width="512">
-    {% endwith %}
+         style="display: block; padding: 0; color: #666666; max-width: 100%;"
+         class="img-max" border="0">
+    {% endif %}
 {% endblock %}
 {% block main_copy %}
     <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center">

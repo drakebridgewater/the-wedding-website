@@ -153,11 +153,29 @@ class EmailTemplate(models.Model):
     name = models.CharField(max_length=100)
     subject = models.CharField(max_length=200, default="You're invited!")
     body_html = models.TextField(default=DEFAULT_INVITE_BODY)
+    main_image = models.ImageField(upload_to='email-images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+
+class SaveTheDateSettings(models.Model):
+    main_image = models.ImageField(upload_to='email-images/save-the-date/', blank=True, null=True)
+    background_color = models.CharField(max_length=7, default='#fff3e8')
+    font_color = models.CharField(max_length=7, default='#666666')
+
+    class Meta:
+        verbose_name_plural = 'Save the date settings'
+
+    def __str__(self):
+        return 'Save the Date Settings'
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
 
 
 class SentEmail(models.Model):

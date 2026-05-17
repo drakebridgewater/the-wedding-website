@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import EmailTemplate, Guest, Party, SentEmail, WeddingPartyGroup, WeddingPartyMember
+from .models import EmailTemplate, Guest, Party, SaveTheDateSettings, SentEmail, WeddingPartyGroup, WeddingPartyMember
 
 
 class WeddingPartyMemberSerializer(serializers.ModelSerializer):
@@ -60,9 +60,35 @@ class PartySerializer(serializers.ModelSerializer):
 
 
 class EmailTemplateSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = EmailTemplate
-        fields = ['id', 'name', 'subject', 'body_html', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'subject', 'body_html', 'image_url', 'created_at', 'updated_at']
+
+    def get_image_url(self, obj):
+        if not obj.main_image:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.main_image.url)
+        return obj.main_image.url
+
+
+class SaveTheDateSettingsSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaveTheDateSettings
+        fields = ['id', 'background_color', 'font_color', 'image_url']
+
+    def get_image_url(self, obj):
+        if not obj.main_image:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.main_image.url)
+        return obj.main_image.url
 
 
 class SentEmailSerializer(serializers.ModelSerializer):

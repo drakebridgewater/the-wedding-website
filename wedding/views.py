@@ -5,8 +5,6 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from guests.models import WeddingPartyMember
-from guests.save_the_date import SAVE_THE_DATE_CONTEXT_MAP
-
 from .models import FundMessage, Question, WeddingSettings
 
 ROLE_LABELS = {
@@ -23,7 +21,6 @@ SIDE_GROUPS = [
 def home(request):
     ws = WeddingSettings.get()
     return render(request, 'home.html', context={
-        'save_the_dates': SAVE_THE_DATE_CONTEXT_MAP,
         'approved_questions': Question.objects.filter(is_approved=True),
         'weddingshare_url': getattr(settings, 'WEDDINGSHARE_URL', ''),
         'hero_photo_url': ws.hero_photo.url if ws.hero_photo else None,

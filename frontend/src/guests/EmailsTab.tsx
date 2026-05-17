@@ -19,6 +19,7 @@ import {
   useEmailTemplates, useCreateEmailTemplate, useUpdateEmailTemplate,
   useDeleteEmailTemplate, usePreviewEmailTemplate, useSendEmailTemplate,
   useSentEmails, useParties,
+  useUploadEmailTemplateImage, useRemoveEmailTemplateImage,
 } from './api'
 import type { EmailTemplate, Party } from './types'
 
@@ -304,11 +305,14 @@ function TemplateEditor({
   const [subject, setSubject] = useState(template?.subject ?? '')
   const [bodyHtml, setBodyHtml] = useState(template?.body_html ?? '')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const updateTemplate = useUpdateEmailTemplate()
   const createTemplate = useCreateEmailTemplate()
   const deleteTemplate = useDeleteEmailTemplate()
   const previewMutation = usePreviewEmailTemplate()
+  const uploadImage = useUploadEmailTemplateImage()
+  const removeImage = useRemoveEmailTemplateImage()
   const [previewData, setPreviewData] = useState<{ subject: string; body_html: string } | null>(null)
 
   // Sync fields when template changes
@@ -317,6 +321,24 @@ function TemplateEditor({
     setSubject(template?.subject ?? '')
     setBodyHtml(template?.body_html ?? '')
   }, [template?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !template) return
+    uploadImage.mutate({ id: template.id, file }, {
+      onSuccess: (updated) => { toast.success('Image uploaded'); onSaved(updated) },
+      onError: () => toast.error('Image upload failed'),
+    })
+    e.target.value = ''
+  }
+
+  const handleRemoveImage = () => {
+    if (!template) return
+    removeImage.mutate(template.id, {
+      onSuccess: (updated) => { toast.success('Image removed'); onSaved(updated) },
+      onError: () => toast.error('Failed to remove image'),
+    })
+  }
 
   const handleSave = () => {
     const data = { name, subject, body_html: bodyHtml }
@@ -374,6 +396,43 @@ function TemplateEditor({
             placeholder="You're invited!"
             className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
           />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-stone-500 mb-1">Header image <span className="font-normal text-stone-400">(optional)</span></label>
+          {template?.image_url ? (
+            <div className="flex items-start gap-3">
+              <img src={template.image_url} alt="Template image" className="h-24 w-24 object-cover rounded-lg border border-stone-200" />
+              <div className="flex flex-col gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadImage.isPending}
+                  className="px-3 py-1.5 text-xs border border-stone-200 rounded-lg hover:bg-stone-50 disabled:opacity-40"
+                >
+                  Replace
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  disabled={removeImage.isPending}
+                  className="px-3 py-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg disabled:opacity-40"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => template && imageInputRef.current?.click()}
+              disabled={!template || uploadImage.isPending}
+              className="px-3 py-2 text-sm border border-dashed border-stone-300 rounded-lg hover:bg-stone-50 disabled:opacity-40 text-stone-500"
+            >
+              {uploadImage.isPending ? 'Uploading…' : '+ Upload image'}
+            </button>
+          )}
+          <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+          {!template && <p className="text-xs text-stone-400 mt-1">Save the template first to upload an image.</p>}
         </div>
         <div>
           <label className="block text-xs font-medium text-stone-500 mb-1">Email body</label>

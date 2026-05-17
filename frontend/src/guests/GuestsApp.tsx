@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { Toaster } from 'sonner'
 import { ContactsTab } from './ContactsTab'
 import { EmailsTab } from './EmailsTab'
+import { SaveTheDateTab } from './SaveTheDateTab'
 
-type Tab = 'contacts' | 'emails'
+type Tab = 'contacts' | 'emails' | 'save-the-date'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'contacts', label: 'Contacts' },
-  { id: 'emails',   label: 'Emails' },
+  { id: 'contacts',      label: 'Contacts' },
+  { id: 'emails',        label: 'Emails' },
+  { id: 'save-the-date', label: 'Save the Date' },
 ]
 
 export function GuestsApp() {
@@ -39,8 +41,9 @@ export function GuestsApp() {
         ))}
       </div>
 
-      {tab === 'contacts' && <ContactsTab />}
-      {tab === 'emails'   && <EmailsTab />}
+      {tab === 'contacts'      && <ContactsTab />}
+      {tab === 'emails'        && <EmailsTab />}
+      {tab === 'save-the-date' && <SaveTheDateTab />}
     </div>
   )
 }

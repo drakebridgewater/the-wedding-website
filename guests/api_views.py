@@ -3,11 +3,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import EmailTemplate, Guest, Party, SentEmail, WeddingPartyGroup, WeddingPartyMember
+from .models import EmailTemplate, Guest, Party, SaveTheDateSettings, SentEmail, WeddingPartyGroup, WeddingPartyMember
 from .serializers import (
     EmailTemplateSerializer,
     GuestSerializer,
     PartySerializer,
+    SaveTheDateSettingsSerializer,
     SentEmailSerializer,
     WeddingPartyGroupSerializer,
     WeddingPartyMemberSerializer,
@@ -272,9 +273,9 @@ def unassigned_guests(request):
 def email_templates(request):
     if request.method == 'GET':
         qs = EmailTemplate.objects.order_by('name')
-        return Response(EmailTemplateSerializer(qs, many=True).data)
+        return Response(EmailTemplateSerializer(qs, many=True, context={'request': request}).data)
 
-    serializer = EmailTemplateSerializer(data=request.data)
+    serializer = EmailTemplateSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     serializer.save()
     return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -289,15 +290,41 @@ def email_template_detail(request, pk):
         return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        return Response(EmailTemplateSerializer(obj).data)
+        return Response(EmailTemplateSerializer(obj, context={'request': request}).data)
     if request.method == 'DELETE':
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    serializer = EmailTemplateSerializer(obj, data=request.data, partial=True)
+    serializer = EmailTemplateSerializer(obj, data=request.data, partial=True, context={'request': request})
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    return Response(serializer.data)
+    return Response(EmailTemplateSerializer(obj, context={'request': request}).data)
+
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def email_template_upload_image(request, pk):
+    """POST: upload an image for the template. DELETE: remove the image."""
+    try:
+        obj = EmailTemplate.objects.get(pk=pk)
+    except EmailTemplate.DoesNotExist:
+        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'DELETE':
+        if obj.main_image:
+            obj.main_image.delete(save=False)
+            obj.main_image = None
+            obj.save(update_fields=['main_image'])
+        return Response(EmailTemplateSerializer(obj, context={'request': request}).data)
+
+    image = request.FILES.get('image')
+    if not image:
+        return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+    if obj.main_image:
+        obj.main_image.delete(save=False)
+    obj.main_image = image
+    obj.save(update_fields=['main_image'])
+    return Response(EmailTemplateSerializer(obj, context={'request': request}).data)
 
 
 @api_view(['POST'])
@@ -383,6 +410,87 @@ def sent_emails(request):
     if party_id:
         qs = qs.filter(party_id=party_id)
     return Response(SentEmailSerializer(qs, many=True).data)
+
+
+# ── Save the date ──────────────────────────────────────────────────────────────
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def save_the_date_settings(request):
+    obj = SaveTheDateSettings.get()
+    if request.method == 'PATCH':
+        serializer = SaveTheDateSettingsSerializer(obj, data=request.data, partial=True, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+    return Response(SaveTheDateSettingsSerializer(obj, context={'request': request}).data)
+
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def save_the_date_upload_image(request):
+    obj = SaveTheDateSettings.get()
+    if request.method == 'DELETE':
+        if obj.main_image:
+            obj.main_image.delete(save=False)
+            obj.main_image = None
+            obj.save(update_fields=['main_image'])
+        return Response(SaveTheDateSettingsSerializer(obj, context={'request': request}).data)
+
+    image = request.FILES.get('image')
+    if not image:
+        return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
+    if obj.main_image:
+        obj.main_image.delete(save=False)
+    obj.main_image = image
+    obj.save(update_fields=['main_image'])
+    return Response(SaveTheDateSettingsSerializer(obj, context={'request': request}).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_the_date_send(request):
+    """Send save-the-date to a list of party IDs. Body: { party_ids: [...] }"""
+    from datetime import datetime
+    from .save_the_date import send_save_the_date_email, get_save_the_date_context_from_settings
+
+    party_ids = request.data.get('party_ids', [])
+    if not party_ids:
+        return Response({'error': 'party_ids required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    context = get_save_the_date_context_from_settings()
+    parties_qs = Party.objects.prefetch_related('guest_set').filter(pk__in=party_ids)
+    sent_count = 0
+    errors = []
+    for party in parties_qs:
+        recipients = party.guest_emails
+        if not recipients:
+            errors.append(f'{party.name}: no valid email addresses')
+            continue
+        try:
+            send_save_the_date_email(context, recipients)
+            party.save_the_date_sent = datetime.now()
+            party.save(update_fields=['save_the_date_sent'])
+            sent_count += 1
+        except Exception as e:
+            errors.append(f'{party.name}: {e}')
+
+    return Response({'sent': sent_count, 'errors': errors})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def save_the_date_sent_list(request):
+    """Return parties that have been sent a save-the-date."""
+    qs = Party.objects.exclude(save_the_date_sent=None).order_by('-save_the_date_sent')
+    data = [
+        {
+            'id': p.id,
+            'name': p.name,
+            'save_the_date_sent': p.save_the_date_sent,
+        }
+        for p in qs
+    ]
+    return Response(data)
 
 
 # ── CSV import ─────────────────────────────────────────────────────────────────

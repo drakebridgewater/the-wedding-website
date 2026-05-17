@@ -30,7 +30,12 @@ urlpatterns = [
     path('guests/api/email-templates/<int:pk>/', api_views.email_template_detail, name='api-email-template-detail'),
     path('guests/api/email-templates/<int:pk>/preview/', api_views.email_template_preview, name='api-email-template-preview'),
     path('guests/api/email-templates/<int:pk>/send/', api_views.email_template_send, name='api-email-template-send'),
+    path('guests/api/email-templates/<int:pk>/upload-image/', api_views.email_template_upload_image, name='api-email-template-upload-image'),
     path('guests/api/sent-emails/', api_views.sent_emails, name='api-sent-emails'),
+    path('guests/api/save-the-date/settings/', api_views.save_the_date_settings, name='api-std-settings'),
+    path('guests/api/save-the-date/settings/upload-image/', api_views.save_the_date_upload_image, name='api-std-upload-image'),
+    path('guests/api/save-the-date/send/', api_views.save_the_date_send, name='api-std-send'),
+    path('guests/api/save-the-date/sent/', api_views.save_the_date_sent_list, name='api-std-sent-list'),
 
     re_path(r'^guests/$', login_required(RedirectView.as_view(url='/guests/manage/', permanent=True)), name='guest-list'),
     re_path(r'^guests/export$', export_guests, name='export-guest-list'),
