@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { StickyNote } from 'lucide-react'
 import { Note, useNotes } from './api'
 import { NoteCard } from './NoteCard'
 import { NoteModal } from './NoteModal'
@@ -41,10 +41,10 @@ export function NotesApp() {
       {/* FAB */}
       <button
         onClick={() => setEditingNote('new')}
-        className="fixed bottom-6 right-24 z-10 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg flex items-center justify-center transition-colors active:scale-95"
+        className="fixed bottom-6 right-24 z-10 w-14 h-14 rounded-full bg-amber-400 hover:bg-amber-500 text-white shadow-lg flex items-center justify-center transition-colors active:scale-95"
         aria-label="Add note"
       >
-        <Plus size={26} />
+        <StickyNote size={22} />
       </button>
 
       {editingNote !== null && (

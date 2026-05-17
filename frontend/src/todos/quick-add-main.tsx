@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { ListTodo } from 'lucide-react'
 import { Toaster } from 'sonner'
 import { CreateTaskModal } from './CreateTaskModal'
 import '@/index.css'
@@ -18,7 +18,7 @@ function QuickAddFAB() {
         aria-label="Add new task"
         title="Add wedding task"
       >
-        <Plus size={24} />
+        <ListTodo size={22} />
       </button>
       <CreateTaskModal open={open} onClose={() => setOpen(false)} />
     </>
