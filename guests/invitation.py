@@ -13,6 +13,7 @@ INVITATION_TEMPLATE = 'guests/email_templates/invitation.html'
 
 def render_template(body_html, subject, party, site_url):
     """Resolve {{merge_fields}} in subject and body_html for a given party."""
+    from guests.save_the_date import _get_wedding_date, _get_wedding_location
     rsvp_path = reverse('invitation', args=[party.invitation_id])
     rsvp_link = site_url.rstrip('/') + rsvp_path
     first_guest = party.guest_set.first()
@@ -22,6 +23,9 @@ def render_template(body_html, subject, party, site_url):
         '{{first_name}}': first_name,
         '{{rsvp_link}}': rsvp_link,
         '{{couple}}': getattr(settings, 'BRIDE_AND_GROOM', ''),
+        '{{date}}': _get_wedding_date(),
+        '{{location}}': _get_wedding_location(),
+        '{{site_url}}': site_url,
     }
     for token, value in replacements.items():
         body_html = body_html.replace(token, value)
@@ -47,6 +51,7 @@ def send_template_email(template, party, user=None, test_only=False, recipients=
     context['site_url'] = site_url
     context['couple'] = getattr(settings, 'BRIDE_AND_GROOM', '')
     context['custom_body'] = rendered_body
+    context['footer_html'] = template.footer_html
 
     # Attach the template's uploaded image if present
     if template.main_image:

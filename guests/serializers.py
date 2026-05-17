@@ -55,8 +55,9 @@ class PartySerializer(serializers.ModelSerializer):
             'is_attending', 'rehearsal_dinner', 'comments', 'guests',
             'address', 'wants_physical_card', 'side', 'plus_one_allowed', 'plus_one_count', 'rsvp_responded_at',
             'invitation_id', 'invitation_sent', 'invitation_opened',
+            'save_the_date_sent',
         ]
-        read_only_fields = ['rsvp_responded_at', 'invitation_id', 'invitation_sent', 'invitation_opened']
+        read_only_fields = ['rsvp_responded_at', 'invitation_id', 'invitation_sent', 'invitation_opened', 'save_the_date_sent']
 
 
 class EmailTemplateSerializer(serializers.ModelSerializer):
@@ -64,7 +65,7 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmailTemplate
-        fields = ['id', 'name', 'subject', 'body_html', 'image_url', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'subject', 'body_html', 'footer_html', 'image_url', 'created_at', 'updated_at']
 
     def get_image_url(self, obj):
         if not obj.main_image:

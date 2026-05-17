@@ -120,6 +120,9 @@ function RichEditor({
     { label: '{{first_name}}', tip: "First guest's first name" },
     { label: '{{rsvp_link}}',  tip: 'Full RSVP URL' },
     { label: '{{couple}}',     tip: 'Bride & Groom names' },
+    { label: '{{date}}',       tip: 'Wedding date from settings' },
+    { label: '{{location}}',   tip: 'Wedding location from settings' },
+    { label: '{{site_url}}',   tip: 'Wedding website URL' },
   ]
 
   return (
@@ -304,6 +307,7 @@ function TemplateEditor({
   const [name, setName] = useState(template?.name ?? '')
   const [subject, setSubject] = useState(template?.subject ?? '')
   const [bodyHtml, setBodyHtml] = useState(template?.body_html ?? '')
+  const [footerHtml, setFooterHtml] = useState(template?.footer_html ?? '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -320,6 +324,7 @@ function TemplateEditor({
     setName(template?.name ?? '')
     setSubject(template?.subject ?? '')
     setBodyHtml(template?.body_html ?? '')
+    setFooterHtml(template?.footer_html ?? '')
   }, [template?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -341,7 +346,7 @@ function TemplateEditor({
   }
 
   const handleSave = () => {
-    const data = { name, subject, body_html: bodyHtml }
+    const data = { name, subject, body_html: bodyHtml, footer_html: footerHtml }
     if (template) {
       updateTemplate.mutate({ id: template.id, data }, {
         onSuccess: (updated) => { toast.success('Template saved'); onSaved(updated) },
@@ -438,6 +443,18 @@ function TemplateEditor({
           <label className="block text-xs font-medium text-stone-500 mb-1">Email body</label>
           <RichEditor content={bodyHtml} onChange={setBodyHtml} />
         </div>
+        <div>
+          <label className="block text-xs font-medium text-stone-500 mb-1">
+            Footer <span className="font-normal text-stone-400">(leave blank for default)</span>
+          </label>
+          <textarea
+            value={footerHtml}
+            onChange={(e) => setFooterHtml(e.target.value)}
+            placeholder="e.g. Can't make it? Let us know at rsvp@example.com"
+            rows={3}
+            className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300 resize-y font-mono"
+          />
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
@@ -485,11 +502,14 @@ function TemplateEditor({
 
 // ── Send panel ────────────────────────────────────────────────────────────────
 
+type MarkAs = 'save_the_date' | 'invitation' | null
+
 function SendPanel({ template }: { template: EmailTemplate | null }) {
   const { data: parties = [] } = useParties()
   const sendMutation = useSendEmailTemplate()
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [confirmSend, setConfirmSend] = useState(false)
+  const [markAs, setMarkAs] = useState<MarkAs>(null)
 
   const invitedParties = parties.filter((p) => p.status === 'invited')
 
@@ -508,7 +528,7 @@ function SendPanel({ template }: { template: EmailTemplate | null }) {
   const handleSend = () => {
     if (!template || selected.size === 0) return
     sendMutation.mutate(
-      { templateId: template.id, partyIds: Array.from(selected) },
+      { templateId: template.id, partyIds: Array.from(selected), markAs },
       {
         onSuccess: ({ sent, errors }) => {
           toast.success(`Sent to ${sent} ${sent === 1 ? 'party' : 'parties'}`)
@@ -520,6 +540,12 @@ function SendPanel({ template }: { template: EmailTemplate | null }) {
       }
     )
   }
+
+  const MARK_OPTIONS: { value: MarkAs; label: string }[] = [
+    { value: null,            label: 'None' },
+    { value: 'save_the_date', label: 'Save the Date' },
+    { value: 'invitation',    label: 'Invitation' },
+  ]
 
   return (
     <>
@@ -549,6 +575,27 @@ function SendPanel({ template }: { template: EmailTemplate | null }) {
           ))}
         </div>
 
+        {/* Mark as tracking */}
+        <div>
+          <p className="text-xs font-medium text-stone-500 mb-1.5">Mark send as</p>
+          <div className="flex gap-1">
+            {MARK_OPTIONS.map(({ value, label }) => (
+              <button
+                key={String(value)}
+                type="button"
+                onClick={() => setMarkAs(value)}
+                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                  markAs === value
+                    ? 'bg-stone-800 text-white border-stone-800'
+                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           disabled={!template || selected.size === 0 || sendMutation.isPending}
           onClick={() => setConfirmSend(true)}
@@ -571,7 +618,6 @@ function SendPanel({ template }: { template: EmailTemplate | null }) {
 
 function PartyCheckRow({ party, checked, onToggle }: { party: Party; checked: boolean; onToggle: () => void }) {
   const guestCount = party.guests.length
-  const hasSent = !!party.invitation_sent
 
   return (
     <label className="flex items-center gap-3 px-3 py-2 hover:bg-stone-50 cursor-pointer">
@@ -580,8 +626,11 @@ function PartyCheckRow({ party, checked, onToggle }: { party: Party; checked: bo
         <span className="text-sm text-stone-800 truncate block">{party.name}</span>
         <span className="text-xs text-stone-400">
           {guestCount} {guestCount === 1 ? 'guest' : 'guests'}
-          {hasSent && (
-            <span className="ml-2 text-emerald-600">✓ sent {format(new Date(party.invitation_sent!), 'MMM d')}</span>
+          {party.save_the_date_sent && (
+            <span className="ml-2 text-sky-600">STD {format(new Date(party.save_the_date_sent), 'MMM d')}</span>
+          )}
+          {party.invitation_sent && (
+            <span className="ml-2 text-emerald-600">inv {format(new Date(party.invitation_sent), 'MMM d')}</span>
           )}
         </span>
       </div>

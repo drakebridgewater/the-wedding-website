@@ -353,6 +353,7 @@ def email_template_preview(_request, pk):
     dummy = _DummyParty()
     dummy.guest_set = _Qs()
 
+    from guests.save_the_date import _get_wedding_date, _get_wedding_location
     site_url = getattr(settings, 'WEDDING_WEBSITE_URL', 'https://example.com')
     # Build a fake rsvp_link without reverse (preview only)
     rsvp_link = site_url.rstrip('/') + '/invite/preview/'
@@ -363,17 +364,23 @@ def email_template_preview(_request, pk):
         '{{first_name}}': 'Jane',
         '{{rsvp_link}}': rsvp_link,
         '{{couple}}': getattr(settings, 'BRIDE_AND_GROOM', 'Drake & Shawna'),
+        '{{date}}': _get_wedding_date(),
+        '{{location}}': _get_wedding_location(),
+        '{{site_url}}': site_url,
     }.items():
         body = body.replace(token, value)
         subject = subject.replace(token, value)
 
-    return Response({'subject': subject, 'body_html': body})
+    return Response({'subject': subject, 'body_html': body, 'footer_html': obj.footer_html})
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def email_template_send(request, pk):
-    """Send template to a list of party IDs. Body: { party_ids: [1, 2, ...] }"""
+    """Send template to a list of party IDs.
+    Body: { party_ids: [1, 2, ...], mark_as: 'save_the_date' | 'invitation' | null }
+    """
+    from datetime import datetime
     try:
         template = EmailTemplate.objects.get(pk=pk)
     except EmailTemplate.DoesNotExist:
@@ -382,6 +389,8 @@ def email_template_send(request, pk):
     party_ids = request.data.get('party_ids', [])
     if not party_ids:
         return Response({'error': 'party_ids required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    mark_as = request.data.get('mark_as')  # 'save_the_date', 'invitation', or None
 
     from .invitation import send_template_email
     parties_qs = Party.objects.prefetch_related('guest_set').filter(pk__in=party_ids)
@@ -392,6 +401,12 @@ def email_template_send(request, pk):
             result = send_template_email(template, party, user=request.user)
             if result:
                 sent_count += 1
+                if mark_as == 'save_the_date':
+                    party.save_the_date_sent = datetime.now()
+                    party.save(update_fields=['save_the_date_sent'])
+                elif mark_as == 'invitation':
+                    party.invitation_sent = datetime.now()
+                    party.save(update_fields=['invitation_sent'])
             else:
                 errors.append(f'{party.name}: no valid email addresses')
         except Exception as e:

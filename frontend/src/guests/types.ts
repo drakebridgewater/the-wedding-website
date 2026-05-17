@@ -64,6 +64,7 @@ export interface Party {
   invitation_id: string
   invitation_sent: string | null
   invitation_opened: string | null
+  save_the_date_sent: string | null
 }
 
 export interface EmailTemplate {
@@ -71,6 +72,7 @@ export interface EmailTemplate {
   name: string
   subject: string
   body_html: string
+  footer_html: string
   image_url: string | null
   created_at: string
   updated_at: string

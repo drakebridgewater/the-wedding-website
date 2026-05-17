@@ -153,6 +153,7 @@ class EmailTemplate(models.Model):
     name = models.CharField(max_length=100)
     subject = models.CharField(max_length=200, default="You're invited!")
     body_html = models.TextField(default=DEFAULT_INVITE_BODY)
+    footer_html = models.TextField(blank=True, default='')
     main_image = models.ImageField(upload_to='email-images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

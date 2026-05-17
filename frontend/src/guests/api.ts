@@ -241,7 +241,7 @@ export function useEmailTemplates() {
 export function useCreateEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: Pick<EmailTemplate, 'name' | 'subject' | 'body_html'>) =>
+    mutationFn: (data: Pick<EmailTemplate, 'name' | 'subject' | 'body_html' | 'footer_html'>) =>
       apiFetch<EmailTemplate>('/guests/api/email-templates/', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
   })
@@ -250,7 +250,7 @@ export function useCreateEmailTemplate() {
 export function useUpdateEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Pick<EmailTemplate, 'name' | 'subject' | 'body_html'>> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<Pick<EmailTemplate, 'name' | 'subject' | 'body_html' | 'footer_html'>> }) =>
       apiFetch<EmailTemplate>(`/guests/api/email-templates/${id}/`, { method: 'PUT', body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
   })
@@ -274,10 +274,10 @@ export function usePreviewEmailTemplate() {
 export function useSendEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ templateId, partyIds }: { templateId: number; partyIds: number[] }) =>
+    mutationFn: ({ templateId, partyIds, markAs }: { templateId: number; partyIds: number[]; markAs?: 'save_the_date' | 'invitation' | null }) =>
       apiFetch<{ sent: number; errors: string[] }>(
         `/guests/api/email-templates/${templateId}/send/`,
-        { method: 'POST', body: JSON.stringify({ party_ids: partyIds }) }
+        { method: 'POST', body: JSON.stringify({ party_ids: partyIds, mark_as: markAs ?? null }) }
       ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.sentEmails })
