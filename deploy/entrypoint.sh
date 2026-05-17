@@ -26,9 +26,8 @@ python manage.py collectstatic --noinput
 # ./manage.py makemigrations app_name
 python manage.py migrate
 
-# Create the superuser
-
-python manage.py createsuperuser --noinput
+# Create the superuser (no-op if already exists)
+python manage.py createsuperuser --noinput 2>/dev/null || true
 
 /usr/sbin/nginx -g 'daemon off;' &
 
