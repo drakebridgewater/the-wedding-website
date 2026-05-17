@@ -26,8 +26,16 @@ def dashboard(request):
     rsvp_overdue = bool(rsvp_deadline and today > rsvp_deadline)
 
     # --- Pipeline / milestone checks ---
-    save_the_dates_sent = Party.objects.filter(save_the_date_sent__isnull=False).exists()
-    invitations_sent = Party.objects.filter(invitation_sent__isnull=False).exists()
+    from django.db.models import Exists, OuterRef
+    from guests.models import Guest as _Guest
+    _has_email = _Guest.objects.filter(party=OuterRef('pk'), email__isnull=False).exclude(email='')
+    # "done" only when no invited party with an email address is still unsent
+    save_the_dates_sent = not Party.objects.filter(
+        status='invited', save_the_date_sent__isnull=True
+    ).filter(Exists(_has_email)).exists()
+    invitations_sent = not Party.objects.filter(
+        status='invited', invitation_sent__isnull=True
+    ).filter(Exists(_has_email)).exists()
 
     checks = [
         {

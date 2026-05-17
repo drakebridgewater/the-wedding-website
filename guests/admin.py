@@ -1,6 +1,58 @@
 from django.contrib import admin
 from django import forms
+from django.db.models import Exists, OuterRef
 from .models import Guest, Party, WeddingPartyMember, WeddingPartyGroup
+
+
+class _HasEmailSubquery:
+    """Reusable Exists subquery: party has at least one guest with a real email."""
+    @staticmethod
+    def qs():
+        return Guest.objects.filter(party=OuterRef('pk'), email__isnull=False).exclude(email='')
+
+
+class SaveTheDateStatusFilter(admin.SimpleListFilter):
+    title = 'save-the-date status'
+    parameter_name = 'std_status'
+
+    def lookups(self, request, model_admin):
+        return [
+            ('sent', 'Sent'),
+            ('pending', 'Not sent — has email'),
+            ('postal', 'No email — postal only'),
+        ]
+
+    def queryset(self, request, queryset):
+        has_email = _HasEmailSubquery.qs()
+        if self.value() == 'sent':
+            return queryset.filter(save_the_date_sent__isnull=False)
+        if self.value() == 'pending':
+            return queryset.filter(save_the_date_sent__isnull=True, status='invited').filter(Exists(has_email))
+        if self.value() == 'postal':
+            return queryset.filter(~Exists(has_email))
+        return queryset
+
+
+class InvitationStatusFilter(admin.SimpleListFilter):
+    title = 'invitation status'
+    parameter_name = 'inv_status'
+
+    def lookups(self, request, model_admin):
+        return [
+            ('sent', 'Sent'),
+            ('pending', 'Not sent — has email'),
+            ('postal', 'No email — postal only'),
+        ]
+
+    def queryset(self, request, queryset):
+        has_email = _HasEmailSubquery.qs()
+        if self.value() == 'sent':
+            return queryset.filter(invitation_sent__isnull=False)
+        if self.value() == 'pending':
+            return queryset.filter(invitation_sent__isnull=True, status='invited').filter(Exists(has_email))
+        if self.value() == 'postal':
+            return queryset.filter(~Exists(has_email))
+        return queryset
 
 
 class GuestForm(forms.ModelForm):
@@ -35,12 +87,20 @@ class GuestInline(admin.StackedInline):
 
 class PartyAdmin(admin.ModelAdmin):
     form = PartyForm
-    list_display = ('name', 'type', 'category', 'side', 'status', 'save_the_date_sent', 'invitation_sent',
+    list_display = ('name', 'type', 'category', 'side', 'status', 'has_email',
+                    'save_the_date_sent', 'invitation_sent',
                     'rehearsal_dinner', 'invitation_opened', 'is_attending', 'rsvp_responded_at', 'plus_one_allowed')
     list_filter = ('type', 'category', 'side', 'status', 'is_attending', 'rehearsal_dinner',
-                   'invitation_opened', 'plus_one_allowed')
+                   'invitation_opened', 'plus_one_allowed', SaveTheDateStatusFilter, InvitationStatusFilter)
     search_fields = ('name', 'address')
     inlines = [GuestInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('guest_set')
+
+    @admin.display(boolean=True, description='Has Email')
+    def has_email(self, obj):
+        return bool(obj.guest_emails)
 
 
 class GuestAdmin(admin.ModelAdmin):
