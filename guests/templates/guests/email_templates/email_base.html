@@ -174,6 +174,7 @@
                         <table border="0" width="100%" cellpadding="0"
                                cellspacing="0">
                             <tbody>
+                            {% if header_filename %}
                             <tr>
                                 <td align="center" bgcolor="#ffffff">
                                     {% with "save-the-date/images/"|add:header_filename as header_filepath %}
@@ -184,6 +185,7 @@
                                     {% endwith %}
                                 </td>
                             </tr>
+                            {% endif %}
                             </tbody>
                         </table>
                     </td>
