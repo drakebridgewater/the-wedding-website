@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
-import { Toaster } from 'sonner'
 import { Note, useNotes } from './api'
 import { NoteCard } from './NoteCard'
 import { NoteModal } from './NoteModal'
@@ -11,7 +10,6 @@ export function NotesApp() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <Toaster position="top-center" />
 
       <div className="max-w-5xl mx-auto px-3 py-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-6 px-1">Notes</h1>
