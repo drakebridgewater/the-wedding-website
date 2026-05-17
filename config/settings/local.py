@@ -37,7 +37,5 @@ DJANGO_VITE = {
 
 # Override with your own details during local development
 # BRIDE_AND_GROOM = 'Your Names'
-# WEDDING_DATE = 'June 1st, 2025'
-# WEDDING_LOCATION = 'Somewhere Special'
 # WEDDING_WEBSITE_URL = 'https://yoursite.com'
 # DEFAULT_WEDDING_EMAIL = 'you@example.com'

@@ -123,10 +123,6 @@ DJANGO_VITE = {
 
 # Names of the couple, used in emails and templates
 BRIDE_AND_GROOM = 'Drake & Shawna'
-# Date of the wedding, displayed on the site
-WEDDING_DATE = 'January 1st, 1969'
-# Location of the wedding, displayed on the site
-WEDDING_LOCATION = 'North Pole, USA'
 # Used in links inside save-the-date and invitation emails
 WEDDING_WEBSITE_URL = 'https://wedding.bridgewater.digital'
 # Base address for all outgoing emails

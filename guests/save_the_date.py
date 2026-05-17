@@ -12,6 +12,24 @@ from guests.models import Party
 SAVE_THE_DATE_TEMPLATE = 'guests/email_templates/save_the_date.html'
 
 
+def _get_wedding_date():
+    try:
+        from wedding.models import WeddingSettings
+        w = WeddingSettings.get()
+        return w.wedding_date_display or getattr(settings, 'WEDDING_DATE', '')
+    except Exception:
+        return getattr(settings, 'WEDDING_DATE', '')
+
+
+def _get_wedding_location():
+    try:
+        from wedding.models import WeddingSettings
+        w = WeddingSettings.get()
+        return w.wedding_location or getattr(settings, 'WEDDING_LOCATION', '')
+    except Exception:
+        return getattr(settings, 'WEDDING_LOCATION', '')
+
+
 def get_save_the_date_context_from_settings():
     from guests.models import SaveTheDateSettings
     std = SaveTheDateSettings.get()
@@ -33,8 +51,8 @@ def get_save_the_date_context_from_settings():
         'main_color': std.background_color,
         'font_color': std.font_color,
         'couple': getattr(settings, 'BRIDE_AND_GROOM', ''),
-        'location': getattr(settings, 'WEDDING_LOCATION', ''),
-        'date': getattr(settings, 'WEDDING_DATE', ''),
+        'location': _get_wedding_location(),
+        'date': _get_wedding_date(),
         'rsvp_address': getattr(settings, 'DEFAULT_WEDDING_REPLY_EMAIL', ''),
         'site_url': site_url,
         'page_title': getattr(settings, 'BRIDE_AND_GROOM', '') + ' - Save the Date!',
