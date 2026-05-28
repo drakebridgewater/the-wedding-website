@@ -16,3 +16,18 @@ services:
       - ${DATA_DIR}/media:/app/media
       - ${DATA_DIR}/data:/app/data
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wedding.rule=Host(`wedding.bridgewater.digital`) || Host(`wedding.drakebridgewater.com`)"
+      - "traefik.http.routers.wedding.entryPoints=https"
+      - "traefik.http.routers.wedding.tls=true"
+      - "traefik.http.routers.wedding.middlewares=default-no-auth@file"
+      - "traefik.http.services.wedding.loadbalancer.server.port=8080"
+    networks:
+      proxy:
+        ipv4_address: 10.20.0.70
+        ipv6_address: fd00:20::70
+
+networks:
+  proxy:
+    external: true
