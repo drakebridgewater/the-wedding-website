@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from guests.models import WeddingPartyMember
-from .models import FundMessage, Question, WeddingSettings
+from .models import FundMessage, PageSectionItem, Question, WeddingSettings
 
 ROLE_LABELS = {
     'bride': 'Bride', 'groom': 'Groom', 'maid_of_honor': 'Maid of Honor',
@@ -20,10 +20,14 @@ SIDE_GROUPS = [
 
 def home(request):
     ws = WeddingSettings.get()
+    sections = {}
+    for item in PageSectionItem.objects.filter(is_published=True).order_by('order', 'id'):
+        sections.setdefault(item.section, []).append(item)
     return render(request, 'home.html', context={
         'approved_questions': Question.objects.filter(is_approved=True),
         'weddingshare_url': getattr(settings, 'WEDDINGSHARE_URL', ''),
         'hero_photo_url': ws.hero_photo.url if ws.hero_photo else None,
+        'page_sections': sections,
     })
 
 

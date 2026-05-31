@@ -4,7 +4,7 @@
 
     <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Ask Us Anything</h2>
     <div class="w-12 h-px bg-accent mx-auto mb-4"></div>
-    <p class="text-stone-500 text-center text-sm mb-12">Have a question about the wedding? Ask below — we'll answer soon.</p>
+    <p class="text-stone-500 text-center text-sm mb-12">{{ wedding.questions_subtitle|default:"Have a question about the wedding? Ask below — we'll answer soon." }}</p>
 
     <!-- Approved Q&As -->
     {% if approved_questions %}

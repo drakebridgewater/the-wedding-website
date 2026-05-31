@@ -44,6 +44,36 @@ class FundMessage(models.Model):
         return f"{self.name or 'Anonymous'}: {self.message[:60]}"
 
 
+class PageSectionItem(models.Model):
+    WELCOME = 'welcome'
+    EVENT = 'event'
+    GETTING_THERE = 'getting_there'
+    GOOD_TO_KNOW = 'good_to_know'
+    PROPOSAL = 'proposal'
+
+    SECTION_CHOICES = [
+        (WELCOME, 'Welcome'),
+        (EVENT, 'The Event'),
+        (GETTING_THERE, 'Getting There'),
+        (GOOD_TO_KNOW, 'Good to Know'),
+        (PROPOSAL, 'The Proposal'),
+    ]
+
+    section = models.CharField(max_length=20, choices=SECTION_CHOICES, db_index=True)
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True, help_text='Supports basic HTML.')
+    order = models.PositiveIntegerField(default=0)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['section', 'order', 'id']
+        verbose_name = 'Page Section Item'
+        verbose_name_plural = 'Page Section Items'
+
+    def __str__(self):
+        return f'{self.get_section_display()} — {self.title}'
+
+
 class WeddingSettings(models.Model):
     """Singleton model — only one row (pk=1) should ever exist."""
 
@@ -74,6 +104,27 @@ class WeddingSettings(models.Model):
         'Theme', null=True, blank=True, on_delete=models.SET_NULL,
         related_name='+',
         help_text='Color theme for the public-facing website. Create new themes in the Themes section.',
+    )
+
+    # Gift Registry section
+    registry_title = models.CharField(max_length=200, blank=True, help_text='Card heading, e.g. "Our Wish List"')
+    registry_description = models.TextField(blank=True, help_text='Short blurb below the title.')
+    registry_button_label = models.CharField(max_length=100, blank=True, help_text='CTA button text, e.g. "View Registry"')
+
+    # Honeymoon Fund section
+    honeymoon_title = models.CharField(max_length=200, blank=True, help_text='Card heading, e.g. "Our Honeymoon Adventure"')
+    honeymoon_description = models.TextField(blank=True, help_text='Short blurb below the title.')
+
+    # Contact section
+    contact_intro = models.TextField(blank=True, help_text='"Get in Touch" section intro sentence.')
+
+    # Ask Us Anything section
+    questions_subtitle = models.TextField(blank=True, help_text='Subtitle shown below "Ask Us Anything".')
+
+    # Proposal section
+    proposal_divider_photo = models.ImageField(
+        upload_to='site/', blank=True, null=True,
+        help_text='Banner photo shown above The Proposal section. Falls back to the default scenic image.',
     )
 
     # Honeymoon fund payment handles

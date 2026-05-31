@@ -2,14 +2,28 @@
   <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Getting There &amp; Where to Stay</h2>
   <div class="w-12 h-px bg-accent mx-auto mb-12"></div>
 
+  {% with items=page_sections.getting_there %}
+  {% if items %}
+  <div class="space-y-6">
+    {% for item in items %}
+    <div class="rounded-2xl border border-stone-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-stone-100 bg-white/70">
+        <h3 class="font-display text-xl text-stone-700">{{ item.title }}</h3>
+      </div>
+      <div class="px-6 py-5 text-stone-500 text-sm leading-relaxed">{{ item.body|safe }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
   <div class="rounded-2xl border border-stone-200 overflow-hidden">
     <div class="px-6 py-4 border-b border-stone-100 bg-white/70">
       <h3 class="font-display text-xl text-stone-700">{{ wedding_location|default:"Location" }}</h3>
     </div>
     <div class="px-6 py-5 text-stone-500 text-sm leading-relaxed">
-      We haven't locked in our venue just yet, but we're narrowing it down to a few beautiful spots 
+      We haven't locked in our venue just yet, but we're narrowing it down to a few beautiful spots
       in the Pacific Northwest. We'll share all the details as soon as they're confirmed — stay tuned!
-      <!-- Travel directions, nearest airports, hotel recommendations, and local attractions coming soon. -->
     </div>
   </div>
+  {% endif %}
+  {% endwith %}
 </div>

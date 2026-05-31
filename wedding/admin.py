@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import FundMessage, Question, Theme, WeddingSettings
+from .models import FundMessage, PageSectionItem, Question, Theme, WeddingSettings
 
 
 class ColorInput(forms.TextInput):
@@ -44,6 +44,24 @@ class ThemeAdmin(admin.ModelAdmin):
         )
 
 
+@admin.register(PageSectionItem)
+class PageSectionItemAdmin(admin.ModelAdmin):
+    list_display = ['section', 'title', 'order', 'is_published']
+    list_display_links = ['title']
+    list_filter = ['section', 'is_published']
+    list_editable = ['order', 'is_published']
+    ordering = ['section', 'order', 'id']
+    fieldsets = (
+        (None, {
+            'fields': ('section', 'title', 'order', 'is_published'),
+        }),
+        ('Content', {
+            'fields': ('body',),
+            'description': 'Supports basic HTML (bold, italic, links, line breaks).',
+        }),
+    )
+
+
 @admin.register(FundMessage)
 class FundMessageAdmin(admin.ModelAdmin):
     list_display = ['name', 'message', 'is_approved', 'created_at']
@@ -74,12 +92,24 @@ class WeddingSettingsAdmin(admin.ModelAdmin):
         ('Contact & Links', {
             'fields': ('support_email', 'website_url'),
         }),
-        ('Honeymoon Fund', {
+        ('Gift Registry Section', {
+            'fields': ('registry_title', 'registry_description', 'registry_button_label'),
+            'description': 'Leave any field blank to use the default text.',
+        }),
+        ('Honeymoon Fund Section', {
+            'fields': ('honeymoon_title', 'honeymoon_description'),
+            'description': 'Leave any field blank to use the default text.',
+        }),
+        ('Contact & Q&A Sections', {
+            'fields': ('contact_intro', 'questions_subtitle'),
+            'description': 'Leave blank to use the default text.',
+        }),
+        ('Honeymoon Fund Payments', {
             'fields': ('venmo_handle', 'zelle_handle', 'cashapp_handle', 'paypal_handle'),
             'description': 'Payment handles shown on the public Honeymoon Fund page. Leave blank to hide a platform.',
         }),
         ('Appearance', {
-            'fields': ('theme', 'hero_photo'),
+            'fields': ('theme', 'hero_photo', 'proposal_divider_photo'),
         }),
         ('Analytics', {
             'fields': ('google_analytics_id',),

@@ -18,16 +18,15 @@
       <!-- Content -->
       <div class="flex-1 px-6 py-6 flex flex-col justify-between gap-4">
         <div>
-          <h3 class="font-display text-xl text-stone-700 mb-2">Our Wish List</h3>
+          <h3 class="font-display text-xl text-stone-700 mb-2">{{ wedding.registry_title|default:"Our Wish List" }}</h3>
           <p class="text-stone-500 text-sm leading-relaxed">
-            We've created a registry on ThingsToGetMe — a universal wish list where you can view
-            and reserve gifts from any store. Your generosity and presence mean the world to us.
+            {{ wedding.registry_description|default:"We've created a registry where you can view and reserve gifts. Your generosity and presence mean the world to us." }}
           </p>
         </div>
         <div>
           <a href="{{ registry_url }}" target="_blank" rel="noopener"
              class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-accent hover:bg-accent-hover text-white text-sm transition-colors">
-            View Registry ↗
+            {{ wedding.registry_button_label|default:"View Registry" }} ↗
           </a>
         </div>
       </div>
@@ -61,10 +60,9 @@
       <!-- Content -->
       <div class="flex-1 px-6 py-6 flex flex-col justify-between gap-4">
         <div>
-          <h3 class="font-display text-xl text-stone-700 mb-2">Our Honeymoon Adventure</h3>
+          <h3 class="font-display text-xl text-stone-700 mb-2">{{ wedding.honeymoon_title|default:"Our Honeymoon Adventure" }}</h3>
           <p class="text-stone-500 text-sm leading-relaxed">
-            Your presence is our greatest gift. If you'd like to contribute something extra,
-            we'd be so grateful for a little help making our honeymoon unforgettable.
+            {{ wedding.honeymoon_description|default:"Your presence is our greatest gift. If you'd like to contribute something extra, we'd be so grateful for a little help making our honeymoon unforgettable." }}
           </p>
         </div>
         <div>
