@@ -10,3 +10,4 @@ requests>=2.31
 beautifulsoup4>=4.12
 gspread>=6,<7
 google-auth>=2,<3
+markdown>=3,<4

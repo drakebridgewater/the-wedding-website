@@ -1,5 +1,5 @@
 {% extends "base_public.html" %}
-{% load static %}
+{% load static wedding_extras %}
 
 {% block page_content %}
 
@@ -98,7 +98,7 @@
         <div class="px-6 py-4 border-b border-stone-100">
           <h3 class="font-display text-xl text-stone-700 text-center">{{ item.title }}</h3>
         </div>
-        <div class="px-6 py-5 text-stone-500 text-sm leading-relaxed text-center">{{ item.body|safe }}</div>
+        <div class="px-6 py-5 text-stone-500 text-sm leading-relaxed text-center prose prose-sm prose-stone max-w-none">{{ item.body|markdownify }}</div>
       </div>
       {% endfor %}
     </div>
