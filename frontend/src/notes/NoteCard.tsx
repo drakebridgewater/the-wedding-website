@@ -9,6 +9,10 @@ const COLOR_CLASSES: Record<string, string> = {
   orange: 'bg-orange-200 hover:bg-orange-300',
 }
 
+function isContentEmpty(html: string): boolean {
+  return !html || html === '<p></p>'
+}
+
 interface NoteCardProps {
   note: Note
   onClick: () => void
@@ -16,6 +20,7 @@ interface NoteCardProps {
 
 export function NoteCard({ note, onClick }: NoteCardProps) {
   const colorClass = COLOR_CLASSES[note.color] ?? COLOR_CLASSES.yellow
+  const empty = !note.title && isContentEmpty(note.content)
 
   return (
     <button
@@ -27,12 +32,13 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
           {note.title}
         </p>
       )}
-      {note.content && (
-        <p className="text-gray-700 text-sm leading-snug break-words line-clamp-6 flex-1">
-          {note.content}
-        </p>
+      {!isContentEmpty(note.content) && (
+        <div
+          className="text-gray-700 text-sm leading-snug break-words line-clamp-6 flex-1 rich-content overflow-hidden"
+          dangerouslySetInnerHTML={{ __html: note.content }}
+        />
       )}
-      {!note.title && !note.content && (
+      {empty && (
         <p className="text-gray-400 text-sm italic">Empty note</p>
       )}
     </button>

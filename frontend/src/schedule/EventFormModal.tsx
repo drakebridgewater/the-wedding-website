@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import type { EventCategory, EventFormData, ScheduleEvent, WeddingPartyGroup, WeddingPartyMember } from './types'
 import { CATEGORY_LABELS } from './types'
+import { RichTextEditor } from '@/lib/RichTextEditor'
 
 interface Props {
   dayId: number
@@ -252,11 +253,11 @@ export function EventFormModal({ dayId, members, groups = [], initialTime, event
           {/* Notes */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+            <RichTextEditor
+              content={notes}
+              onChange={setNotes}
+              placeholder="Add notes…"
+              minHeight="64px"
             />
           </div>
         </form>

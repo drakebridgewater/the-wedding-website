@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { X, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Note, NoteColor, useCreateNote, useDeleteNote, useUpdateNote } from './api'
+import { RichTextEditor } from '@/lib/RichTextEditor'
 
 const COLORS: { value: NoteColor; bg: string; ring: string }[] = [
   { value: 'yellow', bg: 'bg-yellow-300', ring: 'ring-yellow-500' },
@@ -15,13 +16,16 @@ const COLORS: { value: NoteColor; bg: string; ring: string }[] = [
 
 interface FormValues {
   title: string
-  content: string
   color: NoteColor
 }
 
 interface NoteModalProps {
   note?: Note
   onClose: () => void
+}
+
+function isContentEmpty(html: string): boolean {
+  return !html || html === '<p></p>'
 }
 
 export function NoteModal({ note, onClose }: NoteModalProps) {
@@ -31,10 +35,11 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
   const del = useDeleteNote()
   const overlayRef = useRef<HTMLDivElement>(null)
 
+  const [content, setContent] = useState(note?.content ?? '')
+
   const { register, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm<FormValues>({
     defaultValues: {
       title: note?.title ?? '',
-      content: note?.content ?? '',
       color: (note?.color as NoteColor) ?? 'yellow',
     },
   })
@@ -55,13 +60,13 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
   }, [])
 
   async function onSubmit(values: FormValues) {
-    if (!values.title.trim() && !values.content.trim()) return
+    if (!values.title.trim() && isContentEmpty(content)) return
     try {
       if (isEdit) {
-        await update.mutateAsync({ id: note.id, ...values })
+        await update.mutateAsync({ id: note.id, ...values, content })
         toast.success('Note saved')
       } else {
-        await create.mutateAsync(values)
+        await create.mutateAsync({ ...values, content })
         toast.success('Note added')
       }
       onClose()
@@ -128,11 +133,11 @@ export function NoteModal({ note, onClose }: NoteModalProps) {
           />
 
           {/* Content */}
-          <textarea
-            {...register('content')}
+          <RichTextEditor
+            content={content}
+            onChange={setContent}
             placeholder="Write your note…"
-            rows={6}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
+            minHeight="120px"
           />
 
           {/* Actions */}

@@ -19,6 +19,13 @@
     .timeline-item .tl-dot { left: 0; transform: none; }
     .tl-spine { left: 0.75rem; }
   }
+
+  /* Rich text note content */
+  .rich-content ul          { list-style-type: disc; padding-left: 1.25rem; }
+  .rich-content ol          { list-style-type: decimal; padding-left: 1.25rem; }
+  .rich-content li + li     { margin-top: 0.125rem; }
+  .rich-content p + p       { margin-top: 0.25rem; }
+  .rich-content strong      { font-weight: 600; }
 </style>
 {% endblock %}
 
@@ -93,7 +100,7 @@
             </p>
 
             {% if event.notes %}
-            <p class="text-xs text-stone-500 mt-2 leading-relaxed italic">{{ event.notes }}</p>
+            <div class="text-xs text-stone-500 mt-2 leading-relaxed rich-content">{{ event.notes|safe }}</div>
             {% endif %}
 
           </div>
