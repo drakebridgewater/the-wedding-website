@@ -6,10 +6,11 @@ import type { BudgetItem } from './api'
 
 interface Props {
   item: BudgetItem
+  defaultShowForm?: boolean
 }
 
-export function MobileExpensePanel({ item }: Props) {
-  const [showForm, setShowForm] = useState(false)
+export function MobileExpensePanel({ item, defaultShowForm = false }: Props) {
+  const [showForm, setShowForm] = useState(defaultShowForm)
   const createExpense = useCreateExpense()
   const deleteExpense = useDeleteExpense()
   const [formAmount, setFormAmount] = useState('')

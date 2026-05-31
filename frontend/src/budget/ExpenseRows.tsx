@@ -8,10 +8,11 @@ const TOTAL_COLS = 9  // must match column count in BudgetTable
 
 interface Props {
   item: BudgetItem
+  defaultShowForm?: boolean
 }
 
-export function ExpenseRows({ item }: Props) {
-  const [showForm, setShowForm] = useState(false)
+export function ExpenseRows({ item, defaultShowForm = false }: Props) {
+  const [showForm, setShowForm] = useState(defaultShowForm)
   const createExpense = useCreateExpense()
   const deleteExpense = useDeleteExpense()
 

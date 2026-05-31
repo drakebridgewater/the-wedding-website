@@ -10,7 +10,7 @@ import {
 import { useState } from 'react'
 import {
   Pencil, Trash2, ChevronUp, ChevronDown, ChevronsUpDown,
-  Check, ChevronRight, ChevronDown as ChevronDownIcon,
+  Check, ChevronRight, ChevronDown as ChevronDownIcon, Receipt,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { ExpenseRows } from './ExpenseRows'
@@ -30,6 +30,7 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  const [formItemId, setFormItemId] = useState<number | null>(null)
 
   function toggleExpand(id: number) {
     setExpanded((prev) => {
@@ -37,6 +38,11 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+  }
+
+  function openExpenseForm(id: number) {
+    setExpanded((prev) => { const n = new Set(prev); n.add(id); return n })
+    setFormItemId(id)
   }
 
   const columns = [
@@ -54,7 +60,7 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
                 ? 'text-rose-600'
                 : hasExpenses
                 ? 'text-gray-500 hover:text-rose-600'
-                : 'text-gray-200 hover:text-gray-400'
+                : 'text-gray-300 hover:text-gray-500'
             }`}
             title={isOpen ? 'Collapse expenses' : 'Expand expenses'}
           >
@@ -129,8 +135,16 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
       cell: ({ row }) => (
         <div className="flex items-center gap-2 justify-end">
           <button
+            onClick={() => openExpenseForm(row.original.id)}
+            className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors"
+            title="Log expense"
+          >
+            <Receipt size={16} />
+          </button>
+          <button
             onClick={() => onEdit(row.original)}
             className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors"
+            title="Edit item"
           >
             <Pencil size={16} />
           </button>
@@ -138,6 +152,7 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
             onClick={() => onDelete(row.original.id)}
             disabled={isDeleting}
             className="p-1.5 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-40"
+            title="Delete item"
           >
             <Trash2 size={16} />
           </button>
@@ -235,7 +250,11 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
 
                 {/* Expense toggle */}
                 <button
-                  onClick={() => toggleExpand(item.id)}
+                  onClick={() => {
+                    const opening = !isOpen
+                    toggleExpand(item.id)
+                    if (opening && item.expenses.length === 0) setFormItemId(item.id)
+                  }}
                   className="inline-flex items-center gap-1 text-sm text-rose-600 hover:text-rose-800 font-medium transition-colors"
                 >
                   {isOpen ? <ChevronDownIcon size={14} /> : <ChevronRight size={14} />}
@@ -244,7 +263,12 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
                     : 'Log expense'}
                 </button>
 
-                {isOpen && <MobileExpensePanel item={item} />}
+                {isOpen && (
+                  <MobileExpensePanel
+                    item={item}
+                    defaultShowForm={formItemId === item.id}
+                  />
+                )}
               </div>
             )
           })
@@ -297,7 +321,11 @@ export function BudgetTable({ items, onEdit, onDelete, isDeleting }: Props) {
                     ))}
                   </tr>
                   {expanded.has(row.original.id) && (
-                    <ExpenseRows key={`exp-${row.original.id}`} item={row.original} />
+                    <ExpenseRows
+                      key={`exp-${row.original.id}`}
+                      item={row.original}
+                      defaultShowForm={formItemId === row.original.id}
+                    />
                   )}
                 </>
               ))
