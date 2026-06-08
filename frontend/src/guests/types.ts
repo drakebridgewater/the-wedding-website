@@ -1,6 +1,6 @@
 export type MemberRole =
   | 'bride' | 'groom' | 'maid_of_honor' | 'best_man'
-  | 'bridesmaid' | 'groomsman' | 'other'
+  | 'bridesmaid' | 'groomsman' | 'officiant' | 'other'
 
 export type Meal = 'beef' | 'fish' | 'hen' | 'vegetarian' | ''
 export type PartyType = 'formal' | 'fun' | 'family' | 'work' | ''
@@ -146,7 +146,7 @@ export interface GuestFormData {
 }
 
 export const ROLE_ORDER: MemberRole[] = [
-  'bride', 'groom', 'maid_of_honor', 'best_man', 'bridesmaid', 'groomsman', 'other',
+  'bride', 'groom', 'maid_of_honor', 'best_man', 'bridesmaid', 'groomsman', 'officiant', 'other',
 ]
 
 export const ROLE_LABELS: Record<MemberRole, string> = {
@@ -156,6 +156,7 @@ export const ROLE_LABELS: Record<MemberRole, string> = {
   best_man: 'Best Man',
   bridesmaid: 'Bridesmaid',
   groomsman: 'Groomsman',
+  officiant: 'Officiant',
   other: 'Other',
 }
 
@@ -200,4 +201,35 @@ export const PARTY_SIDE_LABELS: Record<string, string> = {
   bride: "Bride's side",
   groom: "Groom's side",
   both: 'Both',
+}
+
+// ── Seating ───────────────────────────────────────────────────────────────────
+
+export interface SeatingGuest {
+  id: number
+  first_name: string
+  last_name: string
+  is_child: boolean
+  meal: string
+  seating_table_id: number | null
+  seat_color: string
+  party_id: number | null
+  party_name: string | null
+}
+
+export interface SeatingTable {
+  id: number
+  name: string
+  capacity: number
+  shape: 'round' | 'square'
+  notes: string
+  assigned_count: number
+  guests: SeatingGuest[]
+}
+
+export interface TableFormData {
+  name: string
+  capacity: number
+  shape: 'round' | 'square'
+  notes: string
 }

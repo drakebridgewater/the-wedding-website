@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
   EmailTemplate, Guest, GuestFormData, GroupFormData, MemberFormData, MemberRole,
   Party, PartyFormData, SaveTheDateSettings, SaveTheDateSentParty, SentEmail,
+  SeatingGuest, SeatingTable, TableFormData,
   WeddingPartyGroup, WeddingPartyMember,
 } from './types'
 
@@ -33,6 +34,8 @@ const QK = {
   sentEmails:     ['guests', 'sentEmails']     as const,
   stdSettings:    ['guests', 'stdSettings']    as const,
   stdSent:        ['guests', 'stdSent']        as const,
+  seatingTables:  ['seating', 'tables']        as const,
+  seatingGuests:  ['seating', 'guests']        as const,
 }
 
 // ── Members ───────────────────────────────────────────────────────────────────
@@ -385,5 +388,82 @@ export function useSaveTheDateSentList() {
   return useQuery<SaveTheDateSentParty[]>({
     queryKey: QK.stdSent,
     queryFn: () => apiFetch('/guests/api/save-the-date/sent/'),
+  })
+}
+
+// ── Seating tables ────────────────────────────────────────────────────────────
+
+export function useSeatingTables() {
+  return useQuery<SeatingTable[]>({
+    queryKey: QK.seatingTables,
+    queryFn: () => apiFetch('/seating/api/tables/'),
+  })
+}
+
+export function useCreateSeatingTable() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: TableFormData) =>
+      apiFetch<SeatingTable>('/seating/api/tables/', { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.seatingTables }),
+  })
+}
+
+export function useUpdateSeatingTable() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<TableFormData> }) =>
+      apiFetch<SeatingTable>(`/seating/api/tables/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.seatingTables }),
+  })
+}
+
+export function useDeleteSeatingTable() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiFetch(`/seating/api/tables/${id}/`, { method: 'DELETE' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.seatingTables })
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
+    },
+  })
+}
+
+// ── Seating guests ────────────────────────────────────────────────────────────
+
+export function useSeatingGuests() {
+  return useQuery<SeatingGuest[]>({
+    queryKey: QK.seatingGuests,
+    queryFn: () => apiFetch('/seating/api/guests/'),
+  })
+}
+
+export function useAssignGuestToTable() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ guestId, tableId }: { guestId: number; tableId: number | null }) =>
+      apiFetch<SeatingGuest>(`/seating/api/guests/${guestId}/assign/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ table_id: tableId }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
+      qc.invalidateQueries({ queryKey: QK.seatingTables })
+    },
+  })
+}
+
+export function useBatchAssignGuests() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ guestIds, tableId }: { guestIds: number[]; tableId: number | null }) =>
+      apiFetch<{ updated: number }>('/seating/api/guests/batch-assign/', {
+        method: 'POST',
+        body: JSON.stringify({ guest_ids: guestIds, table_id: tableId }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
+      qc.invalidateQueries({ queryKey: QK.seatingTables })
+    },
   })
 }

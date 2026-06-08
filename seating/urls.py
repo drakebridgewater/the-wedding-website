@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/tables/', api_views.table_list, name='api-table-list'),
     path('api/tables/<int:pk>/', api_views.table_detail, name='api-table-detail'),
     path('api/guests/', api_views.guest_seating_list, name='api-guests'),
+    path('api/guests/batch-assign/', api_views.guest_batch_assign, name='api-guest-batch-assign'),
     path('api/guests/<int:pk>/assign/', api_views.guest_assign, name='api-guest-assign'),
     path('api/guests/<int:pk>/color/', api_views.guest_color, name='api-guest-color'),
 ]

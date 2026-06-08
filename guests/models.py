@@ -209,6 +209,7 @@ class WeddingPartyMember(models.Model):
         ('best_man', 'Best Man'),
         ('bridesmaid', 'Bridesmaid'),
         ('groomsman', 'Groomsman'),
+        ('officiant', 'Officiant'),
         ('other', 'Other'),
     ]
 

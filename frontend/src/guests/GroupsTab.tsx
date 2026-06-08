@@ -174,24 +174,40 @@ function GroupModal({
             <div>
               <label className="block text-xs font-medium text-stone-600 mb-2">Members</label>
               <div className="space-y-2">
-                {Object.entries(grouped).map(([role, group]) => (
-                  <div key={role}>
-                    <p className="text-[10px] uppercase tracking-wider text-stone-400 mb-1">{ROLE_LABELS[role as MemberRole]}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {group.map((m) => {
-                        const sel = selectedIds.has(m.id)
-                        return (
-                          <button key={m.id} type="button" onClick={() => toggle(m.id)}
-                            className="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors"
-                            style={sel ? { backgroundColor: m.color, borderColor: m.color, color: '#fff' }
-                                       : { borderColor: m.color, color: m.color, backgroundColor: `${m.color}15` }}>
-                            {m.name}
-                          </button>
-                        )
-                      })}
+                {Object.entries(grouped).map(([role, group]) => {
+                  const allSelected = group.every((m) => selectedIds.has(m.id))
+                  return (
+                    <div key={role}>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[10px] uppercase tracking-wider text-stone-400">{ROLE_LABELS[role as MemberRole]}</p>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedIds((prev) => {
+                            const next = new Set(prev)
+                            group.forEach((m) => allSelected ? next.delete(m.id) : next.add(m.id))
+                            return next
+                          })}
+                          className="text-[10px] text-stone-400 hover:text-stone-600 transition-colors"
+                        >
+                          {allSelected ? 'Deselect all' : 'Select all'}
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {group.map((m) => {
+                          const sel = selectedIds.has(m.id)
+                          return (
+                            <button key={m.id} type="button" onClick={() => toggle(m.id)}
+                              className="px-2.5 py-1 rounded-full text-xs font-medium border transition-colors"
+                              style={sel ? { backgroundColor: m.color, borderColor: m.color, color: '#fff' }
+                                         : { borderColor: m.color, color: m.color, backgroundColor: `${m.color}15` }}>
+                              {m.name}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

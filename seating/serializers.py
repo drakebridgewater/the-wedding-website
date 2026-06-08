@@ -11,9 +11,11 @@ class SeatingConfigSerializer(serializers.ModelSerializer):
 
 
 class GuestSeatingSerializer(serializers.ModelSerializer):
+    party_name = serializers.CharField(source='party.name', read_only=True, allow_null=True)
+
     class Meta:
         model = Guest
-        fields = ['id', 'first_name', 'last_name', 'is_child', 'meal', 'seating_table_id', 'seat_color']
+        fields = ['id', 'first_name', 'last_name', 'is_child', 'meal', 'seating_table_id', 'seat_color', 'party_id', 'party_name']
 
 
 class SeatingTableSerializer(serializers.ModelSerializer):

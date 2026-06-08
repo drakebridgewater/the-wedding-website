@@ -2,19 +2,25 @@ import { useState } from 'react'
 import { Toaster } from 'sonner'
 import { ContactsTab } from './ContactsTab'
 import { EmailsTab } from './EmailsTab'
+import { WeddingPartyTab } from './WeddingPartyTab'
+import { GroupsTab } from './GroupsTab'
+import { SeatingTab } from './SeatingTab'
 
-type Tab = 'contacts' | 'emails'
+type Tab = 'contacts' | 'wedding-party' | 'groups' | 'seating' | 'emails'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'contacts', label: 'Contacts' },
-  { id: 'emails',   label: 'Emails' },
+  { id: 'contacts',      label: 'Contacts' },
+  { id: 'wedding-party', label: 'Wedding Party' },
+  { id: 'groups',        label: 'Groups' },
+  { id: 'seating',       label: 'Seating' },
+  { id: 'emails',        label: 'Emails' },
 ]
 
 export function GuestsApp() {
   const [tab, setTab] = useState<Tab>('contacts')
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       <Toaster richColors position="top-right" />
 
       <div className="mb-6">
@@ -39,8 +45,11 @@ export function GuestsApp() {
         ))}
       </div>
 
-      {tab === 'contacts' && <ContactsTab />}
-      {tab === 'emails'   && <EmailsTab />}
+      {tab === 'contacts'      && <ContactsTab />}
+      {tab === 'wedding-party' && <WeddingPartyTab />}
+      {tab === 'groups'        && <GroupsTab />}
+      {tab === 'seating'       && <SeatingTab />}
+      {tab === 'emails'        && <EmailsTab />}
     </div>
   )
 }

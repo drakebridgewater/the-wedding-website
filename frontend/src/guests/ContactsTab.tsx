@@ -29,6 +29,7 @@ const ROLE_COLORS: Record<MemberRole, string> = {
   best_man:     '#6ee7b7',
   bridesmaid:   '#fda4af',
   groomsman:    '#a5b4fc',
+  officiant:    '#fcd34d',
   other:        '#d1d5db',
 }
 

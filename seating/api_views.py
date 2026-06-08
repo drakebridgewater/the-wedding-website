@@ -67,6 +67,28 @@ def guest_color(request, pk):
     return Response(GuestSeatingSerializer(guest).data)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def guest_batch_assign(request):
+    guest_ids = request.data.get('guest_ids', [])
+    table_id = request.data.get('table_id')
+
+    if not guest_ids:
+        return Response({'updated': 0})
+
+    guests = Guest.objects.filter(pk__in=guest_ids)
+    if table_id is not None:
+        try:
+            table = SeatingTable.objects.get(pk=table_id)
+        except SeatingTable.DoesNotExist:
+            return Response({'error': 'Table not found'}, status=status.HTTP_400_BAD_REQUEST)
+        guests.update(seating_table=table)
+    else:
+        guests.update(seating_table=None)
+
+    return Response({'updated': guests.count()})
+
+
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def guest_assign(request, pk):
