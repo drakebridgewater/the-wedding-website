@@ -584,18 +584,20 @@ export function SeatingTab() {
           </div>
         </div>
 
-        {/* Two-column layout */}
-        <div className="flex gap-6 items-start">
+        {/* Two-column layout — each side scrolls independently */}
+        <div className="flex gap-6 h-[calc(100vh-16rem)]">
           {/* Left: unseated */}
-          <UnseatedPanel
-            groups={unseatedGroups}
-            totalCount={unseated.length}
-            collapsedParties={collapsedParties}
-            onToggleParty={toggleParty}
-          />
+          <div className="w-64 flex-shrink-0 overflow-y-auto">
+            <UnseatedPanel
+              groups={unseatedGroups}
+              totalCount={unseated.length}
+              collapsedParties={collapsedParties}
+              onToggleParty={toggleParty}
+            />
+          </div>
 
           {/* Right: tables */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-y-auto">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400">
                 Tables ({tables.length})
