@@ -17,15 +17,14 @@ import {
   useMembers, useGroups,
 } from './api'
 import type {
-  Guest, Party, PartyFormData, PartyType, PartySide, InviteStatus,
-  WeddingPartyMember,
+  Guest, Party, InviteStatus, WeddingPartyMember,
 } from './types'
 import {
   MEAL_LABELS, PARTY_TYPE_LABELS, PARTY_TYPE_DESCRIPTIONS, PARTY_SIDE_LABELS,
   INVITE_STATUS_LABELS, INVITE_STATUS_COLORS,
 } from './types'
 
-type FilterMode = 'all' | `label:${string}` | 'no_label' | `group:${number}`
+type FilterMode = 'all' | `label:${string}` | 'no_label' | `group:${number}` | 'rehearsal_dinner'
 
 // ── Filter helpers ─────────────────────────────────────────────────────────────
 
@@ -33,9 +32,11 @@ function guestMatchesFilter(
   guest: Guest,
   filterMode: FilterMode,
   guestIdsByGroup: Map<number, Set<number>>,
+  rehearsalGuestIds: Set<number>,
 ): boolean {
   if (filterMode === 'all') return true
   if (filterMode === 'no_label') return !guest.label
+  if (filterMode === 'rehearsal_dinner') return rehearsalGuestIds.has(guest.id)
   if (filterMode.startsWith('group:')) {
     const groupId = Number(filterMode.slice(6))
     return guestIdsByGroup.get(groupId)?.has(guest.id) ?? false
@@ -55,39 +56,6 @@ function guestMatchesSearch(guest: Guest, party: Party, query: string): boolean 
     (guest.label?.toLowerCase() ?? '').includes(q) ||
     party.name.toLowerCase().includes(q)
   )
-}
-
-// ── Google Places address autocomplete hook ────────────────────────────────────
-
-function useAddressAutocomplete(ref: React.RefObject<HTMLInputElement>, onSelect: (v: string) => void) {
-  useEffect(() => {
-    const key = document.querySelector<HTMLMetaElement>('meta[name="google-places-key"]')?.content
-    if (!key || !ref.current) return
-
-    function init() {
-      if (!ref.current || !(window as any).google?.maps?.places) return
-      const ac = new (window as any).google.maps.places.Autocomplete(ref.current, { types: ['address'] })
-      ac.addListener('place_changed', () => {
-        const place = ac.getPlace()
-        if (place.formatted_address) onSelect(place.formatted_address)
-      })
-    }
-
-    if ((window as any).google?.maps?.places) {
-      init()
-    } else {
-      ;(window as any).__gplacesReady = init
-      const scriptId = '__gplaces_loader__'
-      if (!document.getElementById(scriptId)) {
-        const s = document.createElement('script')
-        s.id = scriptId
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=__gplacesReady`
-        s.async = true
-        document.head.appendChild(s)
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 }
 
 // ── Enter-to-submit hook ───────────────────────────────────────────────────────
@@ -368,6 +336,14 @@ export function ContactsTab({
     [groups],
   )
 
+  const rehearsalGuestIds = useMemo(() => {
+    const ids = new Set<number>()
+    for (const p of parties) {
+      if (p.rehearsal_dinner) for (const g of p.guests) ids.add(g.id)
+    }
+    return ids
+  }, [parties])
+
   // Derive unique labels from all guests
   const allLabels = useMemo(() => {
     const labels = new Set<string>()
@@ -400,7 +376,7 @@ export function ContactsTab({
       if (filterMode === 'all' && searchQuery && p.name.toLowerCase().includes(searchQuery.toLowerCase())) return true
       return p.guests.some(
         (g) =>
-          guestMatchesFilter(g, filterMode, guestIdsByGroup) &&
+          guestMatchesFilter(g, filterMode, guestIdsByGroup, rehearsalGuestIds) &&
           guestMatchesSearch(g, p, searchQuery),
       )
     })
@@ -412,7 +388,7 @@ export function ContactsTab({
         p.guests
           .filter(
             (g) =>
-              guestMatchesFilter(g, filterMode, guestIdsByGroup) &&
+              guestMatchesFilter(g, filterMode, guestIdsByGroup, rehearsalGuestIds) &&
               guestMatchesSearch(g, p, searchQuery),
           )
           .map((g) => ({ guest: g, party: p })),
@@ -430,11 +406,15 @@ export function ContactsTab({
     })
   }
 
-  async function handleSaveParty(data: PartyFormData) {
+  async function handleSaveParty(name: string) {
     try {
-      await createParty.mutateAsync(data)
-      toast.success('Party added')
+      const party = await createParty.mutateAsync({
+        name, type: '', category: '', status: 'planned',
+        rehearsal_dinner: false, comments: '', address: '',
+        wants_physical_card: false, side: '', plus_one_allowed: false,
+      })
       setShowAddPartyModal(false)
+      onOpenGuest(party.id)
     } catch {
       toast.error('Failed to save')
     }
@@ -472,6 +452,14 @@ export function ContactsTab({
       {/* Filter chips */}
       <div className="flex gap-1.5 flex-wrap items-center mb-4 pb-3 border-b border-stone-100">
         <FilterChip label="All" count={totalGuests} active={filterMode === 'all'} onClick={() => setFilterMode('all')} />
+        {rehearsalGuestIds.size > 0 && (
+          <FilterChip
+            label="Rehearsal Dinner"
+            count={rehearsalGuestIds.size}
+            active={filterMode === 'rehearsal_dinner'}
+            onClick={() => setFilterMode('rehearsal_dinner')}
+          />
+        )}
         {allLabels.map((lbl) => (
           <FilterChip
             key={lbl}
@@ -584,6 +572,7 @@ export function ContactsTab({
               memberByGuestId={memberByGuestId}
               filterMode={filterMode}
               guestIdsByGroup={guestIdsByGroup}
+              rehearsalGuestIds={rehearsalGuestIds}
               searchQuery={searchQuery}
               onOpenGuest={onOpenGuest}
               updateParty={updateParty}
@@ -855,7 +844,7 @@ function FlatGuestTable({
 
 function PartyRow({
   party, expanded, onToggle, onEdit, onDelete,
-  memberByGuestId, filterMode, guestIdsByGroup, searchQuery,
+  memberByGuestId, filterMode, guestIdsByGroup, rehearsalGuestIds, searchQuery,
   onOpenGuest, updateParty,
 }: {
   party: Party
@@ -866,6 +855,7 @@ function PartyRow({
   memberByGuestId: Map<number, WeddingPartyMember>
   filterMode: FilterMode
   guestIdsByGroup: Map<number, Set<number>>
+  rehearsalGuestIds: Set<number>
   searchQuery: string
   onOpenGuest: (partyId: number, guestId: number) => void
   updateParty: ReturnType<typeof useUpdateParty>
@@ -893,7 +883,7 @@ function PartyRow({
   const visibleGuests = isFiltered
     ? party.guests.filter(
         (g) =>
-          guestMatchesFilter(g, filterMode, guestIdsByGroup) &&
+          guestMatchesFilter(g, filterMode, guestIdsByGroup, rehearsalGuestIds) &&
           guestMatchesSearch(g, party, searchQuery),
       )
     : party.guests
@@ -1524,132 +1514,51 @@ function UnassignedGuestsSection({
   )
 }
 
-// ── Party Modal (add new party only) ──────────────────────────────────────────
+// ── Party Modal (name only — full details in PartyEditor) ─────────────────────
 
 function PartyModal({
   onSave, onClose, saving,
 }: {
-  onSave: (data: PartyFormData) => void
+  onSave: (name: string) => void
   onClose: () => void
   saving: boolean
 }) {
-  const [name, setName]             = useState('')
-  const [type, setType]             = useState<PartyType>('')
-  const [category, setCategory]     = useState('')
-  const [status, setStatus]         = useState<InviteStatus>('planned')
-  const [rehearsal, setRehearsal]   = useState(false)
-  const [comments, setComments]     = useState('')
-  const [address, setAddress]       = useState('')
-  const [wantsCard, setWantsCard]   = useState(false)
-  const addressRef = useRef<HTMLInputElement>(null)
-  useAddressAutocomplete(addressRef, setAddress)
-  const [side, setSide]             = useState<PartySide>('')
-  const [plusOne, setPlusOne]       = useState(false)
+  const [name, setName] = useState('')
 
   function doSave() {
-    if (!name) return
-    onSave({ name, type, category, status, rehearsal_dinner: rehearsal,
-             comments, address, wants_physical_card: wantsCard, side, plus_one_allowed: plusOne })
+    if (!name.trim()) return
+    onSave(name.trim())
   }
 
-  useEnterSubmit(doSave, !name || saving)
+  useEnterSubmit(doSave, !name.trim() || saving)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
          onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-xs mx-4">
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <h2 className="text-sm font-semibold text-stone-900">Add Party</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 text-lg leading-none">&times;</button>
         </div>
-        <div className="px-5 py-4 space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">Party name *</label>
-            <input value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Smith Family"
-              autoFocus
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">
-                Type
-                {type && PARTY_TYPE_DESCRIPTIONS[type] && (
-                  <span className="ml-1.5 font-normal text-stone-400" title={PARTY_TYPE_DESCRIPTIONS[type]}>ⓘ</span>
-                )}
-              </label>
-              <select value={type} onChange={(e) => setType(e.target.value as PartyType)}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
-                {Object.entries(PARTY_TYPE_LABELS).map(([v, l]) => (
-                  <option key={v} value={v} title={PARTY_TYPE_DESCRIPTIONS[v] ?? ''}>{l}</option>
-                ))}
-              </select>
-              {type && PARTY_TYPE_DESCRIPTIONS[type] && (
-                <p className="mt-1 text-[11px] text-stone-400">{PARTY_TYPE_DESCRIPTIONS[type]}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Category</label>
-              <input value={category} onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g. family"
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value as InviteStatus)}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
-                {(Object.entries(INVITE_STATUS_LABELS) as [InviteStatus, string][]).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Side</label>
-              <select value={side} onChange={(e) => setSide(e.target.value as PartySide)}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400">
-                {Object.entries(PARTY_SIDE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="flex gap-4 flex-wrap">
-            <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-              <input type="checkbox" checked={rehearsal} onChange={(e) => setRehearsal(e.target.checked)}
-                className="w-4 h-4 rounded border-stone-300" />
-              Rehearsal dinner
-            </label>
-            <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-              <input type="checkbox" checked={plusOne} onChange={(e) => setPlusOne(e.target.checked)}
-                className="w-4 h-4 rounded border-stone-300" />
-              +1 allowed
-            </label>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">Mailing address</label>
-            <input ref={addressRef} type="text" value={address} onChange={(e) => setAddress(e.target.value)}
-              placeholder="Street, City, State ZIP"
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
-            <label className="flex items-center gap-2 cursor-pointer mt-2">
-              <input type="checkbox" checked={wantsCard} onChange={(e) => setWantsCard(e.target.checked)}
-                className="w-4 h-4 rounded accent-rose-600" />
-              <span className="text-xs text-stone-700">Wants physical card</span>
-            </label>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">Comments</label>
-            <textarea value={comments} onChange={(e) => setComments(e.target.value)} rows={2}
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none" />
-          </div>
+        <div className="px-5 py-4">
+          <label className="block text-xs font-medium text-stone-600 mb-1">Party name *</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Smith Family"
+            autoFocus
+            className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+          />
+          <p className="mt-2 text-xs text-stone-400">You can fill in the rest once the party is created.</p>
         </div>
         <div className="px-5 py-4 border-t flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">Cancel</button>
           <button
-            disabled={!name || saving}
+            disabled={!name.trim() || saving}
             onClick={doSave}
             className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50"
           >
-            {saving ? 'Saving…' : 'Add party'}
+            {saving ? 'Creating…' : 'Create & edit →'}
           </button>
         </div>
       </div>
