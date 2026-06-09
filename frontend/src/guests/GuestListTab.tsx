@@ -359,7 +359,6 @@ function FlatGuestTable({ parties }: { parties: Party[] }) {
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 text-stone-500 font-medium">Name</th>
               <th className="text-left px-3 py-3 text-stone-500 font-medium hidden sm:table-cell">Party</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium hidden md:table-cell">Category</th>
               <th className="text-left px-3 py-3 text-stone-500 font-medium hidden sm:table-cell">Email</th>
               <th className="text-left px-3 py-3 text-stone-500 font-medium">Attending</th>
               <th className="text-left px-3 py-3 text-stone-500 font-medium hidden sm:table-cell">Meal</th>
@@ -376,7 +375,6 @@ function FlatGuestTable({ parties }: { parties: Party[] }) {
                   )}
                 </td>
                 <td className="px-3 py-2.5 text-stone-500 hidden sm:table-cell">{party.name}</td>
-                <td className="px-3 py-2.5 text-stone-400 hidden md:table-cell">{party.category || '—'}</td>
                 <td className="px-3 py-2.5 text-stone-400 hidden sm:table-cell">{guest.email || '—'}</td>
                 <td className="px-3 py-2.5">
                   <button
