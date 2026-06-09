@@ -18,6 +18,7 @@ export interface WeddingPartyMember {
   order: number
   guest_id: number | null
   is_informed: boolean
+  is_public: boolean
 }
 
 export interface WeddingPartyGroup {
@@ -42,6 +43,7 @@ export interface Guest {
   meal: Meal
   is_child: boolean
   dietary_restrictions: string
+  label: string
   is_plus_one: boolean
 }
 
@@ -112,6 +114,7 @@ export interface MemberFormData {
   bio: string
   order: number
   is_informed: boolean
+  is_public: boolean
 }
 
 export interface GroupFormData {
@@ -142,6 +145,7 @@ export interface GuestFormData {
   email: string
   is_child: boolean
   dietary_restrictions: string
+  label: string
   is_plus_one?: boolean
 }
 

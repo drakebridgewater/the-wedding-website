@@ -689,7 +689,7 @@ function AddGuestRow({
   async function handleSubmit() {
     if (!firstName) return
     try {
-      await addGuest.mutateAsync({ partyId, data: { first_name: firstName, last_name: lastName, email, is_child: isChild, dietary_restrictions: dietary } })
+      await addGuest.mutateAsync({ partyId, data: { first_name: firstName, last_name: lastName, email, is_child: isChild, dietary_restrictions: dietary, label: '' } })
       toast.success('Guest added')
       onDone()
     } catch {

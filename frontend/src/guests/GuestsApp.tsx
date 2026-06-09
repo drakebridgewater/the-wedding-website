@@ -5,19 +5,27 @@ import { EmailsTab } from './EmailsTab'
 import { WeddingPartyTab } from './WeddingPartyTab'
 import { GroupsTab } from './GroupsTab'
 import { SeatingTab } from './SeatingTab'
+import { RehearsalDinnerTab } from './RehearsalDinnerTab'
+import { PartyEditor } from './PartyEditor'
 
-type Tab = 'contacts' | 'wedding-party' | 'groups' | 'seating' | 'emails'
+type Tab = 'contacts' | 'wedding-party' | 'groups' | 'seating' | 'emails' | 'rehearsal-dinner'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'contacts',      label: 'Contacts' },
-  { id: 'wedding-party', label: 'Wedding Party' },
-  { id: 'groups',        label: 'Groups' },
-  { id: 'seating',       label: 'Seating' },
-  { id: 'emails',        label: 'Emails' },
+  { id: 'contacts',          label: 'Contacts' },
+  { id: 'wedding-party',     label: 'Wedding Party' },
+  { id: 'groups',            label: 'Groups' },
+  { id: 'rehearsal-dinner',  label: 'Rehearsal Dinner' },
+  { id: 'seating',           label: 'Seating' },
+  { id: 'emails',            label: 'Emails' },
 ]
 
 export function GuestsApp() {
   const [tab, setTab] = useState<Tab>('contacts')
+  const [editorTarget, setEditorTarget] = useState<{ partyId: number; guestId?: number } | null>(null)
+
+  function openGuest(partyId: number, guestId?: number) {
+    setEditorTarget({ partyId, guestId })
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -29,12 +37,12 @@ export function GuestsApp() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 mb-6 border-b border-stone-200">
+      <div className="flex gap-1 mb-6 border-b border-stone-200 overflow-x-auto">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
               tab === t.id
                 ? 'border-stone-800 text-stone-900'
                 : 'border-transparent text-stone-500 hover:text-stone-700'
@@ -45,11 +53,20 @@ export function GuestsApp() {
         ))}
       </div>
 
-      {tab === 'contacts'      && <ContactsTab />}
-      {tab === 'wedding-party' && <WeddingPartyTab />}
-      {tab === 'groups'        && <GroupsTab />}
-      {tab === 'seating'       && <SeatingTab />}
-      {tab === 'emails'        && <EmailsTab />}
+      {tab === 'contacts'         && <ContactsTab onOpenGuest={openGuest} />}
+      {tab === 'wedding-party'    && <WeddingPartyTab />}
+      {tab === 'groups'           && <GroupsTab />}
+      {tab === 'rehearsal-dinner' && <RehearsalDinnerTab onOpenGuest={openGuest} />}
+      {tab === 'seating'          && <SeatingTab />}
+      {tab === 'emails'           && <EmailsTab />}
+
+      {editorTarget && (
+        <PartyEditor
+          partyId={editorTarget.partyId}
+          initialGuestId={editorTarget.guestId}
+          onClose={() => setEditorTarget(null)}
+        />
+      )}
     </div>
   )
 }

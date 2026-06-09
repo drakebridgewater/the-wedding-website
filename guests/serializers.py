@@ -9,7 +9,7 @@ class WeddingPartyMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WeddingPartyMember
-        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'bio', 'photo_url', 'order', 'guest_id', 'is_informed']
+        fields = ['id', 'name', 'role', 'role_display', 'color', 'email', 'phone', 'bio', 'photo_url', 'order', 'guest_id', 'is_informed', 'is_public']
         read_only_fields = ['guest_id', 'photo_url']
 
     def get_photo_url(self, obj):
@@ -41,7 +41,7 @@ class GuestSerializer(serializers.ModelSerializer):
         model = Guest
         fields = [
             'id', 'party_id', 'first_name', 'last_name', 'email',
-            'is_attending', 'meal', 'is_child', 'dietary_restrictions', 'is_plus_one',
+            'is_attending', 'meal', 'is_child', 'dietary_restrictions', 'label', 'is_plus_one',
         ]
 
 

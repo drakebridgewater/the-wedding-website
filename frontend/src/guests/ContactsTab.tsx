@@ -4,52 +4,46 @@ import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown, ChevronRight, Pencil, Trash2, Plus, UserPlus,
-  Upload, X, LayoutList, Table2, Download, Search,
+  Upload, X, LayoutList, Table2, Download, Search, Settings2,
+  ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react'
+import {
+  useReactTable, getCoreRowModel, getSortedRowModel, flexRender, createColumnHelper,
+  type SortingState, type VisibilityState,
+} from '@tanstack/react-table'
 import {
   useParties, useCreateParty, useUpdateParty, useDeleteParty,
   useAddGuest, useUpdateGuest, useDeleteGuest, useUnassignedGuests,
-  useMembers, useGroups, useAssignGuestRole, useRemoveGuestRole,
+  useMembers, useGroups,
 } from './api'
 import type {
   Guest, Party, PartyFormData, PartyType, PartySide, InviteStatus,
-  WeddingPartyMember, MemberRole,
+  WeddingPartyMember,
 } from './types'
 import {
   MEAL_LABELS, PARTY_TYPE_LABELS, PARTY_TYPE_DESCRIPTIONS, PARTY_SIDE_LABELS,
-  INVITE_STATUS_LABELS, INVITE_STATUS_COLORS, ROLE_LABELS, ROLE_ORDER,
+  INVITE_STATUS_LABELS, INVITE_STATUS_COLORS,
 } from './types'
 
-// ── Role defaults ──────────────────────────────────────────────────────────────
-
-const ROLE_COLORS: Record<MemberRole, string> = {
-  bride:        '#f9a8d4',
-  groom:        '#93c5fd',
-  maid_of_honor:'#c4b5fd',
-  best_man:     '#6ee7b7',
-  bridesmaid:   '#fda4af',
-  groomsman:    '#a5b4fc',
-  officiant:    '#fcd34d',
-  other:        '#d1d5db',
-}
-
-type FilterMode = 'all' | MemberRole | 'no_role' | `group:${number}`
+type FilterMode = 'all' | `label:${string}` | 'no_label' | `group:${number}`
 
 // ── Filter helpers ─────────────────────────────────────────────────────────────
 
 function guestMatchesFilter(
   guest: Guest,
   filterMode: FilterMode,
-  memberByGuestId: Map<number, WeddingPartyMember>,
   guestIdsByGroup: Map<number, Set<number>>,
 ): boolean {
   if (filterMode === 'all') return true
-  if (filterMode === 'no_role') return !memberByGuestId.has(guest.id)
+  if (filterMode === 'no_label') return !guest.label
   if (filterMode.startsWith('group:')) {
     const groupId = Number(filterMode.slice(6))
     return guestIdsByGroup.get(groupId)?.has(guest.id) ?? false
   }
-  return memberByGuestId.get(guest.id)?.role === (filterMode as MemberRole)
+  if (filterMode.startsWith('label:')) {
+    return guest.label === filterMode.slice(6)
+  }
+  return false
 }
 
 function guestMatchesSearch(guest: Guest, party: Party, query: string): boolean {
@@ -58,6 +52,7 @@ function guestMatchesSearch(guest: Guest, party: Party, query: string): boolean 
   return (
     `${guest.first_name} ${guest.last_name}`.toLowerCase().includes(q) ||
     (guest.email?.toLowerCase() ?? '').includes(q) ||
+    (guest.label?.toLowerCase() ?? '').includes(q) ||
     party.name.toLowerCase().includes(q)
   )
 }
@@ -290,104 +285,24 @@ function InlineEditCell({ value, onSave, type = 'text' }: {
   )
 }
 
-// ── Role Badge ─────────────────────────────────────────────────────────────────
+// ── Label Badge ────────────────────────────────────────────────────────────────
 
-function RoleBadge({
-  guest, member, onAssign, onRemove, isPending,
+function LabelBadge({
+  guest, onOpenGuest, partyId,
 }: {
   guest: Guest
-  member?: WeddingPartyMember
-  onAssign: (role: MemberRole, color: string) => void
-  onRemove: () => void
-  isPending?: boolean
+  onOpenGuest: (partyId: number, guestId: number) => void
+  partyId: number
 }) {
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
-
-  // suppress unused warning
-  void guest
-
-  useEffect(() => {
-    if (!open) return
-    // Position dropdown via portal, flipping above if near bottom
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect()
-      const DROPDOWN_H = 260
-      const spaceBelow = window.innerHeight - rect.bottom
-      const top = spaceBelow >= DROPDOWN_H ? rect.bottom + 2 : Math.max(8, rect.top - DROPDOWN_H)
-      setPos({ top, left: rect.left })
-    }
-    function handler(e: MouseEvent) {
-      const inTrigger = triggerRef.current?.contains(e.target as Node)
-      const inDropdown = dropdownRef.current?.contains(e.target as Node)
-      if (!inTrigger && !inDropdown) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  const dropdown = open && pos ? createPortal(
-    <div
-      ref={dropdownRef}
-      style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 9999 }}
-      className="bg-white border border-stone-200 rounded-lg shadow-lg min-w-[140px] py-1 text-xs"
-    >
-      {ROLE_ORDER.map((role) => (
-        <button
-          key={role}
-          onClick={() => { onAssign(role, member?.color ?? ROLE_COLORS[role]); setOpen(false) }}
-          className={`w-full text-left px-3 py-1.5 hover:bg-stone-50 transition-colors ${
-            member?.role === role ? 'font-semibold text-stone-900' : 'text-stone-600'
-          }`}
-        >
-          <span
-            className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
-            style={{ backgroundColor: ROLE_COLORS[role] }}
-          />
-          {ROLE_LABELS[role]}
-        </button>
-      ))}
-      {member && (
-        <div className="border-t border-stone-100 mt-1 pt-1">
-          <button
-            onClick={() => { onRemove(); setOpen(false) }}
-            className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-500 transition-colors"
-          >
-            Remove role
-          </button>
-        </div>
-      )}
-    </div>,
-    document.body,
-  ) : null
-
+  if (!guest.label) return null
   return (
-    <div className="inline-flex">
-      {member ? (
-        <button
-          ref={triggerRef}
-          onClick={() => setOpen(!open)}
-          style={{ backgroundColor: member.color + '33', borderColor: member.color + '88' }}
-          className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-medium border cursor-pointer hover:opacity-80 transition-opacity"
-          disabled={isPending}
-        >
-          <span style={{ color: member.color }}>{ROLE_LABELS[member.role]}</span>
-          <ChevronDown size={8} style={{ color: member.color }} />
-        </button>
-      ) : (
-        <button
-          ref={triggerRef}
-          onClick={() => setOpen(!open)}
-          className="text-[9px] px-1.5 py-0.5 rounded-full border border-dashed border-stone-300 text-stone-400 hover:border-stone-500 hover:text-stone-500 transition-colors cursor-pointer"
-          disabled={isPending}
-        >
-          + role
-        </button>
-      )}
-      {dropdown}
-    </div>
+    <button
+      onClick={(e) => { e.stopPropagation(); onOpenGuest(partyId, guest.id) }}
+      className="text-[9px] px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium hover:bg-stone-200 transition-colors cursor-pointer"
+      title="Click to edit"
+    >
+      {guest.label}
+    </button>
   )
 }
 
@@ -416,18 +331,19 @@ function FilterChip({
 
 // ── Contacts Tab ───────────────────────────────────────────────────────────────
 
-export function ContactsTab() {
+export function ContactsTab({
+  onOpenGuest,
+}: {
+  onOpenGuest: (partyId: number, guestId?: number) => void
+}) {
   const { data: parties = [], isLoading } = useParties()
   const { data: members = [] } = useMembers()
   const { data: groups = [] } = useGroups()
   const createParty = useCreateParty()
   const updateParty = useUpdateParty()
   const deleteParty = useDeleteParty()
-  const assignRole = useAssignGuestRole()
-  const removeRole = useRemoveGuestRole()
 
-  const [editingParty, setEditingParty] = useState<Party | null>(null)
-  const [showPartyModal, setShowPartyModal] = useState(false)
+  const [showAddPartyModal, setShowAddPartyModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
   const [pendingDeletePartyId, setPendingDeletePartyId] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
@@ -442,14 +358,6 @@ export function ContactsTab() {
     [members],
   )
 
-  const roleCounts = useMemo(() => {
-    const counts: Partial<Record<MemberRole, number>> = {}
-    for (const m of members) {
-      if (m.guest_id != null) counts[m.role] = (counts[m.role] ?? 0) + 1
-    }
-    return counts
-  }, [members])
-
   const guestIdsByGroup = useMemo(
     () => new Map(
       groups.map((g) => [
@@ -460,23 +368,43 @@ export function ContactsTab() {
     [groups],
   )
 
+  // Derive unique labels from all guests
+  const allLabels = useMemo(() => {
+    const labels = new Set<string>()
+    for (const p of parties) {
+      for (const g of p.guests) {
+        if (g.label) labels.add(g.label)
+      }
+    }
+    return Array.from(labels).sort()
+  }, [parties])
+
+  const labelCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const p of parties) {
+      for (const g of p.guests) {
+        if (g.label) counts[g.label] = (counts[g.label] ?? 0) + 1
+      }
+    }
+    return counts
+  }, [parties])
+
   const totalGuests = parties.reduce((n, p) => n + p.guests.length, 0)
-  const noRoleCount = totalGuests - members.filter((m) => m.guest_id != null).length
+  const noLabelCount = parties.reduce((n, p) => n + p.guests.filter((g) => !g.label).length, 0)
 
   // ── Filtered parties/rows ─────────────────────────────────────────────────────
 
   const filteredParties = useMemo(() => {
     if (filterMode === 'all' && !searchQuery) return parties
     return parties.filter((p) => {
-      // Party name matches search → show it (when no role filter)
       if (filterMode === 'all' && searchQuery && p.name.toLowerCase().includes(searchQuery.toLowerCase())) return true
       return p.guests.some(
         (g) =>
-          guestMatchesFilter(g, filterMode, memberByGuestId, guestIdsByGroup) &&
+          guestMatchesFilter(g, filterMode, guestIdsByGroup) &&
           guestMatchesSearch(g, p, searchQuery),
       )
     })
-  }, [parties, filterMode, memberByGuestId, guestIdsByGroup, searchQuery])
+  }, [parties, filterMode, guestIdsByGroup, searchQuery])
 
   const filteredFlatRows = useMemo(
     () =>
@@ -484,12 +412,12 @@ export function ContactsTab() {
         p.guests
           .filter(
             (g) =>
-              guestMatchesFilter(g, filterMode, memberByGuestId, guestIdsByGroup) &&
+              guestMatchesFilter(g, filterMode, guestIdsByGroup) &&
               guestMatchesSearch(g, p, searchQuery),
           )
           .map((g) => ({ guest: g, party: p })),
       ),
-    [parties, filterMode, memberByGuestId, guestIdsByGroup, searchQuery],
+    [parties, filterMode, guestIdsByGroup, searchQuery],
   )
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
@@ -502,20 +430,11 @@ export function ContactsTab() {
     })
   }
 
-  function openAdd() { setEditingParty(null); setShowPartyModal(true) }
-  function openEdit(p: Party) { setEditingParty(p); setShowPartyModal(true) }
-  function closeModal() { setShowPartyModal(false); setEditingParty(null) }
-
   async function handleSaveParty(data: PartyFormData) {
     try {
-      if (editingParty) {
-        await updateParty.mutateAsync({ id: editingParty.id, data })
-        toast.success('Party updated')
-      } else {
-        await createParty.mutateAsync(data)
-        toast.success('Party added')
-      }
-      closeModal()
+      await createParty.mutateAsync(data)
+      toast.success('Party added')
+      setShowAddPartyModal(false)
     } catch {
       toast.error('Failed to save')
     }
@@ -527,22 +446,6 @@ export function ContactsTab() {
       toast.success('Party deleted')
     } catch {
       toast.error('Failed to delete')
-    }
-  }
-
-  async function handleAssignRole(guestId: number, role: MemberRole, color: string) {
-    try {
-      await assignRole.mutateAsync({ guestId, role, color })
-    } catch {
-      toast.error('Failed to assign role')
-    }
-  }
-
-  async function handleRemoveRole(guestId: number) {
-    try {
-      await removeRole.mutateAsync(guestId)
-    } catch {
-      toast.error('Failed to remove role')
     }
   }
 
@@ -569,25 +472,21 @@ export function ContactsTab() {
       {/* Filter chips */}
       <div className="flex gap-1.5 flex-wrap items-center mb-4 pb-3 border-b border-stone-100">
         <FilterChip label="All" count={totalGuests} active={filterMode === 'all'} onClick={() => setFilterMode('all')} />
-        {ROLE_ORDER.map((role) => {
-          const count = roleCounts[role] ?? 0
-          if (count === 0) return null
-          return (
-            <FilterChip
-              key={role}
-              label={ROLE_LABELS[role]}
-              count={count}
-              active={filterMode === role}
-              onClick={() => setFilterMode(role)}
-            />
-          )
-        })}
-        {noRoleCount > 0 && (
+        {allLabels.map((lbl) => (
           <FilterChip
-            label="No role"
-            count={noRoleCount}
-            active={filterMode === 'no_role'}
-            onClick={() => setFilterMode('no_role')}
+            key={lbl}
+            label={lbl}
+            count={labelCounts[lbl]}
+            active={filterMode === `label:${lbl}`}
+            onClick={() => setFilterMode(`label:${lbl}` as FilterMode)}
+          />
+        ))}
+        {noLabelCount > 0 && (
+          <FilterChip
+            label="No label"
+            count={noLabelCount}
+            active={filterMode === 'no_label'}
+            onClick={() => setFilterMode('no_label')}
           />
         )}
         {groups.length > 0 && (
@@ -620,7 +519,6 @@ export function ContactsTab() {
           }
         </p>
         <div className="flex gap-2 flex-wrap">
-          {/* View toggle */}
           <div className="flex rounded-lg border border-stone-200 overflow-hidden">
             <button
               onClick={() => setTableView(false)}
@@ -648,7 +546,7 @@ export function ContactsTab() {
             <Upload size={14} /><span className="hidden sm:inline">Import CSV</span>
           </button>
           <button
-            onClick={openAdd}
+            onClick={() => setShowAddPartyModal(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 text-white text-sm hover:bg-stone-700 transition-colors">
             <Plus size={14} /> Add Party
           </button>
@@ -658,7 +556,7 @@ export function ContactsTab() {
       {parties.length === 0 ? (
         <div className="text-center py-16 text-stone-400">
           <p className="text-sm">No contacts yet.</p>
-          <button onClick={openAdd} className="mt-3 text-sm text-rose-600 hover:underline">Add the first one →</button>
+          <button onClick={() => setShowAddPartyModal(true)} className="mt-3 text-sm text-rose-600 hover:underline">Add the first one →</button>
         </div>
       ) : isFiltered && filteredParties.length === 0 ? (
         <div className="text-center py-16 text-stone-400">
@@ -671,9 +569,7 @@ export function ContactsTab() {
         <FlatGuestTable
           rows={filteredFlatRows}
           memberByGuestId={memberByGuestId}
-          onAssignRole={handleAssignRole}
-          onRemoveRole={handleRemoveRole}
-          rolePending={assignRole.isPending || removeRole.isPending}
+          onOpenGuest={onOpenGuest}
         />
       ) : (
         <div className="space-y-2">
@@ -683,26 +579,24 @@ export function ContactsTab() {
               party={party}
               expanded={expanded.has(party.id)}
               onToggle={() => toggleExpand(party.id)}
-              onEdit={() => openEdit(party)}
+              onEdit={() => onOpenGuest(party.id, party.guests[0]?.id)}
               onDelete={() => setPendingDeletePartyId(party.id)}
               memberByGuestId={memberByGuestId}
               filterMode={filterMode}
               guestIdsByGroup={guestIdsByGroup}
               searchQuery={searchQuery}
-              onAssignRole={handleAssignRole}
-              onRemoveRole={handleRemoveRole}
-              rolePending={assignRole.isPending || removeRole.isPending}
+              onOpenGuest={onOpenGuest}
+              updateParty={updateParty}
             />
           ))}
         </div>
       )}
 
-      {showPartyModal && (
+      {showAddPartyModal && (
         <PartyModal
-          initial={editingParty ?? undefined}
           onSave={handleSaveParty}
-          onClose={closeModal}
-          saving={createParty.isPending || updateParty.isPending}
+          onClose={() => setShowAddPartyModal(false)}
+          saving={createParty.isPending}
         />
       )}
       {showImportModal && <ImportCsvModal onClose={() => setShowImportModal(false)} />}
@@ -715,197 +609,245 @@ export function ContactsTab() {
           onClose={() => setPendingDeletePartyId(null)}
         />
       )}
-      <UnassignedGuestsSection parties={parties} />
+      <UnassignedGuestsSection parties={parties} onOpenGuest={onOpenGuest} />
     </div>
   )
 }
 
-// ── Flat Guest Table ───────────────────────────────────────────────────────────
+// ── Flat Guest Table (TanStack Table) ──────────────────────────────────────────
+
+type FlatRow = { guest: Guest; party: Party }
+const columnHelper = createColumnHelper<FlatRow>()
+
+const DEFAULT_COLUMNS: VisibilityState = {
+  name: true,
+  label: true,
+  party: true,
+  email: true,
+  attending: true,
+  meal: true,
+  dietary: true,
+  status: false,
+  category: false,
+}
+
+function SortIcon({ sorted }: { sorted: false | 'asc' | 'desc' }) {
+  if (sorted === 'asc') return <ArrowUp size={11} className="text-stone-600" />
+  if (sorted === 'desc') return <ArrowDown size={11} className="text-stone-600" />
+  return <ChevronsUpDown size={11} className="text-stone-300" />
+}
 
 function FlatGuestTable({
-  rows, memberByGuestId, onAssignRole, onRemoveRole, rolePending,
+  rows, memberByGuestId, onOpenGuest,
 }: {
-  rows: { guest: Guest; party: Party }[]
+  rows: FlatRow[]
   memberByGuestId: Map<number, WeddingPartyMember>
-  onAssignRole: (guestId: number, role: MemberRole, color: string) => void
-  onRemoveRole: (guestId: number) => void
-  rolePending: boolean
+  onOpenGuest: (partyId: number, guestId: number) => void
 }) {
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(DEFAULT_COLUMNS)
+  const [showColPicker, setShowColPicker] = useState(false)
+  const colPickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showColPicker) return
+    function handler(e: MouseEvent) {
+      if (!colPickerRef.current?.contains(e.target as Node)) setShowColPicker(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColPicker])
+
+  const columns = useMemo(() => [
+    columnHelper.accessor((row) => `${row.guest.first_name} ${row.guest.last_name}`.trim(), {
+      id: 'name',
+      header: 'Name',
+      cell: (info) => {
+        const { guest } = info.row.original
+        return (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-medium text-stone-800">
+              {guest.first_name} {guest.last_name}
+            </span>
+            {guest.is_plus_one && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">+1</span>
+            )}
+            {guest.is_child && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600 font-medium">child</span>
+            )}
+            {memberByGuestId.has(guest.id) && (
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-600 font-medium">
+                {memberByGuestId.get(guest.id)!.role.replace('_', ' ')}
+              </span>
+            )}
+          </div>
+        )
+      },
+    }),
+    columnHelper.accessor((row) => row.guest.label ?? '', {
+      id: 'label',
+      header: 'Label',
+      cell: (info) => {
+        const lbl = info.getValue()
+        return lbl
+          ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">{lbl}</span>
+          : <span className="text-stone-300 text-[10px]">—</span>
+      },
+    }),
+    columnHelper.accessor((row) => row.party.name, {
+      id: 'party',
+      header: 'Party',
+      cell: (info) => <span className="text-stone-600">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor((row) => row.party.category ?? '', {
+      id: 'category',
+      header: 'Category',
+      cell: (info) => info.getValue() || <span className="text-stone-300">—</span>,
+    }),
+    columnHelper.accessor((row) => row.guest.email ?? '', {
+      id: 'email',
+      header: 'Email',
+      cell: (info) => <span className="text-stone-500">{info.getValue() || <span className="text-stone-300">—</span>}</span>,
+    }),
+    columnHelper.accessor((row) => row.guest.is_attending, {
+      id: 'attending',
+      header: 'Attending',
+      sortingFn: (a, b) => {
+        const order = (v: boolean | null) => v === true ? 0 : v === false ? 2 : 1
+        return order(a.original.guest.is_attending) - order(b.original.guest.is_attending)
+      },
+      cell: (info) => {
+        const v = info.getValue()
+        return (
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+            v === true  ? 'bg-emerald-100 text-emerald-700' :
+            v === false ? 'bg-rose-100 text-rose-600' :
+                          'bg-stone-100 text-stone-400'
+          }`}>
+            {v === true ? 'Yes' : v === false ? 'No' : 'Pending'}
+          </span>
+        )
+      },
+    }),
+    columnHelper.accessor((row) => row.guest.meal ?? '', {
+      id: 'meal',
+      header: 'Meal',
+      cell: (info) => <span className="text-stone-500 text-[11px]">{MEAL_LABELS[info.getValue()] || '—'}</span>,
+    }),
+    columnHelper.accessor((row) => row.guest.dietary_restrictions ?? '', {
+      id: 'dietary',
+      header: 'Dietary',
+      cell: (info) => <span className="text-stone-500">{info.getValue() || <span className="text-stone-300">—</span>}</span>,
+    }),
+    columnHelper.accessor((row) => row.party.status, {
+      id: 'status',
+      header: 'Status',
+      cell: (info) => {
+        const s = info.getValue() as InviteStatus
+        return (
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${INVITE_STATUS_COLORS[s]}`}>
+            {INVITE_STATUS_LABELS[s]}
+          </span>
+        )
+      },
+    }),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [memberByGuestId])
+
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: { sorting, columnVisibility },
+    onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
+
+  const COLUMN_LABELS: Record<string, string> = {
+    name: 'Name', label: 'Label', party: 'Party', category: 'Category',
+    email: 'Email', attending: 'Attending', meal: 'Meal', dietary: 'Dietary', status: 'Status',
+  }
+
   if (rows.length === 0) return (
     <div className="text-center py-16 text-stone-400 text-sm">No contacts match.</div>
   )
 
   return (
     <div className="bg-white rounded-xl border border-stone-100 shadow-sm overflow-hidden">
+      {/* Column visibility toggle */}
+      <div className="flex justify-end px-3 py-2 border-b border-stone-100">
+        <div className="relative" ref={colPickerRef}>
+          <button
+            onClick={() => setShowColPicker(!showColPicker)}
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 border border-stone-200 rounded-lg px-2.5 py-1.5 transition-colors"
+          >
+            <Settings2 size={12} /> Columns
+          </button>
+          {showColPicker && (
+            <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-stone-200 rounded-lg shadow-lg p-2 min-w-[140px]">
+              {table.getAllLeafColumns().map((col) => (
+                <label key={col.id} className="flex items-center gap-2 px-2 py-1 hover:bg-stone-50 rounded cursor-pointer text-xs text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={col.getIsVisible()}
+                    onChange={col.getToggleVisibilityHandler()}
+                    className="w-3 h-3 rounded"
+                  />
+                  {COLUMN_LABELS[col.id] ?? col.id}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
-              <th className="text-left px-4 py-3 text-stone-500 font-medium">Name</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium">Role</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium hidden sm:table-cell">Party</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium hidden md:table-cell">Category</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium hidden sm:table-cell">Email</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium">Attending</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium hidden sm:table-cell">Meal</th>
-              <th className="text-left px-3 py-3 text-stone-500 font-medium hidden md:table-cell">Dietary</th>
-              <th className="px-3 py-3" />
-            </tr>
+            {table.getHeaderGroups().map((hg) => (
+              <tr key={hg.id} className="bg-stone-50 border-b border-stone-200">
+                {hg.headers.map((header) => (
+                  <th key={header.id} className="text-left px-3 py-3 text-stone-500 font-medium">
+                    {header.isPlaceholder ? null : (
+                      <button
+                        className="flex items-center gap-1 hover:text-stone-800 transition-colors"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        <SortIcon sorted={header.column.getIsSorted()} />
+                      </button>
+                    )}
+                  </th>
+                ))}
+                <th className="px-3 py-3 w-10" />
+              </tr>
+            ))}
           </thead>
           <tbody className="divide-y divide-stone-50">
-            {rows.map(({ guest, party }) => (
-              <FlatGuestRow
-                key={guest.id}
-                guest={guest}
-                party={party}
-                member={memberByGuestId.get(guest.id)}
-                onAssignRole={onAssignRole}
-                onRemoveRole={onRemoveRole}
-                rolePending={rolePending}
-              />
-            ))}
+            {table.getRowModel().rows.map((row) => {
+              const { guest, party } = row.original
+              return (
+                <tr
+                  key={row.id}
+                  onClick={() => onOpenGuest(party.id, guest.id)}
+                  className="hover:bg-stone-50/60 cursor-pointer transition-colors"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-3 py-2.5 max-w-[200px] truncate">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                  <td className="px-3 py-2.5">
+                    <Pencil size={11} className="text-stone-300 hover:text-stone-600 transition-colors" />
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
     </div>
-  )
-}
-
-function FlatGuestRow({
-  guest, party, member, onAssignRole, onRemoveRole, rolePending,
-}: {
-  guest: Guest
-  party: Party
-  member?: WeddingPartyMember
-  onAssignRole: (guestId: number, role: MemberRole, color: string) => void
-  onRemoveRole: (guestId: number) => void
-  rolePending: boolean
-}) {
-  const updateGuest = useUpdateGuest()
-  const deleteGuest = useDeleteGuest()
-  const [editOpen, setEditOpen]           = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
-
-  async function toggleAttending() {
-    const next = guest.is_attending === null ? true : guest.is_attending === true ? false : null
-    try { await updateGuest.mutateAsync({ id: guest.id, data: { is_attending: next } }) }
-    catch { toast.error('Failed to update') }
-  }
-
-  async function setMeal(meal: string) {
-    try { await updateGuest.mutateAsync({ id: guest.id, data: { meal: meal as Guest['meal'] } }) }
-    catch { toast.error('Failed to update') }
-  }
-
-  async function handleSave(data: Partial<Guest>) {
-    try {
-      await updateGuest.mutateAsync({ id: guest.id, data })
-      toast.success('Guest updated')
-      setEditOpen(false)
-    } catch {
-      toast.error('Failed to update')
-    }
-  }
-
-  async function handleDelete() {
-    try { await deleteGuest.mutateAsync(guest.id) }
-    catch { toast.error('Failed to delete') }
-  }
-
-  return (
-    <>
-      {editOpen && (
-        <GuestEditModal
-          guest={guest}
-          onSave={handleSave}
-          onClose={() => setEditOpen(false)}
-          saving={updateGuest.isPending}
-          member={member}
-          onAssignRole={(role, color) => onAssignRole(guest.id, role, color)}
-          onRemoveRole={() => onRemoveRole(guest.id)}
-        />
-      )}
-      {confirmDelete && (
-        <ConfirmModal
-          title="Remove guest"
-          message={`Remove ${guest.first_name} ${guest.last_name} from the guest list?`}
-          confirmLabel="Remove"
-          onConfirm={handleDelete}
-          onClose={() => setConfirmDelete(false)}
-        />
-      )}
-      <tr className="hover:bg-stone-50/40 transition-colors">
-        <td className="px-4 py-2.5 text-stone-800">
-          <InlineEditCell value={guest.first_name}
-            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { first_name: v } })} />
-          {' '}
-          <InlineEditCell value={guest.last_name}
-            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { last_name: v } })} />
-          {guest.is_child && (
-            <span className="ml-1 text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600 font-medium">child</span>
-          )}
-        </td>
-        <td className="px-3 py-2.5">
-          <RoleBadge
-            guest={guest}
-            member={member}
-            onAssign={(role, color) => onAssignRole(guest.id, role, color)}
-            onRemove={() => onRemoveRole(guest.id)}
-            isPending={rolePending}
-          />
-        </td>
-        <td className="px-3 py-2.5 text-stone-500 hidden sm:table-cell">{party.name}</td>
-        <td className="px-3 py-2.5 text-stone-400 hidden md:table-cell">{party.category || '—'}</td>
-        <td className="px-3 py-2.5 text-stone-400 hidden sm:table-cell">
-          <InlineEditCell value={guest.email ?? ''} type="email"
-            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { email: v } })} />
-        </td>
-        <td className="px-3 py-2.5">
-          <button
-            onClick={toggleAttending}
-            title="Click to cycle: Pending → Yes → No → Pending"
-            className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors cursor-pointer ${
-              guest.is_attending === true  ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' :
-              guest.is_attending === false ? 'bg-rose-100 text-rose-600 hover:bg-rose-200' :
-                                             'bg-stone-100 text-stone-400 hover:bg-stone-200'
-            }`}
-          >
-            {guest.is_attending === true ? 'Yes' : guest.is_attending === false ? 'No' : 'Pending'}
-          </button>
-        </td>
-        <td className="px-3 py-2.5 hidden sm:table-cell">
-          <select
-            value={guest.meal ?? ''}
-            onChange={(e) => setMeal(e.target.value)}
-            className="text-[11px] border-0 bg-transparent text-stone-500 focus:outline-none cursor-pointer"
-          >
-            {Object.entries(MEAL_LABELS).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
-            ))}
-          </select>
-        </td>
-        <td className="px-3 py-2.5 text-stone-400 hidden md:table-cell max-w-[160px]">
-          <InlineEditCell value={guest.dietary_restrictions ?? ''}
-            onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { dietary_restrictions: v } })} />
-        </td>
-        <td className="px-3 py-2.5">
-          <div className="flex gap-0.5">
-            <button
-              onClick={() => setEditOpen(true)}
-              className="p-1 rounded hover:bg-stone-100 text-stone-300 hover:text-stone-600 transition-colors"
-            >
-              <Pencil size={12} />
-            </button>
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="p-1 rounded hover:bg-rose-50 text-stone-300 hover:text-rose-400 transition-colors"
-            >
-              <Trash2 size={12} />
-            </button>
-          </div>
-        </td>
-      </tr>
-    </>
   )
 }
 
@@ -914,7 +856,7 @@ function FlatGuestRow({
 function PartyRow({
   party, expanded, onToggle, onEdit, onDelete,
   memberByGuestId, filterMode, guestIdsByGroup, searchQuery,
-  onAssignRole, onRemoveRole, rolePending,
+  onOpenGuest, updateParty,
 }: {
   party: Party
   expanded: boolean
@@ -925,11 +867,9 @@ function PartyRow({
   filterMode: FilterMode
   guestIdsByGroup: Map<number, Set<number>>
   searchQuery: string
-  onAssignRole: (guestId: number, role: MemberRole, color: string) => void
-  onRemoveRole: (guestId: number) => void
-  rolePending: boolean
+  onOpenGuest: (partyId: number, guestId: number) => void
+  updateParty: ReturnType<typeof useUpdateParty>
 }) {
-  const updateParty = useUpdateParty()
   const addGuest = useAddGuest()
   const [showAddGuest, setShowAddGuest] = useState(false)
 
@@ -942,19 +882,18 @@ function PartyRow({
     try {
       await addGuest.mutateAsync({
         partyId: party.id,
-        data: { first_name: '+1', last_name: '', email: '', is_child: false, dietary_restrictions: '', is_plus_one: true },
+        data: { first_name: '+1', last_name: '', email: '', is_child: false, dietary_restrictions: '', label: '', is_plus_one: true },
       })
     } catch {
       toast.error('Failed to add +1')
     }
   }
 
-  // When filters are active, show only matching guests; otherwise show all
   const isFiltered = filterMode !== 'all' || !!searchQuery
   const visibleGuests = isFiltered
     ? party.guests.filter(
         (g) =>
-          guestMatchesFilter(g, filterMode, memberByGuestId, guestIdsByGroup) &&
+          guestMatchesFilter(g, filterMode, guestIdsByGroup) &&
           guestMatchesSearch(g, party, searchQuery),
       )
     : party.guests
@@ -1042,10 +981,9 @@ function PartyRow({
                   <GuestRow
                     key={g.id}
                     guest={g}
+                    party={party}
                     member={memberByGuestId.get(g.id)}
-                    onAssignRole={(role, color) => onAssignRole(g.id, role, color)}
-                    onRemoveRole={() => onRemoveRole(g.id)}
-                    rolePending={rolePending}
+                    onOpenGuest={onOpenGuest}
                   />
                 ))}
                 {hiddenCount > 0 && visibleGuests.length > 0 && (
@@ -1087,180 +1025,18 @@ function PartyRow({
   )
 }
 
-// ── Guest Edit Modal ──────────────────────────────────────────────────────────
-
-function GuestEditModal({
-  guest, onSave, onClose, saving,
-  member, onAssignRole, onRemoveRole,
-}: {
-  guest: Guest
-  onSave: (data: Partial<Guest>) => void
-  onClose: () => void
-  saving: boolean
-  member?: WeddingPartyMember
-  onAssignRole?: (role: MemberRole, color: string) => void
-  onRemoveRole?: () => void
-}) {
-  const [firstName, setFirstName]     = useState(guest.first_name)
-  const [lastName, setLastName]       = useState(guest.last_name)
-  const [email, setEmail]             = useState(guest.email)
-  const [isChild, setIsChild]         = useState(guest.is_child)
-  const [dietary, setDietary]         = useState(guest.dietary_restrictions)
-  const [attending, setAttending]     = useState<string>(
-    guest.is_attending === true ? 'yes' : guest.is_attending === false ? 'no' : '',
-  )
-  const [meal, setMeal]               = useState(guest.meal ?? '')
-  const [role, setRole]               = useState<MemberRole | ''>(member?.role ?? '')
-
-  const isPlusOne = guest.is_plus_one
-
-  function handleSave() {
-    onSave({
-      first_name: firstName || (isPlusOne ? '+1' : firstName),
-      last_name: lastName,
-      email,
-      is_child: isChild,
-      dietary_restrictions: dietary,
-      is_attending: attending === 'yes' ? true : attending === 'no' ? false : null,
-      meal: meal as Guest['meal'],
-    })
-    if (role !== (member?.role ?? '')) {
-      if (role === '') {
-        onRemoveRole?.()
-      } else {
-        onAssignRole?.(role, ROLE_COLORS[role])
-      }
-    }
-  }
-
-  useEnterSubmit(handleSave, (!firstName && !isPlusOne) || saving)
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-         onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="text-sm font-semibold text-stone-900">{isPlusOne ? 'Edit +1 Guest' : 'Edit Guest'}</h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 text-lg leading-none">&times;</button>
-        </div>
-        <div className="px-5 py-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">First name{!isPlusOne && ' *'}</label>
-              <input
-                autoFocus
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Last name</label>
-              <input
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Attending</label>
-              <select
-                value={attending}
-                onChange={(e) => setAttending(e.target.value)}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-              >
-                <option value="">Pending</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">Meal</label>
-              <select
-                value={meal}
-                onChange={(e) => setMeal(e.target.value as Guest['meal'])}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-              >
-                {Object.entries(MEAL_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as MemberRole | '')}
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-            >
-              <option value="">No role</option>
-              {ROLE_ORDER.map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">Dietary restrictions</label>
-            <input
-              value={dietary}
-              onChange={(e) => setDietary(e.target.value)}
-              placeholder="Gluten-free, vegan, nut allergy…"
-              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
-            />
-          </div>
-          <label className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isChild}
-              onChange={(e) => setIsChild(e.target.checked)}
-              className="w-4 h-4 rounded border-stone-300"
-            />
-            Child
-          </label>
-        </div>
-        <div className="px-5 py-4 border-t flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-stone-600 border border-stone-300 rounded-lg hover:bg-stone-50">
-            Cancel
-          </button>
-          <button
-            disabled={(!firstName && !isPlusOne) || saving}
-            onClick={handleSave}
-            className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50"
-          >
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Guest Row ─────────────────────────────────────────────────────────────────
 
 function GuestRow({
-  guest, member, onAssignRole, onRemoveRole, rolePending,
+  guest, party, member, onOpenGuest,
 }: {
   guest: Guest
+  party: Party
   member?: WeddingPartyMember
-  onAssignRole: (role: MemberRole, color: string) => void
-  onRemoveRole: () => void
-  rolePending: boolean
+  onOpenGuest: (partyId: number, guestId: number) => void
 }) {
   const updateGuest = useUpdateGuest()
   const deleteGuest = useDeleteGuest()
-  const [editOpen, setEditOpen]       = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   async function toggleAttending() {
@@ -1274,16 +1050,6 @@ function GuestRow({
     catch { toast.error('Failed to update') }
   }
 
-  async function handleSave(data: Partial<Guest>) {
-    try {
-      await updateGuest.mutateAsync({ id: guest.id, data })
-      toast.success('Guest updated')
-      setEditOpen(false)
-    } catch {
-      toast.error('Failed to update')
-    }
-  }
-
   async function handleDelete() {
     try { await deleteGuest.mutateAsync(guest.id) }
     catch { toast.error('Failed to delete') }
@@ -1291,17 +1057,6 @@ function GuestRow({
 
   return (
     <>
-      {editOpen && (
-        <GuestEditModal
-          guest={guest}
-          onSave={handleSave}
-          onClose={() => setEditOpen(false)}
-          saving={updateGuest.isPending}
-          member={member}
-          onAssignRole={onAssignRole}
-          onRemoveRole={onRemoveRole}
-        />
-      )}
       {confirmDelete && (
         <ConfirmModal
           title="Remove guest"
@@ -1317,7 +1072,7 @@ function GuestRow({
             <InlineEditCell value={guest.first_name}
               onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { first_name: v } })} />
             {' '}
-            <InlineEditCell value={guest.last_name}
+            <InlineEditCell value={guest.last_name ?? ''}
               onSave={(v) => updateGuest.mutateAsync({ id: guest.id, data: { last_name: v } })} />
             {guest.is_plus_one && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">+1</span>
@@ -1325,13 +1080,15 @@ function GuestRow({
             {guest.is_child && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600 font-medium">child</span>
             )}
-            <RoleBadge
-              guest={guest}
-              member={member}
-              onAssign={onAssignRole}
-              onRemove={onRemoveRole}
-              isPending={rolePending}
-            />
+            <LabelBadge guest={guest} onOpenGuest={onOpenGuest} partyId={party.id} />
+            {member && (
+              <span
+                className="text-[9px] px-1.5 py-0.5 rounded-full font-medium border"
+                style={{ backgroundColor: member.color + '33', borderColor: member.color + '88', color: member.color }}
+              >
+                {member.role.replace('_', ' ')}
+              </span>
+            )}
           </div>
         </td>
         <td className="px-2 py-2 text-stone-400 hidden sm:table-cell">
@@ -1369,8 +1126,9 @@ function GuestRow({
         <td className="px-2 py-2">
           <div className="flex gap-0.5">
             <button
-              onClick={() => setEditOpen(true)}
+              onClick={() => onOpenGuest(party.id, guest.id)}
               className="p-1 rounded hover:bg-stone-100 text-stone-300 hover:text-stone-600 transition-colors"
+              title="Open full editor"
             >
               <Pencil size={12} />
             </button>
@@ -1411,7 +1169,7 @@ function AddGuestRow({
     try {
       await addGuest.mutateAsync({
         partyId,
-        data: { first_name: firstName, last_name: lastName, email, is_child: isChild, dietary_restrictions: dietary },
+        data: { first_name: firstName, last_name: lastName, email, is_child: isChild, dietary_restrictions: dietary, label: '' },
       })
       toast.success('Guest added')
       onDone()
@@ -1537,7 +1295,7 @@ function PartyPicker({
   useEffect(() => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
-      const DROPDOWN_H = 228 // max-h-52 (208px) + padding
+      const DROPDOWN_H = 228
       const spaceBelow = window.innerHeight - rect.bottom
       const top = spaceBelow >= DROPDOWN_H
         ? rect.bottom + 2
@@ -1625,7 +1383,12 @@ function PartyPicker({
 
 // ── Unassigned Guests Section ──────────────────────────────────────────────────
 
-function UnassignedGuestsSection({ parties }: { parties: Party[] }) {
+function UnassignedGuestsSection({
+  parties, onOpenGuest,
+}: {
+  parties: Party[]
+  onOpenGuest: (partyId: number, guestId?: number) => void
+}) {
   const { data: unassigned = [], isLoading, isError } = useUnassignedGuests()
   const updateGuest = useUpdateGuest()
   const deleteGuest = useDeleteGuest()
@@ -1658,6 +1421,7 @@ function UnassignedGuestsSection({ parties }: { parties: Party[] }) {
       })
       await updateGuest.mutateAsync({ id: guest.id, data: { party_id: party.id } })
       toast.success(`Created party "${partyName}"`)
+      onOpenGuest(party.id, guest.id)
     } catch {
       toast.error('Failed to create party')
     }
@@ -1760,28 +1524,27 @@ function UnassignedGuestsSection({ parties }: { parties: Party[] }) {
   )
 }
 
-// ── Party Modal ────────────────────────────────────────────────────────────────
+// ── Party Modal (add new party only) ──────────────────────────────────────────
 
 function PartyModal({
-  initial, onSave, onClose, saving,
+  onSave, onClose, saving,
 }: {
-  initial?: Party
   onSave: (data: PartyFormData) => void
   onClose: () => void
   saving: boolean
 }) {
-  const [name, setName]             = useState(initial?.name ?? '')
-  const [type, setType]             = useState<PartyType>(initial?.type ?? '')
-  const [category, setCategory]     = useState(initial?.category ?? '')
-  const [status, setStatus]         = useState<InviteStatus>(initial?.status ?? 'planned')
-  const [rehearsal, setRehearsal]   = useState(initial?.rehearsal_dinner ?? false)
-  const [comments, setComments]     = useState(initial?.comments ?? '')
-  const [address, setAddress]       = useState(initial?.address ?? '')
-  const [wantsCard, setWantsCard]   = useState(initial?.wants_physical_card ?? false)
+  const [name, setName]             = useState('')
+  const [type, setType]             = useState<PartyType>('')
+  const [category, setCategory]     = useState('')
+  const [status, setStatus]         = useState<InviteStatus>('planned')
+  const [rehearsal, setRehearsal]   = useState(false)
+  const [comments, setComments]     = useState('')
+  const [address, setAddress]       = useState('')
+  const [wantsCard, setWantsCard]   = useState(false)
   const addressRef = useRef<HTMLInputElement>(null)
   useAddressAutocomplete(addressRef, setAddress)
-  const [side, setSide]             = useState<PartySide>(initial?.side ?? '')
-  const [plusOne, setPlusOne]       = useState(initial?.plus_one_allowed ?? false)
+  const [side, setSide]             = useState<PartySide>('')
+  const [plusOne, setPlusOne]       = useState(false)
 
   function doSave() {
     if (!name) return
@@ -1796,7 +1559,7 @@ function PartyModal({
          onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
         <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="text-sm font-semibold text-stone-900">{initial ? 'Edit Party' : 'Add Party'}</h2>
+          <h2 className="text-sm font-semibold text-stone-900">Add Party</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 text-lg leading-none">&times;</button>
         </div>
         <div className="px-5 py-4 space-y-3">
@@ -1804,6 +1567,7 @@ function PartyModal({
             <label className="block text-xs font-medium text-stone-600 mb-1">Party name *</label>
             <input value={name} onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Smith Family"
+              autoFocus
               className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -1885,7 +1649,7 @@ function PartyModal({
             onClick={doSave}
             className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 disabled:opacity-50"
           >
-            {saving ? 'Saving…' : initial ? 'Save changes' : 'Add party'}
+            {saving ? 'Saving…' : 'Add party'}
           </button>
         </div>
       </div>

@@ -32,7 +32,7 @@ def home(request):
 
 
 def wedding_party(request):
-    members = WeddingPartyMember.objects.filter(is_informed=True).order_by('order', 'name')
+    members = WeddingPartyMember.objects.filter(is_public=True).order_by('order', 'name')
     by_role = {}
     for m in members:
         by_role.setdefault(m.role, []).append(m)

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
-import { Pencil, Trash2, Plus, Camera, BellOff, BellRing } from 'lucide-react'
+import { Pencil, Trash2, Plus, Camera, BellOff, BellRing, Eye, EyeOff } from 'lucide-react'
 import { useMembers, useCreateMember, useUpdateMember, useDeleteMember, useUploadMemberPhoto } from './api'
 import type { MemberFormData, MemberRole, WeddingPartyMember } from './types'
 import { ROLE_LABELS, ROLE_ORDER } from './types'
@@ -38,6 +38,15 @@ export function WeddingPartyTab() {
     try {
       await updateMember.mutateAsync({ id: m.id, data: { ...m, is_informed: !m.is_informed } })
       toast.success(m.is_informed ? `${m.name} marked as not yet informed` : `${m.name} marked as informed`)
+    } catch {
+      toast.error('Failed to update')
+    }
+  }
+
+  async function handleTogglePublic(m: WeddingPartyMember) {
+    try {
+      await updateMember.mutateAsync({ id: m.id, data: { ...m, is_public: !m.is_public } })
+      toast.success(m.is_public ? `${m.name} hidden from public page` : `${m.name} now visible on public page`)
     } catch {
       toast.error('Failed to update')
     }
@@ -101,6 +110,9 @@ export function WeddingPartyTab() {
                         ) : (
                           <span className="flex-shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700">Not informed</span>
                         )}
+                        {m.is_public && (
+                          <span className="flex-shrink-0 rounded-full bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-700">Public ✓</span>
+                        )}
                       </div>
                       {m.email && <p className="text-xs text-stone-400 truncate">{m.email}</p>}
                     </div>
@@ -111,6 +123,13 @@ export function WeddingPartyTab() {
                         className={`p-1.5 rounded transition-colors ${m.is_informed ? 'text-blue-400 hover:bg-blue-50 hover:text-blue-600' : 'text-amber-400 hover:bg-amber-50 hover:text-amber-600'}`}
                       >
                         {m.is_informed ? <BellRing size={13} /> : <BellOff size={13} />}
+                      </button>
+                      <button
+                        onClick={() => handleTogglePublic(m)}
+                        title={m.is_public ? 'Hide from public page' : 'Show on public page'}
+                        className={`p-1.5 rounded transition-colors ${m.is_public ? 'text-emerald-500 hover:bg-emerald-50 hover:text-emerald-700' : 'text-stone-300 hover:bg-stone-100 hover:text-stone-500'}`}
+                      >
+                        {m.is_public ? <Eye size={13} /> : <EyeOff size={13} />}
                       </button>
                       <button onClick={() => openEdit(m)} className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors">
                         <Pencil size={13} />
@@ -204,6 +223,7 @@ function MemberModal({
     bio:         initial?.bio         ?? '',
     order:       initial?.order       ?? 0,
     is_informed: initial?.is_informed ?? false,
+    is_public:   initial?.is_public   ?? false,
   })
   const photoRef = useRef<HTMLInputElement>(null)
   const uploadPhoto = useUploadMemberPhoto()
@@ -306,7 +326,19 @@ function MemberModal({
             />
             <span className="text-sm text-stone-700">
               Informed
-              <span className="ml-1 text-xs text-stone-400">(shows on public wedding party page)</span>
+              <span className="ml-1 text-xs text-stone-400">(person has been told about their role)</span>
+            </span>
+          </label>
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.is_public}
+              onChange={(e) => set('is_public', e.target.checked)}
+              className="w-4 h-4 rounded border-stone-300 text-emerald-600 focus:ring-emerald-400"
+            />
+            <span className="text-sm text-stone-700">
+              Public
+              <span className="ml-1 text-xs text-stone-400">(visible on the public wedding party page)</span>
             </span>
           </label>
         </div>

@@ -119,6 +119,7 @@ class Guest(models.Model):
     meal = models.CharField(max_length=20, choices=MEALS, null=True, blank=True)
     is_child = models.BooleanField(default=False)
     dietary_restrictions = models.TextField(blank=True)
+    label = models.CharField(max_length=100, blank=True)
     is_plus_one = models.BooleanField(default=False)
     seating_table = models.ForeignKey(
         'seating.SeatingTable',
@@ -231,8 +232,11 @@ class WeddingPartyMember(models.Model):
     )
     is_informed = models.BooleanField(
         default=False,
-        help_text='Has this person been informed that they are in the wedding party? '
-                  'Only informed members appear on the public wedding party page.',
+        help_text='Has this person been informed that they are in the wedding party?',
+    )
+    is_public = models.BooleanField(
+        default=False,
+        help_text='Show this member on the public wedding party page.',
     )
 
     class Meta:
