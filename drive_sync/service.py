@@ -73,13 +73,16 @@ def _get_spreadsheet(spreadsheet_name=None):
         )
 
     title = spreadsheet_name or getattr(settings, 'GOOGLE_SPREADSHEET_TITLE', 'Wedding Planning')
+    # Optional: put new spreadsheets in a shared Drive folder so storage
+    # counts against your Drive quota, not the service account's 15 GB quota.
+    folder_id = getattr(settings, 'GOOGLE_SPREADSHEET_FOLDER_ID', None)
     gc = gspread.service_account(filename=creds_file)
 
     try:
         sh = gc.open(title)
     except gspread.SpreadsheetNotFound:
-        sh = gc.create(title)
-        log.info('Created new spreadsheet: %s', title)
+        sh = gc.create(title, folder_id=folder_id)
+        log.info('Created new spreadsheet "%s" (folder_id=%s)', title, folder_id)
 
     return sh
 

@@ -820,6 +820,9 @@ function FlatGuestRow({
           onSave={handleSave}
           onClose={() => setEditOpen(false)}
           saving={updateGuest.isPending}
+          member={member}
+          onAssignRole={(role, color) => onAssignRole(guest.id, role, color)}
+          onRemoveRole={() => onRemoveRole(guest.id)}
         />
       )}
       {confirmDelete && (
@@ -1088,11 +1091,15 @@ function PartyRow({
 
 function GuestEditModal({
   guest, onSave, onClose, saving,
+  member, onAssignRole, onRemoveRole,
 }: {
   guest: Guest
   onSave: (data: Partial<Guest>) => void
   onClose: () => void
   saving: boolean
+  member?: WeddingPartyMember
+  onAssignRole?: (role: MemberRole, color: string) => void
+  onRemoveRole?: () => void
 }) {
   const [firstName, setFirstName]     = useState(guest.first_name)
   const [lastName, setLastName]       = useState(guest.last_name)
@@ -1103,6 +1110,7 @@ function GuestEditModal({
     guest.is_attending === true ? 'yes' : guest.is_attending === false ? 'no' : '',
   )
   const [meal, setMeal]               = useState(guest.meal ?? '')
+  const [role, setRole]               = useState<MemberRole | ''>(member?.role ?? '')
 
   const isPlusOne = guest.is_plus_one
 
@@ -1116,6 +1124,13 @@ function GuestEditModal({
       is_attending: attending === 'yes' ? true : attending === 'no' ? false : null,
       meal: meal as Guest['meal'],
     })
+    if (role !== (member?.role ?? '')) {
+      if (role === '') {
+        onRemoveRole?.()
+      } else {
+        onAssignRole?.(role, ROLE_COLORS[role])
+      }
+    }
   }
 
   useEnterSubmit(handleSave, (!firstName && !isPlusOne) || saving)
@@ -1182,6 +1197,19 @@ function GuestEditModal({
                 ))}
               </select>
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-600 mb-1">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as MemberRole | '')}
+              className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
+            >
+              <option value="">No role</option>
+              {ROLE_ORDER.map((r) => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-medium text-stone-600 mb-1">Dietary restrictions</label>
@@ -1269,6 +1297,9 @@ function GuestRow({
           onSave={handleSave}
           onClose={() => setEditOpen(false)}
           saving={updateGuest.isPending}
+          member={member}
+          onAssignRole={onAssignRole}
+          onRemoveRole={onRemoveRole}
         />
       )}
       {confirmDelete && (
