@@ -331,12 +331,10 @@
             <span class="w-24 shrink-0 text-stone-500 capitalize">{{ cat.category }}</span>
             <div class="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
               {% if est and est > 0 %}
-                {% with pct=act.amount|default:0 %}
-                <div class="h-full bg-stone-400 rounded-full" style="width: {% if act %}{% widthratio act.amount est.amount 100 %}{% else %}0{% endif %}%"></div>
-                {% endwith %}
+                <div class="h-full bg-stone-400 rounded-full" style="width: {% if act %}{% widthratio act est 100 %}{% else %}0{% endif %}%"></div>
               {% endif %}
             </div>
-            <span class="w-16 text-right text-stone-600">${{ est.amount|default:0|floatformat:0 }}</span>
+            <span class="w-16 text-right text-stone-600">${{ est|default:0|floatformat:0 }}</span>
           </div>
           {% endwith %}
           {% endfor %}

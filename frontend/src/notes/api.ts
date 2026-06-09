@@ -5,6 +5,7 @@ export interface Note {
   title: string
   content: string
   color: string
+  created_by_name: string | null
   created_at: string
   updated_at: string
 }

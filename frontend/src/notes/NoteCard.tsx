@@ -1,3 +1,4 @@
+import { formatDistanceToNow } from 'date-fns'
 import { Note } from './api'
 
 const COLOR_CLASSES: Record<string, string> = {
@@ -21,6 +22,7 @@ interface NoteCardProps {
 export function NoteCard({ note, onClick }: NoteCardProps) {
   const colorClass = COLOR_CLASSES[note.color] ?? COLOR_CLASSES.yellow
   const empty = !note.title && isContentEmpty(note.content)
+  const updatedAgo = formatDistanceToNow(new Date(note.updated_at), { addSuffix: true })
 
   return (
     <button
@@ -41,6 +43,10 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
       {empty && (
         <p className="text-gray-400 text-sm italic">Empty note</p>
       )}
+      <div className="mt-auto pt-2 border-t border-black/10 flex items-center justify-between gap-2 text-xs text-gray-500">
+        <span>{note.created_by_name ?? 'Unknown'}</span>
+        <span title={new Date(note.updated_at).toLocaleString()}>{updatedAgo}</span>
+      </div>
     </button>
   )
 }

@@ -16,7 +16,7 @@ def note_list(request):
 
     serializer = NoteSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
+    serializer.save(created_by=request.user)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 

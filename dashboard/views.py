@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -111,21 +111,29 @@ def dashboard(request):
     )
 
     # --- Budget stats ---
-    budget_items = BudgetLineItem.objects.all()
-    _est = budget_items.aggregate(total=Sum('estimated_cost'))['total']
-    _act = budget_items.exclude(actual_cost__isnull=True).aggregate(total=Sum('actual_cost'))['total']
-    # djmoney may return Money objects or Decimals; normalise to Decimal
-    total_estimated = (_est.amount if hasattr(_est, 'amount') else _est) or Decimal('0')
-    total_actual = (_act.amount if hasattr(_act, 'amount') else _act) or Decimal('0')
+    # Mirror the budget page API: sum Expense records first; fall back to actual_cost.
+    def _actual_for(item):
+        exp_total = sum(e.amount.amount for e in item.expenses.all())
+        if exp_total:
+            return exp_total
+        return item.actual_cost.amount if item.actual_cost is not None else Decimal('0')
+
+    _budget_items = list(BudgetLineItem.objects.prefetch_related('expenses').all())
+    total_estimated = sum(i.estimated_cost.amount for i in _budget_items) or Decimal('0')
+    total_actual = sum(_actual_for(i) for i in _budget_items) or Decimal('0')
     budget_remaining = total_estimated - total_actual
     budget_pct_used = int(total_actual / total_estimated * 100) if total_estimated > 0 else 0
 
-    budget_by_category = (
-        budget_items
-        .values('category')
-        .annotate(estimated=Sum('estimated_cost'), actual=Sum('actual_cost'))
-        .order_by('category')
-    )
+    _by_cat: dict = {}
+    for _item in _budget_items:
+        cat = _item.category
+        if cat not in _by_cat:
+            _by_cat[cat] = {'category': cat, 'estimated': Decimal('0'), 'actual': None}
+        _by_cat[cat]['estimated'] += _item.estimated_cost.amount
+        act = _actual_for(_item)
+        if act:
+            _by_cat[cat]['actual'] = (_by_cat[cat]['actual'] or Decimal('0')) + act
+    budget_by_category = sorted(_by_cat.values(), key=lambda x: x['category'])
 
     # --- Seating stats ---
     tables = SeatingTable.objects.all()

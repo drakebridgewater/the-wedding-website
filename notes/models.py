@@ -1,4 +1,7 @@
+from django.contrib.auth import get_user_model
 from django.db import models
+
+User = get_user_model()
 
 
 class Note(models.Model):
@@ -20,6 +23,7 @@ class Note(models.Model):
     title = models.CharField(max_length=200, blank=True)
     content = models.TextField(blank=True)
     color = models.CharField(max_length=20, choices=COLOR_CHOICES, default=COLOR_YELLOW)
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='notes')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
