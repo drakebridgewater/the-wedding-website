@@ -210,11 +210,14 @@ export interface SeatingGuest {
   first_name: string
   last_name: string
   is_child: boolean
+  is_plus_one: boolean
+  is_attending: boolean | null
   meal: string
   seating_table_id: number | null
   seat_color: string
   party_id: number | null
   party_name: string | null
+  party_plus_one_count: number
 }
 
 export interface SeatingTable {

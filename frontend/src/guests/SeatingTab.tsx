@@ -33,6 +33,7 @@ interface DragParty {
   partyId: number
   guestIds: number[]
   partyName: string
+  plusOneCount: number
 }
 
 type DragData = DragGuest | DragParty
@@ -45,6 +46,7 @@ interface PartyGroup {
   partyId: number | null
   partyName: string
   guests: SeatingGuest[]
+  plusOneCount: number
 }
 
 function groupByParty(guests: SeatingGuest[]): PartyGroup[] {
@@ -57,6 +59,7 @@ function groupByParty(guests: SeatingGuest[]): PartyGroup[] {
         partyId: g.party_id,
         partyName: g.party_name ?? `${g.first_name} ${g.last_name}`,
         guests: [],
+        plusOneCount: g.party_plus_one_count ?? 0,
       })
     }
     map.get(key)!.guests.push(g)
@@ -97,9 +100,16 @@ function GuestChip({ guest }: { guest: SeatingGuest }) {
       className={`flex items-center gap-1.5 px-2 py-1 rounded-md border border-stone-200 bg-white text-xs text-stone-700 select-none cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? 'opacity-30' : 'hover:border-stone-300'}`}
     >
       <GripVertical size={10} className="text-stone-300 flex-shrink-0" />
+      <span
+        className={`inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+          guest.is_attending === true ? 'bg-emerald-400' : 'bg-amber-300'
+        }`}
+        title={guest.is_attending === true ? 'Attending' : 'Pending RSVP'}
+      />
       <span className="truncate">
         {guest.first_name} {guest.last_name}
         {guest.is_child && <span className="ml-1 text-stone-400 text-[10px]">child</span>}
+        {guest.is_plus_one && <span className="ml-1 text-stone-400 text-[10px]">+1</span>}
       </span>
     </div>
   )
@@ -117,6 +127,7 @@ function UnseatedPartyGroup({
   onToggle: () => void
 }) {
   const isSingleSolo = group.partyId === null && group.guests.length === 1
+  const totalSeats = group.guests.length + group.plusOneCount
 
   // Party-level drag (only for multi-guest parties)
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -127,6 +138,7 @@ function UnseatedPartyGroup({
       partyId: group.partyId ?? -1,
       guestIds: group.guests.map((g) => g.id),
       partyName: group.partyName,
+      plusOneCount: group.plusOneCount,
     } as DragData,
   })
 
@@ -158,12 +170,20 @@ function UnseatedPartyGroup({
             ? <ChevronRight size={11} className="text-stone-400 flex-shrink-0" />
             : <ChevronDown size={11} className="text-stone-400 flex-shrink-0" />}
           <span className="text-xs font-medium text-stone-700 truncate">{group.partyName}</span>
-          <span className="ml-auto text-[10px] text-stone-400 flex-shrink-0 pl-1">({group.guests.length})</span>
+          <span className="ml-auto text-[10px] text-stone-400 flex-shrink-0 pl-1">
+            ({totalSeats}{group.plusOneCount > 0 && <span className="text-amber-500"> incl. +{group.plusOneCount}</span>})
+          </span>
         </button>
       </div>
       {!collapsed && (
         <div className="px-2 pb-2 flex flex-col gap-1 border-t border-stone-100 pt-1.5">
           {group.guests.map((g) => <GuestChip key={g.id} guest={g} />)}
+          {group.plusOneCount > 0 && Array.from({ length: group.plusOneCount }).map((_, i) => (
+            <div key={`plusone-${i}`} className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-amber-200 bg-amber-50/50 text-xs text-amber-600 select-none">
+              <GripVertical size={10} className="text-amber-300 flex-shrink-0" />
+              <span className="italic">+1 (unnamed)</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -440,6 +460,7 @@ export function SeatingTab() {
 
   const unseated       = seatingGuests.filter((g) => g.seating_table_id === null)
   const unseatedGroups = groupByParty(unseated)
+  const unseatedPlusOnes = unseatedGroups.reduce((sum, g) => sum + g.plusOneCount, 0)
 
   function toggleTable(id: number) {
     setCollapsedTables((prev) => {
@@ -488,7 +509,7 @@ export function SeatingTab() {
             : drag.guestIds.filter((id) => {
                 const g = seatingGuests.find((g) => g.id === id)
                 return g?.seating_table_id !== tableId
-              }).length
+              }).length + drag.plusOneCount
         if (currentCount + addingCount > table.capacity) {
           toast.warning(`"${table.name}" is over capacity`, {
             description: `${currentCount + addingCount} assigned, capacity is ${table.capacity}. Assignment saved.`,
@@ -546,19 +567,20 @@ export function SeatingTab() {
       <div className="space-y-4">
         {/* Summary bar */}
         <div className="flex items-center gap-3 text-xs text-stone-400">
-          <span>{seatingGuests.length} attending</span>
+          <span>{seatingGuests.filter((g) => g.is_attending === true).length} confirmed</span>
+          <span>·</span>
+          <span>{seatingGuests.filter((g) => g.is_attending === null).length} pending</span>
           <span>·</span>
           <span>{totalSeated} seated</span>
           <span>·</span>
-          <span className={unseated.length > 0 ? 'text-amber-500' : 'text-green-600'}>
-            {unseated.length} unseated
+          <span className={unseated.length + unseatedPlusOnes > 0 ? 'text-amber-500' : 'text-green-600'}>
+            {unseated.length + unseatedPlusOnes} unseated
           </span>
           <span>·</span>
           <span>{tables.length} tables</span>
           <div className="ml-auto flex items-center gap-3 text-[10px]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Empty</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Has room</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Full</span>
+            <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Confirmed</span>
+            <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-300 inline-block" /> Pending</span>
           </div>
         </div>
 

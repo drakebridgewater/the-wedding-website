@@ -470,6 +470,11 @@ function PartyRow({
             {PARTY_TYPE_LABELS[party.type]}
           </span>
         )}
+        {party.category && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 font-medium hidden sm:inline">
+            {party.category}
+          </span>
+        )}
         {party.side && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 font-medium hidden sm:inline">
             {PARTY_SIDE_LABELS[party.side]}

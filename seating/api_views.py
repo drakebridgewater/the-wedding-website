@@ -51,7 +51,7 @@ def table_detail(request, pk):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def guest_seating_list(request):
-    guests = Guest.objects.filter(is_attending=True).order_by('last_name', 'first_name')
+    guests = Guest.objects.exclude(is_attending=False).order_by('last_name', 'first_name')
     return Response(GuestSeatingSerializer(guests, many=True).data)
 
 
