@@ -60,6 +60,23 @@ export function useUpdateSong() {
   })
 }
 
+export function useReorderSongs() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (updates: { id: number; order: number }[]) => {
+      await Promise.all(
+        updates.map(({ id, order }) =>
+          apiFetch<Song>(`/music/api/songs/${id}/`, {
+            method: 'PATCH',
+            body: JSON.stringify({ order }),
+          }),
+        ),
+      )
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['music', 'songs'] }),
+  })
+}
+
 export function useDeleteSong() {
   const qc = useQueryClient()
   return useMutation({
