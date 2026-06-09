@@ -147,7 +147,10 @@ export function useCreateParty() {
   return useMutation({
     mutationFn: (data: PartyFormData) =>
       apiFetch<Party>('/guests/api/parties/', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.parties }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.parties })
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
+    },
   })
 }
 
@@ -156,7 +159,10 @@ export function useUpdateParty() {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<PartyFormData> }) =>
       apiFetch<Party>(`/guests/api/parties/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.parties }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.parties })
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
+    },
   })
 }
 
@@ -164,7 +170,10 @@ export function useDeleteParty() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => apiFetch(`/guests/api/parties/${id}/`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.parties }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.parties })
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
+    },
   })
 }
 
@@ -175,7 +184,10 @@ export function useAddGuest() {
   return useMutation({
     mutationFn: ({ partyId, data }: { partyId: number; data: GuestFormData }) =>
       apiFetch<Guest>(`/guests/api/parties/${partyId}/guests/`, { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: QK.parties }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.parties })
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
+    },
   })
 }
 
@@ -187,6 +199,7 @@ export function useUpdateGuest() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.parties })
       qc.invalidateQueries({ queryKey: QK.unassigned })
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
     },
   })
 }
@@ -205,6 +218,7 @@ export function useDeleteGuest() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.parties })
       qc.invalidateQueries({ queryKey: QK.unassigned })
+      qc.invalidateQueries({ queryKey: QK.seatingGuests })
     },
   })
 }
