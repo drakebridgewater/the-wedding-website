@@ -24,7 +24,7 @@ import {
   INVITE_STATUS_LABELS, INVITE_STATUS_COLORS,
 } from './types'
 
-type FilterMode = 'all' | `label:${string}` | 'no_label' | `group:${number}` | 'rehearsal_dinner'
+type FilterMode = 'all' | `label:${string}` | 'no_label' | `group:${number}` | 'rehearsal_dinner' | 'no_rehearsal_dinner'
 
 // ── Filter helpers ─────────────────────────────────────────────────────────────
 
@@ -37,6 +37,7 @@ function guestMatchesFilter(
   if (filterMode === 'all') return true
   if (filterMode === 'no_label') return !guest.label
   if (filterMode === 'rehearsal_dinner') return rehearsalGuestIds.has(guest.id)
+  if (filterMode === 'no_rehearsal_dinner') return !rehearsalGuestIds.has(guest.id)
   if (filterMode.startsWith('group:')) {
     const groupId = Number(filterMode.slice(6))
     return guestIdsByGroup.get(groupId)?.has(guest.id) ?? false
@@ -452,13 +453,21 @@ export function ContactsTab({
       {/* Filter chips */}
       <div className="flex gap-1.5 flex-wrap items-center mb-4 pb-3 border-b border-stone-100">
         <FilterChip label="All" count={totalGuests} active={filterMode === 'all'} onClick={() => setFilterMode('all')} />
-        {rehearsalGuestIds.size > 0 && (
-          <FilterChip
-            label="Rehearsal Dinner"
-            count={rehearsalGuestIds.size}
-            active={filterMode === 'rehearsal_dinner'}
-            onClick={() => setFilterMode('rehearsal_dinner')}
-          />
+        {parties.length > 0 && (
+          <>
+            <FilterChip
+              label="RD Invited"
+              count={rehearsalGuestIds.size}
+              active={filterMode === 'rehearsal_dinner'}
+              onClick={() => setFilterMode('rehearsal_dinner')}
+            />
+            <FilterChip
+              label="RD Not Invited"
+              count={totalGuests - rehearsalGuestIds.size}
+              active={filterMode === 'no_rehearsal_dinner'}
+              onClick={() => setFilterMode('no_rehearsal_dinner')}
+            />
+          </>
         )}
         {allLabels.map((lbl) => (
           <FilterChip
@@ -879,6 +888,16 @@ function PartyRow({
     }
   }
 
+  async function toggleRehearsalDinner() {
+    try { await updateParty.mutateAsync({ id: party.id, data: { rehearsal_dinner: !party.rehearsal_dinner } }) }
+    catch { toast.error('Failed to update') }
+  }
+
+  async function togglePhysicalCard() {
+    try { await updateParty.mutateAsync({ id: party.id, data: { wants_physical_card: !party.wants_physical_card } }) }
+    catch { toast.error('Failed to update') }
+  }
+
   const isFiltered = filterMode !== 'all' || !!searchQuery
   const visibleGuests = isFiltered
     ? party.guests.filter(
@@ -919,14 +938,33 @@ function PartyRow({
             {PARTY_SIDE_LABELS[party.side]}
           </span>
         )}
-        {party.wants_physical_card && (
-          <span title="Wants physical card" className="text-sm text-stone-400">✉</span>
-        )}
+        <button
+          onClick={(e) => { e.stopPropagation(); togglePhysicalCard() }}
+          title={party.wants_physical_card ? 'Wants physical card — click to remove' : 'No physical card — click to add'}
+          className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors hidden sm:inline-block ${
+            party.wants_physical_card
+              ? 'bg-sky-100 text-sky-700 hover:bg-sky-200'
+              : 'border border-stone-200 text-stone-300 hover:border-stone-400 hover:text-stone-600'
+          }`}
+        >
+          ✉
+        </button>
         {party.plus_one_allowed && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium hidden sm:inline">
             +1 ok
           </span>
         )}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleRehearsalDinner() }}
+          title={party.rehearsal_dinner ? 'Invited to rehearsal dinner — click to remove' : 'Not invited to rehearsal dinner — click to add'}
+          className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors hidden sm:inline-block ${
+            party.rehearsal_dinner
+              ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+              : 'border border-stone-200 text-stone-300 hover:border-stone-400 hover:text-stone-600'
+          }`}
+        >
+          RD
+        </button>
         <select
           value={party.status}
           onChange={(e) => setStatus(e.target.value as InviteStatus)}
