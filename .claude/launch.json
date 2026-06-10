@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "django",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["manage.py", "runserver", "8002"],
+      "port": 8002
+    },
+    {
+      "name": "vite",
+      "runtimeExecutable": "/Users/drake/.nvm/versions/node/v23.10.0/bin/npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
+      "port": 5173
+    }
+  ]
+}

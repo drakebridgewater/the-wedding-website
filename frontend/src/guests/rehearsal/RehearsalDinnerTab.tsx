@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
-import { useParties } from './api'
-import { MEAL_LABELS } from './types'
+import { useParties } from '../api'
+import { MEAL_LABELS } from '../types'
+import { AttendingBadge, Badge, GuestFlags } from '../components/badges'
+import { EmptyState } from '../components/EmptyState'
 
+/** Read-only roster of everyone whose party is invited to the rehearsal dinner. */
 export function RehearsalDinnerTab({
   onOpenGuest,
 }: {
@@ -22,21 +25,21 @@ export function RehearsalDinnerTab({
 
   if (rehearsalParties.length === 0) {
     return (
-      <div className="text-center py-16 text-stone-400">
-        <p className="text-sm">No parties are marked for the rehearsal dinner.</p>
-        <p className="text-xs mt-1">Enable "Rehearsal dinner" on a party in the Contacts tab to add them here.</p>
-      </div>
+      <EmptyState
+        message="No parties are marked for the rehearsal dinner."
+        hint={'Enable "Rehearsal dinner" on a party in the Contacts tab to add them here.'}
+      />
     )
   }
 
   return (
     <div className="space-y-6">
       {/* Summary bar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <h2 className="text-sm font-semibold text-stone-700">Rehearsal Dinner Guests</h2>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-medium">
+        <Badge tone="rose" className="text-xs">
           {totalGuests} {totalGuests === 1 ? 'person' : 'people'}
-        </span>
+        </Badge>
         <span className="text-xs text-stone-400">across {rehearsalParties.length} {rehearsalParties.length === 1 ? 'party' : 'parties'}</span>
       </div>
 
@@ -72,33 +75,20 @@ export function RehearsalDinnerTab({
                       className="hover:bg-stone-50/60 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-2.5 text-stone-800 font-medium">
-                        <span className="hover:underline">
-                          {guest.first_name} {guest.last_name}
+                        <span className="inline-flex items-center gap-1.5 flex-wrap">
+                          <span className="hover:underline">
+                            {guest.first_name} {guest.last_name}
+                          </span>
+                          <GuestFlags guest={guest} />
                         </span>
-                        {guest.is_child && (
-                          <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-600 font-medium">child</span>
-                        )}
-                        {guest.is_plus_one && (
-                          <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">+1</span>
-                        )}
                       </td>
                       <td className="px-3 py-2.5 hidden sm:table-cell">
-                        {guest.label ? (
-                          <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">
-                            {guest.label}
-                          </span>
-                        ) : (
-                          <span className="text-stone-300">—</span>
-                        )}
+                        {guest.label
+                          ? <Badge>{guest.label}</Badge>
+                          : <span className="text-stone-300">—</span>}
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          guest.is_attending === true  ? 'bg-emerald-100 text-emerald-700' :
-                          guest.is_attending === false ? 'bg-rose-100 text-rose-600' :
-                                                        'bg-stone-100 text-stone-400'
-                        }`}>
-                          {guest.is_attending === true ? 'Yes' : guest.is_attending === false ? 'No' : 'Pending'}
-                        </span>
+                        <AttendingBadge value={guest.is_attending} />
                       </td>
                       <td className="px-3 py-2.5 hidden sm:table-cell text-stone-500">
                         {MEAL_LABELS[guest.meal ?? ''] || '—'}

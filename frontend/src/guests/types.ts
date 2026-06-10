@@ -21,15 +21,6 @@ export interface WeddingPartyMember {
   is_public: boolean
 }
 
-export interface WeddingPartyGroup {
-  id: number
-  name: string
-  description: string
-  color: string
-  order: number
-  members: WeddingPartyMember[]
-}
-
 export type PartySide = 'bride' | 'groom' | 'both' | ''
 export type InviteStatus = 'planned' | 'invited' | 'not_invited'
 
@@ -80,19 +71,6 @@ export interface EmailTemplate {
   updated_at: string
 }
 
-export interface SaveTheDateSettings {
-  id: number
-  background_color: string
-  font_color: string
-  image_url: string | null
-}
-
-export interface SaveTheDateSentParty {
-  id: number
-  name: string
-  save_the_date_sent: string
-}
-
 export interface SentEmail {
   id: number
   template_id: number | null
@@ -117,14 +95,6 @@ export interface MemberFormData {
   is_public: boolean
 }
 
-export interface GroupFormData {
-  name: string
-  description: string
-  color: string
-  order: number
-  member_ids: number[]
-}
-
 export interface PartyFormData {
   name: string
   type: PartyType
@@ -137,6 +107,13 @@ export interface PartyFormData {
   side: PartySide
   plus_one_allowed: boolean
   plus_one_count?: number
+}
+
+/** Defaults for creating a party when only the name is known. */
+export const EMPTY_PARTY_FORM: Omit<PartyFormData, 'name'> = {
+  type: '', category: '', status: 'planned',
+  rehearsal_dinner: false, comments: '', address: '',
+  wants_physical_card: false, side: '', plus_one_allowed: false,
 }
 
 export interface GuestFormData {
