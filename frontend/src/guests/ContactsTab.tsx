@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown, ChevronRight, Pencil, Trash2, Plus, UserPlus,
-  Upload, X, LayoutList, Table2, Download, Search, Settings2,
+  Upload, X, LayoutList, Table2, TableProperties, Download, Search, Settings2,
   ArrowUp, ArrowDown, ChevronsUpDown,
 } from 'lucide-react'
 import {
@@ -14,37 +14,30 @@ import {
 import {
   useParties, useCreateParty, useUpdateParty, useDeleteParty,
   useAddGuest, useUpdateGuest, useDeleteGuest, useUnassignedGuests,
-  useMembers, useGroups,
+  useMembers,
 } from './api'
 import type {
-  Guest, Party, InviteStatus, WeddingPartyMember,
+  Guest, Party, PartyFormData, InviteStatus, WeddingPartyMember,
 } from './types'
 import {
   MEAL_LABELS, PARTY_TYPE_LABELS, PARTY_TYPE_DESCRIPTIONS, PARTY_SIDE_LABELS,
   INVITE_STATUS_LABELS, INVITE_STATUS_COLORS,
 } from './types'
 
-type FilterMode = 'all' | `label:${string}` | 'no_label' | `group:${number}` | 'rehearsal_dinner' | 'no_rehearsal_dinner'
+type FilterMode = 'all' | `label:${string}` | 'no_label' | 'rehearsal_dinner' | 'no_rehearsal_dinner'
 
 // ── Filter helpers ─────────────────────────────────────────────────────────────
 
 function guestMatchesFilter(
   guest: Guest,
   filterMode: FilterMode,
-  guestIdsByGroup: Map<number, Set<number>>,
   rehearsalGuestIds: Set<number>,
 ): boolean {
   if (filterMode === 'all') return true
   if (filterMode === 'no_label') return !guest.label
   if (filterMode === 'rehearsal_dinner') return rehearsalGuestIds.has(guest.id)
   if (filterMode === 'no_rehearsal_dinner') return !rehearsalGuestIds.has(guest.id)
-  if (filterMode.startsWith('group:')) {
-    const groupId = Number(filterMode.slice(6))
-    return guestIdsByGroup.get(groupId)?.has(guest.id) ?? false
-  }
-  if (filterMode.startsWith('label:')) {
-    return guest.label === filterMode.slice(6)
-  }
+  if (filterMode.startsWith('label:')) return guest.label === filterMode.slice(6)
   return false
 }
 
@@ -307,7 +300,6 @@ export function ContactsTab({
 }) {
   const { data: parties = [], isLoading } = useParties()
   const { data: members = [] } = useMembers()
-  const { data: groups = [] } = useGroups()
   const createParty = useCreateParty()
   const updateParty = useUpdateParty()
   const deleteParty = useDeleteParty()
@@ -316,7 +308,7 @@ export function ContactsTab({
   const [showImportModal, setShowImportModal] = useState(false)
   const [pendingDeletePartyId, setPendingDeletePartyId] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
-  const [tableView, setTableView] = useState(false)
+  const [viewMode, setViewMode] = useState<'cards' | 'parties' | 'guests'>('cards')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -325,16 +317,6 @@ export function ContactsTab({
   const memberByGuestId = useMemo(
     () => new Map(members.filter((m) => m.guest_id != null).map((m) => [m.guest_id!, m])),
     [members],
-  )
-
-  const guestIdsByGroup = useMemo(
-    () => new Map(
-      groups.map((g) => [
-        g.id,
-        new Set(g.members.filter((m) => m.guest_id != null).map((m) => m.guest_id!)),
-      ]),
-    ),
-    [groups],
   )
 
   const rehearsalGuestIds = useMemo(() => {
@@ -377,11 +359,11 @@ export function ContactsTab({
       if (filterMode === 'all' && searchQuery && p.name.toLowerCase().includes(searchQuery.toLowerCase())) return true
       return p.guests.some(
         (g) =>
-          guestMatchesFilter(g, filterMode, guestIdsByGroup, rehearsalGuestIds) &&
+          guestMatchesFilter(g, filterMode, rehearsalGuestIds) &&
           guestMatchesSearch(g, p, searchQuery),
       )
     })
-  }, [parties, filterMode, guestIdsByGroup, searchQuery])
+  }, [parties, filterMode, rehearsalGuestIds, searchQuery])
 
   const filteredFlatRows = useMemo(
     () =>
@@ -389,12 +371,12 @@ export function ContactsTab({
         p.guests
           .filter(
             (g) =>
-              guestMatchesFilter(g, filterMode, guestIdsByGroup, rehearsalGuestIds) &&
+              guestMatchesFilter(g, filterMode, rehearsalGuestIds) &&
               guestMatchesSearch(g, p, searchQuery),
           )
           .map((g) => ({ guest: g, party: p })),
       ),
-    [parties, filterMode, guestIdsByGroup, searchQuery],
+    [parties, filterMode, rehearsalGuestIds, searchQuery],
   )
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
@@ -486,25 +468,6 @@ export function ContactsTab({
             onClick={() => setFilterMode('no_label')}
           />
         )}
-        {groups.length > 0 && (
-          <>
-            <span className="text-stone-300 text-xs px-0.5 select-none">|</span>
-            {groups.map((g) => {
-              const count = guestIdsByGroup.get(g.id)?.size ?? 0
-              if (count === 0) return null
-              return (
-                <FilterChip
-                  key={g.id}
-                  label={g.name}
-                  count={count}
-                  active={filterMode === `group:${g.id}`}
-                  onClick={() => setFilterMode(`group:${g.id}` as FilterMode)}
-                  outline
-                />
-              )
-            })}
-          </>
-        )}
       </div>
 
       {/* Toolbar */}
@@ -518,16 +481,23 @@ export function ContactsTab({
         <div className="flex gap-2 flex-wrap">
           <div className="flex rounded-lg border border-stone-200 overflow-hidden">
             <button
-              onClick={() => setTableView(false)}
-              title="Party view"
-              className={`p-2 transition-colors ${!tableView ? 'bg-stone-800 text-white' : 'bg-white text-stone-400 hover:text-stone-600'}`}
+              onClick={() => setViewMode('cards')}
+              title="Party cards"
+              className={`p-2 transition-colors ${viewMode === 'cards' ? 'bg-stone-800 text-white' : 'bg-white text-stone-400 hover:text-stone-600'}`}
             >
               <LayoutList size={14} />
             </button>
             <button
-              onClick={() => setTableView(true)}
-              title="Flat table view"
-              className={`p-2 transition-colors ${tableView ? 'bg-stone-800 text-white' : 'bg-white text-stone-400 hover:text-stone-600'}`}
+              onClick={() => setViewMode('parties')}
+              title="Party table"
+              className={`p-2 transition-colors ${viewMode === 'parties' ? 'bg-stone-800 text-white' : 'bg-white text-stone-400 hover:text-stone-600'}`}
+            >
+              <TableProperties size={14} />
+            </button>
+            <button
+              onClick={() => setViewMode('guests')}
+              title="Guest table"
+              className={`p-2 transition-colors ${viewMode === 'guests' ? 'bg-stone-800 text-white' : 'bg-white text-stone-400 hover:text-stone-600'}`}
             >
               <Table2 size={14} />
             </button>
@@ -562,10 +532,16 @@ export function ContactsTab({
             Clear filters
           </button>
         </div>
-      ) : tableView ? (
+      ) : viewMode === 'guests' ? (
         <FlatGuestTable
           rows={filteredFlatRows}
           memberByGuestId={memberByGuestId}
+          onOpenGuest={onOpenGuest}
+        />
+      ) : viewMode === 'parties' ? (
+        <PartyTable
+          parties={filteredParties}
+          updateParty={updateParty}
           onOpenGuest={onOpenGuest}
         />
       ) : (
@@ -580,7 +556,6 @@ export function ContactsTab({
               onDelete={() => setPendingDeletePartyId(party.id)}
               memberByGuestId={memberByGuestId}
               filterMode={filterMode}
-              guestIdsByGroup={guestIdsByGroup}
               rehearsalGuestIds={rehearsalGuestIds}
               searchQuery={searchQuery}
               onOpenGuest={onOpenGuest}
@@ -616,6 +591,7 @@ export function ContactsTab({
 
 type FlatRow = { guest: Guest; party: Party }
 const columnHelper = createColumnHelper<FlatRow>()
+const partyColumnHelper = createColumnHelper<Party>()
 
 const DEFAULT_COLUMNS: VisibilityState = {
   name: true,
@@ -849,11 +825,257 @@ function FlatGuestTable({
   )
 }
 
+// ── Party Table ───────────────────────────────────────────────────────────────
+
+const DEFAULT_PARTY_COLUMNS: VisibilityState = {
+  name: true, guests: true, status: true,
+  rehearsal_dinner: true, wants_physical_card: true, plus_one_allowed: true,
+  side: true, type: false,
+}
+
+const PARTY_COLUMN_LABELS: Record<string, string> = {
+  name: 'Party', guests: 'Guests', status: 'Status',
+  rehearsal_dinner: 'RD', wants_physical_card: '✉',
+  plus_one_allowed: '+1', side: 'Side', type: 'Type',
+}
+
+function PartyTable({
+  parties, updateParty, onOpenGuest,
+}: {
+  parties: Party[]
+  updateParty: ReturnType<typeof useUpdateParty>
+  onOpenGuest: (partyId: number, guestId?: number) => void
+}) {
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(DEFAULT_PARTY_COLUMNS)
+  const [showColPicker, setShowColPicker] = useState(false)
+  const colPickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showColPicker) return
+    function handler(e: MouseEvent) {
+      if (!colPickerRef.current?.contains(e.target as Node)) setShowColPicker(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColPicker])
+
+  function patch(party: Party, data: Partial<PartyFormData>) {
+    updateParty.mutateAsync({ id: party.id, data }).catch(() => toast.error('Failed to update'))
+  }
+
+  const columns = useMemo(() => [
+    partyColumnHelper.accessor('name', {
+      header: 'Party',
+      cell: (info) => (
+        <span className="font-medium text-stone-800">{info.getValue()}</span>
+      ),
+    }),
+    partyColumnHelper.accessor((row) => row.guests.length, {
+      id: 'guests',
+      header: 'Guests',
+      cell: (info) => {
+        const { guests } = info.row.original
+        const attending = guests.filter((g) => g.is_attending).length
+        return (
+          <span className="text-stone-500">
+            {guests.length}
+            {attending > 0 && <span className="text-emerald-600 ml-1">· {attending} ✓</span>}
+          </span>
+        )
+      },
+    }),
+    partyColumnHelper.accessor('status', {
+      header: 'Status',
+      cell: (info) => {
+        const party = info.row.original
+        return (
+          <select
+            value={party.status}
+            onChange={(e) => patch(party, { status: e.target.value as InviteStatus })}
+            onClick={(e) => e.stopPropagation()}
+            className={`text-[10px] px-2 py-0.5 rounded-full font-medium border-0 cursor-pointer focus:outline-none focus:ring-1 focus:ring-stone-400 ${INVITE_STATUS_COLORS[party.status]}`}
+          >
+            {(Object.entries(INVITE_STATUS_LABELS) as [InviteStatus, string][]).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+        )
+      },
+    }),
+    partyColumnHelper.accessor('rehearsal_dinner', {
+      header: 'RD',
+      cell: (info) => {
+        const party = info.row.original
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); patch(party, { rehearsal_dinner: !party.rehearsal_dinner }) }}
+            title={party.rehearsal_dinner ? 'Remove from rehearsal dinner' : 'Add to rehearsal dinner'}
+            className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
+              party.rehearsal_dinner
+                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                : 'border border-stone-200 text-stone-300 hover:border-stone-400 hover:text-stone-600'
+            }`}
+          >
+            RD
+          </button>
+        )
+      },
+    }),
+    partyColumnHelper.accessor('wants_physical_card', {
+      header: '✉',
+      cell: (info) => {
+        const party = info.row.original
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); patch(party, { wants_physical_card: !party.wants_physical_card }) }}
+            title={party.wants_physical_card ? 'Remove physical card' : 'Add physical card'}
+            className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
+              party.wants_physical_card
+                ? 'bg-sky-100 text-sky-700 hover:bg-sky-200'
+                : 'border border-stone-200 text-stone-300 hover:border-stone-400 hover:text-stone-600'
+            }`}
+          >
+            ✉
+          </button>
+        )
+      },
+    }),
+    partyColumnHelper.accessor('plus_one_allowed', {
+      header: '+1',
+      cell: (info) => {
+        const party = info.row.original
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); patch(party, { plus_one_allowed: !party.plus_one_allowed }) }}
+            title={party.plus_one_allowed ? 'Remove +1 allowance' : 'Allow +1'}
+            className={`text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
+              party.plus_one_allowed
+                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                : 'border border-stone-200 text-stone-300 hover:border-stone-400 hover:text-stone-600'
+            }`}
+          >
+            +1
+          </button>
+        )
+      },
+    }),
+    partyColumnHelper.accessor('side', {
+      header: 'Side',
+      cell: (info) => {
+        const side = info.getValue()
+        return side
+          ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-600 font-medium">{PARTY_SIDE_LABELS[side]}</span>
+          : <span className="text-stone-300 text-[10px]">—</span>
+      },
+    }),
+    partyColumnHelper.accessor('type', {
+      header: 'Type',
+      cell: (info) => {
+        const type = info.getValue()
+        return type
+          ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 font-medium">{PARTY_TYPE_LABELS[type]}</span>
+          : <span className="text-stone-300 text-[10px]">—</span>
+      },
+    }),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [updateParty])
+
+  const table = useReactTable({
+    data: parties,
+    columns,
+    state: { sorting, columnVisibility },
+    onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
+
+  if (parties.length === 0) return (
+    <div className="text-center py-16 text-stone-400 text-sm">No parties match.</div>
+  )
+
+  return (
+    <div className="bg-white rounded-xl border border-stone-100 shadow-sm overflow-hidden">
+      <div className="flex justify-end px-3 py-2 border-b border-stone-100">
+        <div className="relative" ref={colPickerRef}>
+          <button
+            onClick={() => setShowColPicker(!showColPicker)}
+            className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 border border-stone-200 rounded-lg px-2.5 py-1.5 transition-colors"
+          >
+            <Settings2 size={12} /> Columns
+          </button>
+          {showColPicker && (
+            <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-stone-200 rounded-lg shadow-lg p-2 min-w-[140px]">
+              {table.getAllLeafColumns().map((col) => (
+                <label key={col.id} className="flex items-center gap-2 px-2 py-1 hover:bg-stone-50 rounded cursor-pointer text-xs text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={col.getIsVisible()}
+                    onChange={col.getToggleVisibilityHandler()}
+                    className="w-3 h-3 rounded"
+                  />
+                  {PARTY_COLUMN_LABELS[col.id] ?? col.id}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead>
+            {table.getHeaderGroups().map((hg) => (
+              <tr key={hg.id} className="bg-stone-50 border-b border-stone-200">
+                {hg.headers.map((header) => (
+                  <th key={header.id} className="text-left px-3 py-3 text-stone-500 font-medium whitespace-nowrap">
+                    {header.isPlaceholder ? null : (
+                      <button
+                        className="flex items-center gap-1 hover:text-stone-800 transition-colors"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        <SortIcon sorted={header.column.getIsSorted()} />
+                      </button>
+                    )}
+                  </th>
+                ))}
+                <th className="px-3 py-3 w-10" />
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-stone-50">
+            {table.getRowModel().rows.map((row) => {
+              const party = row.original
+              return (
+                <tr
+                  key={row.id}
+                  onClick={() => onOpenGuest(party.id)}
+                  className="hover:bg-stone-50/60 cursor-pointer transition-colors"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-3 py-2.5 max-w-[220px] truncate">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                  <td className="px-3 py-2.5">
+                    <Pencil size={11} className="text-stone-300 hover:text-stone-600 transition-colors" />
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 // ── Party Row ──────────────────────────────────────────────────────────────────
 
 function PartyRow({
   party, expanded, onToggle, onEdit, onDelete,
-  memberByGuestId, filterMode, guestIdsByGroup, rehearsalGuestIds, searchQuery,
+  memberByGuestId, filterMode, rehearsalGuestIds, searchQuery,
   onOpenGuest, updateParty,
 }: {
   party: Party
@@ -863,7 +1085,6 @@ function PartyRow({
   onDelete: () => void
   memberByGuestId: Map<number, WeddingPartyMember>
   filterMode: FilterMode
-  guestIdsByGroup: Map<number, Set<number>>
   rehearsalGuestIds: Set<number>
   searchQuery: string
   onOpenGuest: (partyId: number, guestId: number) => void
@@ -902,7 +1123,7 @@ function PartyRow({
   const visibleGuests = isFiltered
     ? party.guests.filter(
         (g) =>
-          guestMatchesFilter(g, filterMode, guestIdsByGroup, rehearsalGuestIds) &&
+          guestMatchesFilter(g, filterMode, rehearsalGuestIds) &&
           guestMatchesSearch(g, party, searchQuery),
       )
     : party.guests

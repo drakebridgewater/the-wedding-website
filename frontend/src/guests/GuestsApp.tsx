@@ -3,17 +3,15 @@ import { Toaster } from 'sonner'
 import { ContactsTab } from './ContactsTab'
 import { EmailsTab } from './EmailsTab'
 import { WeddingPartyTab } from './WeddingPartyTab'
-import { GroupsTab } from './GroupsTab'
 import { SeatingTab } from './SeatingTab'
 import { RehearsalDinnerTab } from './RehearsalDinnerTab'
 import { PartyEditor } from './PartyEditor'
 
-type Tab = 'contacts' | 'wedding-party' | 'groups' | 'seating' | 'emails' | 'rehearsal-dinner'
+type Tab = 'contacts' | 'wedding-party' | 'seating' | 'emails' | 'rehearsal-dinner'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'contacts',          label: 'Contacts' },
   { id: 'wedding-party',     label: 'Wedding Party' },
-  { id: 'groups',            label: 'Groups' },
   { id: 'rehearsal-dinner',  label: 'Rehearsal Dinner' },
   { id: 'seating',           label: 'Seating' },
   { id: 'emails',            label: 'Emails' },
@@ -55,7 +53,6 @@ export function GuestsApp() {
 
       {tab === 'contacts'         && <ContactsTab onOpenGuest={openGuest} />}
       {tab === 'wedding-party'    && <WeddingPartyTab />}
-      {tab === 'groups'           && <GroupsTab />}
       {tab === 'rehearsal-dinner' && <RehearsalDinnerTab onOpenGuest={openGuest} />}
       {tab === 'seating'          && <SeatingTab />}
       {tab === 'emails'           && <EmailsTab />}
