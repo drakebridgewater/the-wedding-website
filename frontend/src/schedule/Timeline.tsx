@@ -1,26 +1,12 @@
 import { useRef } from 'react'
 import type { ScheduleEvent } from './types'
 import { EventBranch, HOUR_PX, BAR_W, STEM_BASE, COLUMN_W } from './EventBranch'
+import { minsToTimeStr, parseTime, snapTo15 } from './time'
 
 const START_HOUR = 6
 const END_HOUR = 24
 const SPINE_X = 108      // x position of the spine
 const MIN_PX = HOUR_PX / 60
-
-function parseTime(t: string): number {
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
-}
-
-function snapTo15(totalMins: number): number {
-  return Math.round(totalMins / 15) * 15
-}
-
-function minsToTimeStr(totalMins: number): string {
-  const h = Math.floor(totalMins / 60)
-  const m = totalMins % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-}
 
 function formatHourLabel(h: number): string {
   if (h === 0 || h === 24) return '12 AM'
@@ -80,7 +66,7 @@ export function Timeline({ events, onTimeClick, onEventClick }: Props) {
   return (
     <div
       ref={containerRef}
-      className="relative overflow-y-auto select-none rounded-xl border border-stone-100 bg-white"
+      className="relative overflow-auto select-none rounded-xl border border-stone-100 bg-white"
       style={{ height: 'calc(100vh - 220px)' }}
     >
       <div className="relative" style={{ height: naturalHeight + 40, minWidth }}>

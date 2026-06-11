@@ -1,6 +1,7 @@
 import { AlertTriangle, Globe } from 'lucide-react'
 import type { ScheduleEvent } from './types'
 import { CATEGORY_COLORS, CATEGORY_LABELS } from './types'
+import { formatTime } from './time'
 
 export const HOUR_PX = 80     // vertical px per hour (shared with Timeline)
 
@@ -9,13 +10,6 @@ export const BAR_W    = 4     // width of each column's duration bar on the spin
 export const STEM_BASE = 20   // gap from spine to first bubble column
 export const COLUMN_W  = 220  // horizontal spacing between bubble columns
 // ─────────────────────────────────────────────────────────────────────────────
-
-function formatTime(t: string): string {
-  const [h, m] = t.split(':').map(Number)
-  const ampm = h < 12 ? 'AM' : 'PM'
-  const h12 = h % 12 || 12
-  return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`
-}
 
 interface Props {
   event: ScheduleEvent

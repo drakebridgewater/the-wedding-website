@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { EventFormData, ScheduleDay, ScheduleEvent, WeddingPartyGroup, WeddingPartyMember } from './types'
+import type { DayFormData, EventFormData, ScheduleDay, ScheduleEvent, WeddingPartyGroup, WeddingPartyMember } from './types'
 
 function getCsrf(): string {
   return (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] ?? ''
@@ -44,6 +44,39 @@ export function useDays() {
   return useQuery<ScheduleDay[]>({
     queryKey: QK.days,
     queryFn: () => apiFetch('/schedule/api/days/'),
+  })
+}
+
+export function useCreateDay() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: DayFormData) =>
+      apiFetch<ScheduleDay>('/schedule/api/days/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.days }),
+  })
+}
+
+export function useUpdateDay() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<DayFormData> }) =>
+      apiFetch<ScheduleDay>(`/schedule/api/days/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.days }),
+  })
+}
+
+export function useDeleteDay() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiFetch(`/schedule/api/days/${id}/`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.days }),
   })
 }
 

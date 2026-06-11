@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import type { EventCategory, EventFormData, ScheduleEvent, WeddingPartyGroup, WeddingPartyMember } from './types'
 import { CATEGORY_LABELS } from './types'
 import { RichTextEditor } from '@/lib/RichTextEditor'
+import { formatDuration } from './time'
 
 interface Props {
   dayId: number
@@ -16,13 +17,6 @@ interface Props {
 }
 
 const DURATIONS = [15, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360]
-
-function formatDuration(mins: number): string {
-  if (mins < 60) return `${mins}m`
-  const h = Math.floor(mins / 60)
-  const m = mins % 60
-  return m ? `${h}h ${m}m` : `${h}h`
-}
 
 // Group members by role for display
 const ROLE_ORDER = ['bride', 'groom', 'maid_of_honor', 'best_man', 'bridesmaid', 'groomsman', 'other']
@@ -94,10 +88,10 @@ export function EventFormModal({ dayId, members, groups = [], initialTime, event
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-md sm:mx-4 max-h-[92dvh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b">
           <h2 className="text-base font-semibold text-gray-900">

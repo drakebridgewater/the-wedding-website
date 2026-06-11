@@ -1,10 +1,14 @@
 import { useState } from 'react'
 import { Toaster, toast } from 'sonner'
+import { CalendarRange, List, Plus } from 'lucide-react'
 import { useDays, useMembers, useGroups, useCreateEvent, useUpdateEvent, useDeleteEvent } from './api'
 import { DayTabs } from './DayTabs'
 import { Timeline } from './Timeline'
+import { AgendaView } from './AgendaView'
 import { EventFormModal } from './EventFormModal'
 import type { EventFormData, MemberRole, ScheduleEvent } from './types'
+
+type ViewMode = 'agenda' | 'timeline'
 
 type RoleFilter = MemberRole | 'all'
 
@@ -33,6 +37,12 @@ export function ScheduleApp() {
   const [editingEvent, setEditingEvent] = useState<ScheduleEvent | undefined>()
   const [showModal, setShowModal] = useState(false)
   const [selectedRole, setSelectedRole] = useState<RoleFilter>('all')
+  // Agenda reads better on phones; the spatial timeline shines on wide screens.
+  const [viewMode, setViewMode] = useState<ViewMode>(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+      ? 'timeline'
+      : 'agenda',
+  )
 
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
@@ -130,18 +140,42 @@ export function ScheduleApp() {
       <Toaster richColors position="top-right" />
 
       {/* Page header */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
+      <div className="flex items-center justify-between mb-5 gap-2">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold text-stone-900">Day-of Schedule</h1>
           {conflictCount > 0 ? (
             <p className="text-xs text-amber-600 mt-0.5">
               ⚠ {conflictCount} scheduling conflict{conflictCount > 1 ? 's' : ''}
             </p>
           ) : (
-            <p className="text-xs text-stone-400 mt-0.5">Plan every moment — from getting ready to the last dance.</p>
+            <p className="text-xs text-stone-400 mt-0.5 hidden sm:block">Plan every moment — from getting ready to the last dance.</p>
           )}
         </div>
-        <p className="text-xs text-stone-400 hidden sm:block">Click the timeline to add an event</p>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* View toggle */}
+          <div className="flex rounded-lg border border-stone-200 overflow-hidden">
+            <button
+              onClick={() => setViewMode('agenda')}
+              title="Agenda list"
+              className={`p-2.5 transition-colors ${viewMode === 'agenda' ? 'bg-stone-800 text-white' : 'bg-white text-stone-400 hover:text-stone-600'}`}
+            >
+              <List size={14} />
+            </button>
+            <button
+              onClick={() => setViewMode('timeline')}
+              title="Timeline"
+              className={`p-2.5 transition-colors ${viewMode === 'timeline' ? 'bg-stone-800 text-white' : 'bg-white text-stone-400 hover:text-stone-600'}`}
+            >
+              <CalendarRange size={14} />
+            </button>
+          </div>
+          <button
+            onClick={() => openAddModal('12:00')}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg bg-stone-800 text-white text-sm hover:bg-stone-700 transition-colors"
+          >
+            <Plus size={14} /> Add Event
+          </button>
+        </div>
       </div>
 
       {/* Day tabs */}
@@ -157,26 +191,42 @@ export function ScheduleApp() {
       {/* Role filter chips */}
       {members.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3 mb-3">
-          {visibleRoles.map((role) => (
-            <button
-              key={role}
-              onClick={() => setSelectedRole(role)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
-                selectedRole === role
-                  ? 'bg-stone-800 text-white border-stone-800'
-                  : 'bg-white text-stone-500 border-stone-200 hover:border-stone-400 hover:text-stone-700'
-              }`}
-            >
-              {ROLE_LABELS[role]}
-              {role !== 'all' && activeDay && (
-                <span className={`ml-1 text-[10px] ${selectedRole === role ? 'opacity-70' : 'text-stone-400'}`}>
-                  {activeDay.events.filter(
-                    (ev) => ev.attendees.length === 0 || ev.attendees.some((a) => a.role === role),
-                  ).length}
-                </span>
-              )}
-            </button>
-          ))}
+          {visibleRoles.map((role) => {
+            const roleColors = role === 'all'
+              ? []
+              : [...new Set(members.filter((m) => m.role === role).map((m) => m.color))].slice(0, 3)
+            return (
+              <button
+                key={role}
+                onClick={() => setSelectedRole(role)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                  selectedRole === role
+                    ? 'bg-stone-800 text-white border-stone-800'
+                    : 'bg-white text-stone-500 border-stone-200 hover:border-stone-400 hover:text-stone-700'
+                }`}
+              >
+                {roleColors.length > 0 && (
+                  <span className="flex -space-x-1">
+                    {roleColors.map((c) => (
+                      <span
+                        key={c}
+                        className="w-2 h-2 rounded-full ring-1 ring-white"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </span>
+                )}
+                {ROLE_LABELS[role]}
+                {role !== 'all' && activeDay && (
+                  <span className={`text-[10px] ${selectedRole === role ? 'opacity-70' : 'text-stone-400'}`}>
+                    {activeDay.events.filter(
+                      (ev) => ev.attendees.length === 0 || ev.attendees.some((a) => a.role === role),
+                    ).length}
+                  </span>
+                )}
+              </button>
+            )
+          })}
           {selectedRole !== 'all' && (
             <span className="flex items-center text-[11px] text-stone-400 ml-1">
               {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
@@ -185,14 +235,32 @@ export function ScheduleApp() {
         </div>
       )}
 
-      {/* Timeline */}
+      {/* Active view */}
       {activeDay && (
-        <Timeline
-          events={filteredEvents}
-          onTimeClick={openAddModal}
-          onEventClick={openEditModal}
-        />
+        viewMode === 'agenda' ? (
+          <AgendaView
+            events={filteredEvents}
+            onEventClick={openEditModal}
+            onAdd={() => openAddModal('12:00')}
+          />
+        ) : (
+          <Timeline
+            events={filteredEvents}
+            onTimeClick={openAddModal}
+            onEventClick={openEditModal}
+          />
+        )
       )}
+
+      {/* Floating add button — phones only (header button covers larger screens).
+          Offset above the todos quick-add bubble that base.html renders bottom-right. */}
+      <button
+        onClick={() => openAddModal('12:00')}
+        aria-label="Add event"
+        className="sm:hidden fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-stone-800 text-white shadow-lg flex items-center justify-center active:bg-stone-700"
+      >
+        <Plus size={22} />
+      </button>
 
       {/* Modal */}
       {showModal && activeDayId !== null && (

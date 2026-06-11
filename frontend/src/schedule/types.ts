@@ -59,6 +59,12 @@ export interface ScheduleDay {
   events: ScheduleEvent[]
 }
 
+export interface DayFormData {
+  date: string         // "YYYY-MM-DD"
+  label: string
+  order: number
+}
+
 export interface EventFormData {
   day: number
   start_time: string
