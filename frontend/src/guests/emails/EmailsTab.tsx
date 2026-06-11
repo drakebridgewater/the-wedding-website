@@ -5,7 +5,11 @@ import { TemplateEditor } from './TemplateEditor'
 import { SendPanel } from './SendPanel'
 import { SendLog } from './SendLog'
 
-export function EmailsTab() {
+export function EmailsTab({
+  onOpenGuest,
+}: {
+  onOpenGuest?: (partyId: number, guestId?: number) => void
+}) {
   const { data: templates = [], isLoading } = useEmailTemplates()
   const [activeId, setActiveId] = useState<number | 'new' | null>(null)
 
@@ -70,7 +74,7 @@ export function EmailsTab() {
         </div>
 
         <div>
-          <SendPanel template={activeTemplate} />
+          <SendPanel template={activeTemplate} onOpenGuest={onOpenGuest} />
         </div>
       </div>
 

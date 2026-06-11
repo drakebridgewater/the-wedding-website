@@ -1,15 +1,19 @@
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react'
+import { Armchair, ChevronDown, ChevronRight, GripVertical } from 'lucide-react'
 import { GuestChip } from './GuestChip'
+import type { SeatingGuest } from '../types'
 import type { DragData, DropTarget, PartyGroup } from './dnd'
 
 function UnseatedPartyGroup({
-  group, collapsed, onToggle,
+  group, collapsed, onToggle, onOpenGuest, onSeat, onSeatParty,
 }: {
   group: PartyGroup
   collapsed: boolean
   onToggle: () => void
+  onOpenGuest?: (partyId: number, guestId: number) => void
+  onSeat?: (guest: SeatingGuest) => void
+  onSeatParty?: (group: PartyGroup) => void
 }) {
   const isSingleSolo = group.partyId === null && group.guests.length === 1
   const totalSeats = group.guests.length + group.plusOneCount
@@ -27,7 +31,7 @@ function UnseatedPartyGroup({
     } as DragData,
   })
 
-  if (isSingleSolo) return <GuestChip guest={group.guests[0]} />
+  if (isSingleSolo) return <GuestChip guest={group.guests[0]} onOpenGuest={onOpenGuest} onSeat={onSeat} />
 
   return (
     <div
@@ -59,10 +63,20 @@ function UnseatedPartyGroup({
             ({totalSeats}{group.plusOneCount > 0 && <span className="text-amber-500"> incl. +{group.plusOneCount}</span>})
           </span>
         </button>
+        {onSeatParty && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onSeatParty(group) }}
+            title="Seat whole party at a table…"
+            aria-label={`Seat ${group.partyName} at a table`}
+            className="p-1.5 rounded text-stone-300 hover:text-stone-600 hover:bg-stone-100 transition-colors flex-shrink-0"
+          >
+            <Armchair size={13} />
+          </button>
+        )}
       </div>
       {!collapsed && (
         <div className="px-2 pb-2 flex flex-col gap-1 border-t border-stone-100 pt-1.5">
-          {group.guests.map((g) => <GuestChip key={g.id} guest={g} />)}
+          {group.guests.map((g) => <GuestChip key={g.id} guest={g} onOpenGuest={onOpenGuest} onSeat={onSeat} />)}
           {group.plusOneCount > 0 && Array.from({ length: group.plusOneCount }).map((_, i) => (
             <div key={`plusone-${i}`} className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-dashed border-amber-200 bg-amber-50/50 text-xs text-amber-600 select-none">
               <GripVertical size={10} className="text-amber-300 flex-shrink-0" />
@@ -77,12 +91,15 @@ function UnseatedPartyGroup({
 
 /** Drop zone + list of guests not yet assigned to a table. */
 export function UnseatedPanel({
-  groups, totalCount, collapsedParties, onToggleParty,
+  groups, totalCount, collapsedParties, onToggleParty, onOpenGuest, onSeat, onSeatParty,
 }: {
   groups: PartyGroup[]
   totalCount: number
   collapsedParties: Set<string>
   onToggleParty: (key: string) => void
+  onOpenGuest?: (partyId: number, guestId: number) => void
+  onSeat?: (guest: SeatingGuest) => void
+  onSeatParty?: (group: PartyGroup) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'unseated',
@@ -109,6 +126,9 @@ export function UnseatedPanel({
               group={group}
               collapsed={collapsedParties.has(group.key)}
               onToggle={() => onToggleParty(group.key)}
+              onOpenGuest={onOpenGuest}
+              onSeat={onSeat}
+              onSeatParty={onSeatParty}
             />
           ))
         )}

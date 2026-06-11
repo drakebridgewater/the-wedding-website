@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core'
-import { AlertTriangle, ChevronDown, ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronRight, Pencil, Trash2, UserPlus } from 'lucide-react'
 import { IconButton } from '../components/Button'
 import type { SeatingGuest, SeatingTable } from '../types'
 import { GuestChip } from './GuestChip'
@@ -17,7 +17,7 @@ function CapacityDot({ assigned, capacity }: { assigned: number; capacity: numbe
 
 /** One seating table: drop target + assigned guest chips. */
 export function TableCard({
-  table, assignedGuests, collapsed, onToggle, onEdit, onDelete,
+  table, assignedGuests, collapsed, onToggle, onEdit, onDelete, onOpenGuest, onSeat, onAddGuests,
 }: {
   table: SeatingTable
   assignedGuests: SeatingGuest[]
@@ -25,6 +25,9 @@ export function TableCard({
   onToggle: () => void
   onEdit: () => void
   onDelete: () => void
+  onOpenGuest?: (partyId: number, guestId: number) => void
+  onSeat?: (guest: SeatingGuest) => void
+  onAddGuests?: () => void
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `table-${table.id}`,
@@ -64,6 +67,11 @@ export function TableCard({
           </span>
         )}
         <div className="flex ml-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          {onAddGuests && (
+            <IconButton title="Add guests to this table" onClick={onAddGuests}>
+              <UserPlus size={11} />
+            </IconButton>
+          )}
           <IconButton title="Edit table" onClick={onEdit}>
             <Pencil size={11} />
           </IconButton>
@@ -79,10 +87,21 @@ export function TableCard({
             <p className="text-xs text-stone-400 italic mb-2 border-t border-stone-100 pt-2">{table.notes}</p>
           )}
           {assignedGuests.length === 0 ? (
-            <p className="text-xs text-stone-300 italic text-center py-3">Drop guests here</p>
+            onAddGuests ? (
+              <button
+                onClick={onAddGuests}
+                className="w-full text-xs text-stone-300 italic text-center py-3 hover:text-stone-500 transition-colors"
+              >
+                Drop guests here, or tap to add…
+              </button>
+            ) : (
+              <p className="text-xs text-stone-300 italic text-center py-3">Drop guests here</p>
+            )
           ) : (
             <div className="flex flex-col gap-1 border-t border-stone-100 pt-2">
-              {assignedGuests.map((g) => <GuestChip key={g.id} guest={g} />)}
+              {assignedGuests.map((g) => (
+                <GuestChip key={g.id} guest={g} onOpenGuest={onOpenGuest} onSeat={onSeat} />
+              ))}
             </div>
           )}
         </div>

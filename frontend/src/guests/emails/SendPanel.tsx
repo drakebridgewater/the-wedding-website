@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { Pencil } from 'lucide-react'
 import { useParties, useSendEmailTemplate } from '../api'
 import type { EmailTemplate, Party } from '../types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
@@ -13,7 +14,14 @@ const MARK_OPTIONS: { value: MarkAs; label: string }[] = [
   { value: 'invitation',    label: 'Invitation' },
 ]
 
-function PartyCheckRow({ party, checked, onToggle }: { party: Party; checked: boolean; onToggle: () => void }) {
+function PartyCheckRow({
+  party, checked, onToggle, onOpenGuest,
+}: {
+  party: Party
+  checked: boolean
+  onToggle: () => void
+  onOpenGuest?: (partyId: number, guestId?: number) => void
+}) {
   const guestCount = party.guests.length
 
   return (
@@ -38,12 +46,27 @@ function PartyCheckRow({ party, checked, onToggle }: { party: Party; checked: bo
       }`}>
         {party.status}
       </span>
+      {onOpenGuest && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onOpenGuest(party.id) }}
+          title="Edit party"
+          aria-label={`Edit ${party.name}`}
+          className="p-2 -m-1 rounded text-stone-300 hover:text-stone-600 hover:bg-stone-100 transition-colors flex-shrink-0"
+        >
+          <Pencil size={12} />
+        </button>
+      )}
     </label>
   )
 }
 
 /** Pick recipient parties and deliver the active template. */
-export function SendPanel({ template }: { template: EmailTemplate | null }) {
+export function SendPanel({
+  template, onOpenGuest,
+}: {
+  template: EmailTemplate | null
+  onOpenGuest?: (partyId: number, guestId?: number) => void
+}) {
   const { data: parties = [] } = useParties()
   const sendMutation = useSendEmailTemplate()
   const [selected, setSelected] = useState<Set<number>>(new Set())
@@ -102,6 +125,7 @@ export function SendPanel({ template }: { template: EmailTemplate | null }) {
               party={party}
               checked={selected.has(party.id)}
               onToggle={() => toggle(party.id)}
+              onOpenGuest={onOpenGuest}
             />
           ))}
         </div>

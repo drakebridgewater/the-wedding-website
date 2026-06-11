@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
-  EmailTemplate, Guest, GuestFormData, MemberFormData,
+  EmailTemplate, Guest, GuestFormData, MemberFormData, MemberRole,
   Party, PartyFormData, SentEmail,
   SeatingGuest, SeatingTable, TableFormData,
   WeddingPartyMember,
@@ -173,6 +173,29 @@ export function useDeleteGuest() {
       qc.invalidateQueries({ queryKey: QK.unassigned })
       qc.invalidateQueries({ queryKey: QK.seatingGuests })
     },
+  })
+}
+
+// ── Guest role assignment ─────────────────────────────────────────────────────
+
+export function useAssignGuestRole() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ guestId, role, color }: { guestId: number; role: MemberRole; color?: string }) =>
+      apiFetch<WeddingPartyMember>(`/guests/api/guests/${guestId}/assign_role/`, {
+        method: 'POST',
+        body: JSON.stringify({ role, color: color ?? '#94a3b8', order: 0 }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.members }),
+  })
+}
+
+export function useRemoveGuestRole() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (guestId: number) =>
+      apiFetch(`/guests/api/guests/${guestId}/remove_role/`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.members }),
   })
 }
 

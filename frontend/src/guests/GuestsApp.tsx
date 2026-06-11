@@ -52,10 +52,10 @@ export function GuestsApp() {
       </div>
 
       {tab === 'contacts'         && <ContactsTab onOpenGuest={openGuest} />}
-      {tab === 'wedding-party'    && <WeddingPartyTab />}
+      {tab === 'wedding-party'    && <WeddingPartyTab onOpenGuest={openGuest} />}
       {tab === 'rehearsal-dinner' && <RehearsalDinnerTab onOpenGuest={openGuest} />}
-      {tab === 'seating'          && <SeatingTab />}
-      {tab === 'emails'           && <EmailsTab />}
+      {tab === 'seating'          && <SeatingTab onOpenGuest={openGuest} />}
+      {tab === 'emails'           && <EmailsTab onOpenGuest={openGuest} />}
 
       {editorTarget && (
         <PartyEditor

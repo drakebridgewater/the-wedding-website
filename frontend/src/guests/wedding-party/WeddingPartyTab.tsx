@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { BellOff, BellRing, Eye, EyeOff, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useCreateMember, useDeleteMember, useMembers, useUpdateMember } from '../api'
+import { useCreateMember, useDeleteMember, useMembers, useParties, useUpdateMember } from '../api'
 import type { MemberFormData, MemberRole, WeddingPartyMember } from '../types'
 import { ROLE_LABELS, ROLE_ORDER } from '../types'
 import { Button, IconButton } from '../components/Button'
@@ -9,8 +9,13 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
 import { MemberModal } from './MemberModal'
 
-export function WeddingPartyTab() {
+export function WeddingPartyTab({
+  onOpenGuest,
+}: {
+  onOpenGuest: (partyId: number, guestId?: number) => void
+}) {
   const { data: members = [], isLoading } = useMembers()
+  const { data: parties = [] } = useParties()
   const createMember = useCreateMember()
   const updateMember = useUpdateMember()
   const deleteMember = useDeleteMember()
@@ -19,9 +24,26 @@ export function WeddingPartyTab() {
   const [showModal, setShowModal] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<WeddingPartyMember | null>(null)
 
+  // Look up which party a linked guest belongs to so edit can open the shared editor.
+  const partyIdByGuestId = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const p of parties) for (const g of p.guests) map.set(g.id, p.id)
+    return map
+  }, [parties])
+
   function openAdd() { setEditing(null); setShowModal(true) }
-  function openEdit(m: WeddingPartyMember) { setEditing(m); setShowModal(true) }
   function closeModal() { setShowModal(false); setEditing(null) }
+
+  function openEdit(m: WeddingPartyMember) {
+    // Members linked to a guest use the shared party editor; standalone
+    // members (no guest record) still use the profile modal.
+    const partyId = m.guest_id != null ? partyIdByGuestId.get(m.guest_id) : undefined
+    if (m.guest_id != null && partyId != null) {
+      onOpenGuest(partyId, m.guest_id)
+    } else {
+      setEditing(m); setShowModal(true)
+    }
+  }
 
   async function handleSave(data: MemberFormData) {
     try {

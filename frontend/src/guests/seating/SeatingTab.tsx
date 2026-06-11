@@ -20,10 +20,20 @@ import type { SeatingGuest, SeatingTable, TableFormData } from '../types'
 import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
-import { groupByParty, type DragData, type DropTarget } from './dnd'
+import { groupByParty, type DragData, type DropTarget, type PartyGroup } from './dnd'
 import { UnseatedPanel } from './UnseatedPanel'
 import { TableCard } from './TableCard'
 import { TableFormModal } from './TableFormModal'
+import { TablePickerSheet } from './TablePickerSheet'
+import { AddGuestsSheet } from './AddGuestsSheet'
+
+/** What the table-picker sheet is currently seating: one guest or a whole party. */
+interface SeatTarget {
+  guestIds: number[]
+  label: string
+  currentTableId: number | null
+  seatsNeeded: number
+}
 
 function DragOverlayContent({ activeDrag, seatingGuests }: { activeDrag: DragData | null; seatingGuests: SeatingGuest[] }) {
   if (!activeDrag) return null
@@ -45,7 +55,11 @@ function DragOverlayContent({ activeDrag, seatingGuests }: { activeDrag: DragDat
   )
 }
 
-export function SeatingTab() {
+export function SeatingTab({
+  onOpenGuest,
+}: {
+  onOpenGuest?: (partyId: number, guestId?: number) => void
+}) {
   const { data: tables = [], isLoading: tablesLoading } = useSeatingTables()
   const { data: seatingGuests = [], isLoading: guestsLoading } = useSeatingGuests()
   const assignGuest = useAssignGuestToTable()
@@ -60,6 +74,8 @@ export function SeatingTab() {
   const [editingTable,     setEditingTable]     = useState<SeatingTable | null>(null)
   const [activeDrag,       setActiveDrag]       = useState<DragData | null>(null)
   const [pendingDeleteTable, setPendingDeleteTable] = useState<SeatingTable | null>(null)
+  const [seatTarget,       setSeatTarget]       = useState<SeatTarget | null>(null)
+  const [addToTable,       setAddToTable]       = useState<SeatingTable | null>(null)
 
   // Small activation thresholds keep taps/scrolls from starting a drag on touch screens.
   const sensors = useSensors(
@@ -91,6 +107,56 @@ export function SeatingTab() {
     return seatingGuests.filter((g) => g.seating_table_id === tableId)
   }
 
+  /** Toast (but still allow) when an assignment pushes a table over capacity. */
+  function warnIfOverCapacity(tableId: number, addingCount: number) {
+    const table = tables.find((t) => t.id === tableId)
+    if (!table) return
+    const currentCount = getAssignedGuests(tableId).length
+    if (currentCount + addingCount > table.capacity) {
+      toast.warning(`"${table.name}" is over capacity`, {
+        description: `${currentCount + addingCount} assigned, capacity is ${table.capacity}. Assignment saved.`,
+      })
+    }
+  }
+
+  /** Shared by drag-drop, the table-picker sheet, and the add-guests sheet. */
+  async function assignGuestsToTable(guestIds: number[], tableId: number | null, plusOneCount = 0) {
+    if (tableId !== null) {
+      const adding = guestIds.filter((id) => {
+        const g = seatingGuests.find((g) => g.id === id)
+        return g?.seating_table_id !== tableId
+      }).length + plusOneCount
+      warnIfOverCapacity(tableId, adding)
+    }
+    try {
+      if (guestIds.length === 1) {
+        await assignGuest.mutateAsync({ guestId: guestIds[0], tableId })
+      } else {
+        await batchAssign.mutateAsync({ guestIds, tableId })
+      }
+    } catch {
+      toast.error('Failed to update seating')
+    }
+  }
+
+  function openSeatSheetForGuest(guest: SeatingGuest) {
+    setSeatTarget({
+      guestIds: [guest.id],
+      label: `Seat ${guest.first_name} ${guest.last_name}`.trim(),
+      currentTableId: guest.seating_table_id,
+      seatsNeeded: 1,
+    })
+  }
+
+  function openSeatSheetForParty(group: PartyGroup) {
+    setSeatTarget({
+      guestIds: group.guests.map((g) => g.id),
+      label: `Seat ${group.partyName} (${group.guests.length + group.plusOneCount})`,
+      currentTableId: null,
+      seatsNeeded: group.guests.length + group.plusOneCount,
+    })
+  }
+
   function handleDragStart(event: DragStartEvent) {
     setActiveDrag(event.active.data.current as DragData)
   }
@@ -107,35 +173,9 @@ export function SeatingTab() {
     // Skip no-op
     if (drag.type === 'guest' && drag.currentTableId === tableId) return
 
-    // Capacity warning (still saves)
-    if (tableId !== null) {
-      const table = tables.find((t) => t.id === tableId)
-      if (table) {
-        const currentCount = getAssignedGuests(tableId).length
-        const addingCount =
-          drag.type === 'guest'
-            ? drag.currentTableId !== tableId ? 1 : 0
-            : drag.guestIds.filter((id) => {
-                const g = seatingGuests.find((g) => g.id === id)
-                return g?.seating_table_id !== tableId
-              }).length + drag.plusOneCount
-        if (currentCount + addingCount > table.capacity) {
-          toast.warning(`"${table.name}" is over capacity`, {
-            description: `${currentCount + addingCount} assigned, capacity is ${table.capacity}. Assignment saved.`,
-          })
-        }
-      }
-    }
-
-    try {
-      if (drag.type === 'guest') {
-        await assignGuest.mutateAsync({ guestId: drag.guestId, tableId })
-      } else {
-        await batchAssign.mutateAsync({ guestIds: drag.guestIds, tableId })
-      }
-    } catch {
-      toast.error('Failed to update seating')
-    }
+    const guestIds = drag.type === 'guest' ? [drag.guestId] : drag.guestIds
+    const plusOnes = drag.type === 'party' ? drag.plusOneCount : 0
+    await assignGuestsToTable(guestIds, tableId, plusOnes)
   }
 
   async function handleSaveTable(data: TableFormData) {
@@ -204,6 +244,9 @@ export function SeatingTab() {
               totalCount={unseated.length}
               collapsedParties={collapsedParties}
               onToggleParty={toggleParty}
+              onOpenGuest={onOpenGuest}
+              onSeat={openSeatSheetForGuest}
+              onSeatParty={openSeatSheetForParty}
             />
           </div>
 
@@ -235,6 +278,9 @@ export function SeatingTab() {
                     onToggle={() => toggleTable(table.id)}
                     onEdit={() => { setEditingTable(table); setShowTableModal(true) }}
                     onDelete={() => setPendingDeleteTable(table)}
+                    onOpenGuest={onOpenGuest}
+                    onSeat={openSeatSheetForGuest}
+                    onAddGuests={() => setAddToTable(table)}
                   />
                 ))}
               </div>
@@ -261,6 +307,34 @@ export function SeatingTab() {
           message={`Delete "${pendingDeleteTable.name}"? Guests will be unassigned.`}
           onConfirm={() => handleDeleteTable(pendingDeleteTable.id)}
           onClose={() => setPendingDeleteTable(null)}
+        />
+      )}
+      {seatTarget && (
+        <TablePickerSheet
+          title={seatTarget.label}
+          tables={tables}
+          currentTableId={seatTarget.currentTableId}
+          seatsNeeded={seatTarget.seatsNeeded}
+          getAssignedGuests={getAssignedGuests}
+          onPick={(tableId) => {
+            const target = seatTarget
+            setSeatTarget(null)
+            assignGuestsToTable(target.guestIds, tableId, target.seatsNeeded - target.guestIds.length)
+          }}
+          onClose={() => setSeatTarget(null)}
+        />
+      )}
+      {addToTable && (
+        <AddGuestsSheet
+          table={addToTable}
+          groups={unseatedGroups}
+          assignedCount={getAssignedGuests(addToTable.id).length}
+          onAssign={(guestIds) => {
+            const table = addToTable
+            setAddToTable(null)
+            assignGuestsToTable(guestIds, table.id)
+          }}
+          onClose={() => setAddToTable(null)}
         />
       )}
     </DndContext>
