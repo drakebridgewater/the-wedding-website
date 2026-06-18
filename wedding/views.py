@@ -12,10 +12,12 @@ ROLE_LABELS = {
     'best_man': 'Best Man', 'bridesmaid': 'Bridesmaid', 'groomsman': 'Groomsman', 'other': 'Other',
 }
 
-SIDE_GROUPS = [
-    {'label': 'Bridal Party',  'roles': ['maid_of_honor', 'bridesmaid'], 'honor_roles': {'maid_of_honor'}},
-    {'label': "Groom's Party", 'roles': ['best_man', 'groomsman'],       'honor_roles': {'best_man'}},
-]
+# Honor attendants get their role spelled out under their name.
+HONOR_ROLES = {'maid_of_honor', 'best_man'}
+
+# Which roles fall on each side of the aisle. Order matters: honor attendant first.
+BRIDES_SIDE_ROLES = ['bride', 'maid_of_honor', 'bridesmaid']
+GROOMS_SIDE_ROLES = ['groom', 'best_man', 'groomsman']
 
 
 def home(request):
@@ -35,27 +37,32 @@ def wedding_party(request):
     members = WeddingPartyMember.objects.filter(is_public=True).order_by('order', 'name')
     by_role = {}
     for m in members:
+        m.is_honor = m.role in HONOR_ROLES
         by_role.setdefault(m.role, []).append(m)
 
-    grouped = []
+    def collect(roles):
+        out = []
+        for role in roles:
+            out.extend(by_role.get(role, []))
+        return out
 
-    for role in ['bride', 'groom']:
-        group = by_role.get(role, [])
-        if group:
-            grouped.append({'label': ROLE_LABELS[role], 'members': group, 'honor_roles': set()})
+    # Bride's side (girls) on the left, groom's side (boys) on the right.
+    brides_side = collect(BRIDES_SIDE_ROLES)
+    grooms_side = collect(GROOMS_SIDE_ROLES)
+    # The couple anchor the top of each column.
+    bride = (by_role.get('bride') or [None])[0]
+    groom = (by_role.get('groom') or [None])[0]
+    # Officiant / other don't sit on a side — shown centered below.
+    extras = collect(['officiant', 'other'])
 
-    for side in SIDE_GROUPS:
-        side_members = []
-        for role in side['roles']:
-            side_members.extend(by_role.get(role, []))
-        if side_members:
-            grouped.append({'label': side['label'], 'members': side_members, 'honor_roles': side['honor_roles']})
-
-    other = by_role.get('other', [])
-    if other:
-        grouped.append({'label': ROLE_LABELS['other'], 'members': other, 'honor_roles': set()})
-
-    return render(request, 'party.html', {'grouped': grouped})
+    return render(request, 'party.html', {
+        'bride': bride,
+        'groom': groom,
+        'brides_attendants': [m for m in brides_side if m.role != 'bride'],
+        'grooms_attendants': [m for m in grooms_side if m.role != 'groom'],
+        'extras': extras,
+        'has_any': bool(brides_side or grooms_side or extras),
+    })
 
 
 def privacy(request):

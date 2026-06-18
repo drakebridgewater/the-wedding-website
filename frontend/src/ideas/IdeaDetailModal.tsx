@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { ExternalLink, Heart, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useDeleteIdea, useTags, useUpdateIdea } from './api'
+import { useDeleteIdea, useUpdateIdea } from './api'
+import { TagEditor } from './TagEditor'
 import { SOURCE_LABELS, type Idea } from './types'
 
 interface IdeaDetailModalProps {
@@ -11,13 +12,11 @@ interface IdeaDetailModalProps {
 
 export function IdeaDetailModal({ idea, onClose }: IdeaDetailModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
-  const { data: allTags } = useTags()
   const update = useUpdateIdea()
   const del = useDeleteIdea()
 
   const [title, setTitle] = useState(idea.title)
   const [description, setDescription] = useState(idea.description)
-  const [tagIds, setTagIds] = useState<number[]>(idea.tags.map((t) => t.id))
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -25,13 +24,9 @@ export function IdeaDetailModal({ idea, onClose }: IdeaDetailModalProps) {
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
-  function toggleTag(id: number) {
-    setTagIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
   async function handleSave() {
     try {
-      await update.mutateAsync({ id: idea.id, title, description, tag_ids: tagIds })
+      await update.mutateAsync({ id: idea.id, title, description })
       toast.success('Idea saved')
       onClose()
     } catch (e) {
@@ -101,24 +96,8 @@ export function IdeaDetailModal({ idea, onClose }: IdeaDetailModalProps) {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300 resize-none"
           />
 
-          {/* Tags */}
-          <p className="text-xs text-gray-500 mb-1.5">Tags</p>
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {(allTags ?? []).map((tag) => (
-              <button
-                key={tag.id}
-                onClick={() => toggleTag(tag.id)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                  tagIds.includes(tag.id) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {tag.name}
-              </button>
-            ))}
-            {(allTags ?? []).length === 0 && (
-              <span className="text-xs text-gray-400">No tags yet — add some from the board.</span>
-            )}
-          </div>
+          {/* Tags — type-to-create, saved instantly */}
+          <TagEditor ideaId={idea.id} tags={idea.tags} />
 
           {idea.source_url && (
             <a

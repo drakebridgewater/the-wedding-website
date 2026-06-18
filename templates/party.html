@@ -11,84 +11,54 @@
       <div class="w-12 h-px bg-stone-300 mx-auto"></div>
     </div>
 
-    {% if not grouped %}
+    {% if not has_any %}
       <p class="text-center text-stone-400">No wedding party members yet.</p>
+    {% else %}
+
+    {# Two sides of the aisle: bride's side (left) and groom's side (right), #}
+    {# with a continuous center divider. Stays two columns on mobile. #}
+    <div class="grid grid-cols-2">
+
+      {# ── Bride's side ───────────────────────────────────────────── #}
+      <div class="px-2 sm:px-8 border-r border-stone-200 flex flex-col items-center">
+        {% if bride %}
+          <div class="mb-8 sm:mb-12">
+            {% include 'partials/party_member.html' with member=bride show_role=True large=True %}
+          </div>
+        {% endif %}
+        <div class="flex flex-wrap justify-center gap-x-1 sm:gap-x-3 gap-y-8">
+          {% for member in brides_attendants %}
+            {% include 'partials/party_member.html' with member=member show_role=member.is_honor %}
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ── Groom's side ───────────────────────────────────────────── #}
+      <div class="px-2 sm:px-8 flex flex-col items-center">
+        {% if groom %}
+          <div class="mb-8 sm:mb-12">
+            {% include 'partials/party_member.html' with member=groom show_role=True large=True %}
+          </div>
+        {% endif %}
+        <div class="flex flex-wrap justify-center gap-x-1 sm:gap-x-3 gap-y-8">
+          {% for member in grooms_attendants %}
+            {% include 'partials/party_member.html' with member=member show_role=member.is_honor %}
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    {# Officiant / others — centered beneath both columns #}
+    {% if extras %}
+    <div class="mt-16 pt-10 border-t border-stone-200 flex flex-wrap justify-center gap-x-3 gap-y-8">
+      {% for member in extras %}
+        {% include 'partials/party_member.html' with member=member show_role=True %}
+      {% endfor %}
+    </div>
     {% endif %}
 
-    {% for section in grouped %}
-    <div class="mb-14">
-      <h2 class="text-xs font-bold uppercase tracking-widest text-stone-400 text-center mb-6">
-        {{ section.label }}
-      </h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-        {% for member in section.members %}
-        <div class="text-center" data-member-id="{{ member.id }}">
-
-          {# Photo area #}
-          <div class="relative inline-block mb-3 group">
-            {% if member.photo %}
-              <img src="{{ member.photo.url }}" alt="{{ member.name }}"
-                class="w-28 h-28 rounded-full object-cover mx-auto border-2 border-stone-100 shadow-sm member-photo">
-            {% else %}
-              <div class="w-28 h-28 rounded-full bg-stone-100 flex items-center justify-center mx-auto border-2 border-stone-100 shadow-sm member-photo-placeholder"
-                   style="border-color: {{ member.color }}22">
-                <span class="font-script text-3xl" style="color: {{ member.color }}88">
-                  {{ member.name|first }}
-                </span>
-              </div>
-            {% endif %}
-
-            {% if user.is_authenticated %}
-            <label class="absolute inset-0 rounded-full flex items-center justify-center
-                          bg-black/0 group-hover:bg-black/40 cursor-pointer transition-colors"
-                   title="Click to upload photo">
-              <svg class="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                   fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              <input type="file" accept="image/*" class="hidden member-photo-input"
-                     data-member-id="{{ member.id }}">
-            </label>
-            {% endif %}
-          </div>
-
-          {# Name #}
-          <p class="font-semibold text-stone-800 text-sm mb-1">{{ member.name }}</p>
-
-          {# Role label — shown for honor roles (MoH, Best Man) within a side group #}
-          {% if member.role in section.honor_roles %}
-            <p class="text-xs text-stone-400 italic mb-1">{{ member.role_display }}</p>
-          {% endif %}
-
-          {# Bio #}
-          <div class="relative group/bio">
-            {% if member.bio %}
-              <p class="text-xs text-stone-500 leading-relaxed member-bio">{{ member.bio }}</p>
-            {% elif user.is_authenticated %}
-              <p class="text-xs text-stone-300 italic member-bio">Add a bio…</p>
-            {% endif %}
-
-            {% if user.is_authenticated %}
-            <button class="edit-bio-btn absolute -top-1 -right-1 opacity-0 group-hover/bio:opacity-100
-                           transition-opacity p-1 rounded bg-white shadow-sm border border-stone-200
-                           hover:bg-stone-50 text-stone-400 hover:text-stone-600"
-                    data-member-id="{{ member.id }}"
-                    data-bio="{{ member.bio|escapejs }}"
-                    title="Edit bio">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-              </svg>
-            </button>
-            {% endif %}
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
+    {% endif %}
 
   </div>
 </section>
