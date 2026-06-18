@@ -28,6 +28,8 @@ export function TablePickerSheet({
           {tables.map((t) => {
             const occupants = getAssignedGuests(t.id)
             const isCurrent = t.id === currentTableId
+            const isFull = occupants.length >= t.capacity
+            // Seating this guest/party here would push the table past its capacity.
             const wouldOverflow = !isCurrent && occupants.length + seatsNeeded > t.capacity
             return (
               <button
@@ -46,7 +48,9 @@ export function TablePickerSheet({
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-stone-200 text-stone-500 font-medium">Current</span>
                   )}
                   {wouldOverflow && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">over capacity</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                      {isFull ? 'full' : 'not enough room'}
+                    </span>
                   )}
                   <span className="text-xs text-stone-400 tabular-nums flex-shrink-0">
                     {occupants.length}/{t.capacity}
