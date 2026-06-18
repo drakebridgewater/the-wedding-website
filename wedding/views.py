@@ -58,6 +58,16 @@ def wedding_party(request):
     return render(request, 'party.html', {'grouped': grouped})
 
 
+def privacy(request):
+    """Public privacy policy — linked from the Pinterest OAuth app registration."""
+    return render(request, 'privacy.html', {
+        'couple': getattr(settings, 'BRIDE_AND_GROOM', ''),
+        'contact_email': getattr(settings, 'DEFAULT_WEDDING_EMAIL', ''),
+        'website_url': getattr(settings, 'WEDDING_WEBSITE_URL', ''),
+        'updated': '2026-06-18',
+    })
+
+
 @login_required
 @require_POST
 def upload_hero_photo(request):

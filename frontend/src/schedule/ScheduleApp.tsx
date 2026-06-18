@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { CalendarRange, List, Plus } from 'lucide-react'
-import { useDays, useMembers, useGroups, useCreateEvent, useUpdateEvent, useDeleteEvent } from './api'
+import {
+  useDays, useMembers, useGroups, useCreateEvent, useUpdateEvent, useDeleteEvent,
+  useCreateDay, useUpdateDay, useDeleteDay,
+} from './api'
 import { DayTabs } from './DayTabs'
 import { Timeline } from './Timeline'
 import { AgendaView } from './AgendaView'
 import { EventFormModal } from './EventFormModal'
-import type { EventFormData, MemberRole, ScheduleEvent } from './types'
+import { DayFormModal } from './DayFormModal'
+import type { DayFormData, EventFormData, MemberRole, ScheduleDay, ScheduleEvent } from './types'
 
 type ViewMode = 'agenda' | 'timeline'
 
@@ -47,6 +51,12 @@ export function ScheduleApp() {
   const createEvent = useCreateEvent()
   const updateEvent = useUpdateEvent()
   const deleteEvent = useDeleteEvent()
+  const createDay = useCreateDay()
+  const updateDay = useUpdateDay()
+  const deleteDay = useDeleteDay()
+
+  const [showDayModal, setShowDayModal] = useState(false)
+  const [editingDay, setEditingDay] = useState<ScheduleDay | undefined>()
 
   const activeDayId = selectedDayId ?? days[0]?.id ?? null
   const activeDay = days.find((d) => d.id === activeDayId)
@@ -107,6 +117,39 @@ export function ScheduleApp() {
     }
   }
 
+  function closeDayModal() {
+    setShowDayModal(false)
+    setEditingDay(undefined)
+  }
+
+  async function handleSaveDay(data: DayFormData) {
+    try {
+      if (editingDay) {
+        await updateDay.mutateAsync({ id: editingDay.id, data })
+        toast.success('Day updated')
+      } else {
+        const day = await createDay.mutateAsync(data)
+        setSelectedDayId(day.id)
+        toast.success('Day added')
+      }
+      closeDayModal()
+    } catch {
+      toast.error('Failed to save day')
+    }
+  }
+
+  async function handleDeleteDay() {
+    if (!editingDay) return
+    try {
+      await deleteDay.mutateAsync(editingDay.id)
+      setSelectedDayId(null) // fall back to the first remaining day
+      toast.success('Day deleted')
+      closeDayModal()
+    } catch {
+      toast.error('Failed to delete day')
+    }
+  }
+
   if (daysLoading) {
     return (
       <div className="flex items-center justify-center h-64 text-stone-400 text-sm">
@@ -118,14 +161,25 @@ export function ScheduleApp() {
   if (days.length === 0) {
     return (
       <div className="max-w-2xl mx-auto mt-16 text-center px-4">
+        <Toaster richColors position="top-right" />
         <h2 className="text-lg font-semibold text-stone-800 mb-2">No schedule days yet</h2>
-        <p className="text-sm text-stone-500">
-          Add schedule days in the{' '}
-          <a href="/admin/schedule/scheduleday/add/" className="text-rose-600 underline">
-            Django admin
-          </a>{' '}
-          to get started.
+        <p className="text-sm text-stone-500 mb-4">
+          Create a day for each part of the celebration — rehearsal dinner, wedding day, brunch…
         </p>
+        <button
+          onClick={() => setShowDayModal(true)}
+          className="px-4 py-2 text-sm text-white bg-stone-800 rounded-lg hover:bg-stone-700 transition-colors"
+        >
+          + Add your first day
+        </button>
+        {showDayModal && (
+          <DayFormModal
+            nextOrder={0}
+            onSave={handleSaveDay}
+            onClose={closeDayModal}
+            saving={createDay.isPending}
+          />
+        )}
       </div>
     )
   }
@@ -186,6 +240,8 @@ export function ScheduleApp() {
           setSelectedDayId(id)
           setSelectedRole('all')
         }}
+        onAddDay={() => { setEditingDay(undefined); setShowDayModal(true) }}
+        onEditDay={(day) => { setEditingDay(day); setShowDayModal(true) }}
       />
 
       {/* Role filter chips */}
@@ -262,7 +318,19 @@ export function ScheduleApp() {
         <Plus size={22} />
       </button>
 
-      {/* Modal */}
+      {/* Day modal */}
+      {showDayModal && (
+        <DayFormModal
+          day={editingDay}
+          nextOrder={days.length}
+          onSave={handleSaveDay}
+          onDelete={editingDay ? handleDeleteDay : undefined}
+          onClose={closeDayModal}
+          saving={createDay.isPending || updateDay.isPending}
+        />
+      )}
+
+      {/* Event modal */}
       {showModal && activeDayId !== null && (
         <EventFormModal
           dayId={activeDayId}

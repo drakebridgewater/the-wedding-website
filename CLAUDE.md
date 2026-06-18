@@ -78,6 +78,8 @@ the-wedding-website/
 ├── seating/                      # SeatingConfig, SeatingTable + drag-and-drop assignment
 ├── schedule/                     # ScheduleDay, ScheduleEvent, groups, public program page
 ├── todos/                        # Task + TickTickSettings (TickTick OAuth sync)
+├── notes/                        # Note (colored sticky notes) — mounted as a tab on /todos/
+├── ideas/                        # Idea + IdeaTag (Pinterest-style board) — tab on /todos/, Pinterest OAuth import
 ├── music/                        # Song (playlist + do-not-play) + MusicBrainz search
 ├── drive_sync/                   # Google Sheets exporter
 ├── frontend/
@@ -112,8 +114,9 @@ From `config/urls.py`:
 | `/vendors/<type>/` | `vendors` | `venue`, `caterer`, `cake`, `florist`, `entertainment` |
 | `/seating/` | `seating` | Drag-and-drop chart |
 | `/schedule/` | `schedule` | Internal schedule, `/schedule/program/` is public, `/schedule/groups/` for emails |
-| `/todos/` | `todos` | Task list (TickTick-synced) |
+| `/todos/` | `todos` | Task list (TickTick-synced). Also hosts the **Notes** (`#notes`) and **Idea Board** (`#ideas`) tabs as React islands |
 | `/music/` | `music` | Playlist + do-not-play |
+| `/ideas/` | `ideas` | Idea board (Pinterest-style). The page route redirects to `/todos/#ideas`; API lives under `/ideas/api/...` |
 | `/drive/sync/` | `drive_sync` | POST endpoint to trigger sync (login required) |
 | `/admin/` | Django admin | |
 | `/accounts/` | Django auth | login/logout/password |
@@ -183,7 +186,7 @@ Email derivations (`DEFAULT_WEDDING_FROM_EMAIL` etc.) are computed at the bottom
 
 `drive_sync` writes a single spreadsheet (default title `Wedding Planning`) with these tabs in order:
 
-`Summary`, `Guests`, `Parties`, `Wedding Party`, `Budget`, `Expenses`, `Schedule`, `Seating Tables`, `Music — Playlist`, `Music — Do Not Play`, `Venues`, `Caterers`, `Cakes`, `Florists`, `Entertainment`.
+`Summary`, `Guests`, `Parties`, `Wedding Party`, `Budget`, `Expenses`, `Schedule`, `Seating Tables`, `Music — Playlist`, `Music — Do Not Play`, `Ideas`, `Venues`, `Caterers`, `Cakes`, `Florists`, `Entertainment`.
 
 **Trigger paths:**
 - CLI: `python manage.py sync_to_drive [--spreadsheet "Other Title"]`
@@ -193,6 +196,23 @@ Email derivations (`DEFAULT_WEDDING_FROM_EMAIL` etc.) are computed at the bottom
 
 > [!note] No scheduled sync
 > Sync is on-demand only. There is no Celery/Redis in this project. If you need scheduled sync, do it via a cron entry calling the management command — don't reintroduce a broker.
+
+---
+
+## 8b. Idea Board (ideas app)
+
+A Pinterest-style board of inspiration images, mounted as the third tab on `/todos/` (next to To-Dos and Notes). Models: `Idea` (image stored locally in `media/ideas/%Y/%m/`, plus `source`, `source_url`, `pinterest_pin_id`, `is_favorite`) and `IdeaTag` (M2M). Filtering by tag / source / favorite / search is done server-side in `ideas/api_views.py`.
+
+**Three ways to add an idea:**
+- **Upload** a file (`POST /ideas/api/ideas/upload/`, multipart).
+- **Paste a URL** (`POST /ideas/api/ideas/fetch-url/`) — `ideas/importer.py` fetches the page's `og:image` and downloads it locally. Works for any page, image URL, or Pinterest *pin* link (no API needed).
+- **Pinterest board sync** (`POST /ideas/api/pinterest/sync/`) — the official API path.
+
+### Pinterest OAuth (mirrors the TickTick integration)
+
+`ideas/pinterest_client.py` is modeled on `todos/ticktick_client.py`: on-disk token at `PINTEREST_TOKEN_PATH` (`.pinterest-token`), auto-refresh, and a one-time `python manage.py pinterest_auth` browser flow that prints board IDs.
+
+**Setup:** register an app at developers.pinterest.com; set `PINTEREST_CLIENT_ID` / `PINTEREST_CLIENT_SECRET` / `PINTEREST_REDIRECT_URI` / `PINTEREST_BOARD_ID` in settings or `.env`. A **trial-mode** app can read the *authenticated user's own* boards — enough for the couple's own wedding board. Reading arbitrary public boards needs Pinterest "standard access" (app review). Pins are deduped on `pinterest_pin_id`, so re-syncing only imports new pins.
 
 ---
 

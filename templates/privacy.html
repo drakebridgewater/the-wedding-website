@@ -1,0 +1,128 @@
+{% extends "base_public.html" %}
+
+{% block page_content %}
+
+<section class="py-20 px-4">
+  <div class="max-w-3xl mx-auto">
+
+    <div class="text-center mb-12">
+      <h1 class="font-script text-6xl text-stone-800 mb-4">Privacy Policy</h1>
+      <div class="w-12 h-px bg-stone-300 mx-auto"></div>
+      <p class="text-sm text-stone-400 mt-4">Last updated {{ updated }}</p>
+    </div>
+
+    <div class="prose prose-stone max-w-none text-stone-600 leading-relaxed space-y-6">
+
+      <p>
+        This website is a private wedding-planning site operated by {{ couple }}
+        (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) for personal use by the couple and a small
+        group of people helping plan our wedding. This policy explains what
+        information the site handles and how we use it. We do not sell your
+        information, and we do not use it for advertising.
+      </p>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Information we handle</h2>
+      <ul class="list-disc pl-6 space-y-2">
+        <li>
+          <strong>Account information.</strong> Planners sign in with a username and
+          password so that planning pages stay private.
+        </li>
+        <li>
+          <strong>Guest and event details</strong> that we enter ourselves to plan the
+          wedding (such as names, RSVP responses, schedule, budget, and vendor notes).
+        </li>
+        <li>
+          <strong>Content you add</strong> to the planning tools, including notes,
+          to-dos, and images you upload or import to the idea board.
+        </li>
+      </ul>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Pinterest integration</h2>
+      <p>
+        Our idea board offers an optional connection to Pinterest so we can gather
+        wedding inspiration in one place. If you choose to connect a Pinterest
+        account:
+      </p>
+      <ul class="list-disc pl-6 space-y-2">
+        <li>
+          We request <strong>read-only</strong> access to your boards and pins
+          (the <code>boards:read</code> and <code>pins:read</code> permissions only).
+        </li>
+        <li>
+          We use that access solely to <strong>import images and their descriptions</strong>
+          from a board you select into a private idea board on this site.
+        </li>
+        <li>
+          We <strong>never post, edit, follow, message, or change anything</strong> on your
+          Pinterest account, and we do not access boards or pins you have not asked us to import.
+        </li>
+        <li>
+          Imported images are stored on our own server so the idea board keeps working
+          even if a pin later changes. We do <strong>not</strong> share Pinterest data with any
+          third party.
+        </li>
+        <li>
+          You can revoke our access at any time from your Pinterest account under
+          <em>Settings &rarr; Security and permissions &rarr; Apps</em>. Revoking access
+          stops any future imports.
+        </li>
+      </ul>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">How we use information</h2>
+      <p>
+        Information is used only to operate the planning tools on this site &mdash;
+        for example, to display the guest list, track the budget, and show the idea
+        board. We do not sell, rent, or trade information, and we do not use it for
+        marketing.
+      </p>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Sharing and third-party services</h2>
+      <p>
+        We use a small number of services to run the site: Pinterest (for the optional
+        import described above), Google Sheets (so a planner can read an export of our
+        own planning data), and an email provider (to send wedding correspondence).
+        These services only receive the data needed to provide their function, and
+        each is governed by its own privacy policy.
+      </p>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Data retention and deletion</h2>
+      <p>
+        We keep planning data for as long as it is useful for the wedding and then
+        delete it. You can ask us to delete data connected to you &mdash; including any
+        content imported from Pinterest &mdash; by emailing us at the address below, and
+        we will remove it.
+      </p>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Cookies</h2>
+      <p>
+        The site uses a single session cookie to keep planners signed in. It is not
+        used for tracking or advertising.
+      </p>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Children</h2>
+      <p>
+        This site is not directed to children, and we do not knowingly collect
+        information from anyone under 13.
+      </p>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Changes to this policy</h2>
+      <p>
+        We may update this policy from time to time. The date at the top reflects the
+        most recent change.
+      </p>
+
+      <h2 class="text-lg font-semibold text-stone-800 pt-4">Contact</h2>
+      <p>
+        Questions about this policy or your data? Email us at
+        {% if contact_email %}
+          <a href="mailto:{{ contact_email }}" class="text-stone-800 underline">{{ contact_email }}</a>.
+        {% else %}
+          the contact address listed on this site.
+        {% endif %}
+      </p>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}

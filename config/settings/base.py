@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'vendors.apps.VendorsConfig',
     'music.apps.MusicConfig',
     'notes.apps.NotesConfig',
+    'ideas.apps.IdeasConfig',
     'drive_sync.apps.DriveSyncConfig',
     'dashboard.apps.DashboardConfig',
 ]
@@ -177,6 +178,19 @@ TODOIST_PROJECT_NAME = 'Wedding'
 # `python manage.py todoist_setup` after configuring the token to list them.
 TODOIST_DRAKE_ASSIGNEE = ''
 TODOIST_SHAWNA_ASSIGNEE = ''
+
+# -------------------------
+# Pinterest (Idea Board import)
+# OAuth2: register an app at https://developers.pinterest.com, then run
+# `python manage.py pinterest_auth` once to complete the browser flow.
+# A trial-mode app can read the authenticated user's own boards (enough for
+# the couple's own wedding board). The redirect URI must match the app config.
+# -------------------------
+PINTEREST_CLIENT_ID = ''
+PINTEREST_CLIENT_SECRET = ''
+PINTEREST_REDIRECT_URI = 'http://localhost'
+PINTEREST_TOKEN_PATH = str(BASE_DIR / '.pinterest-token')
+PINTEREST_BOARD_ID = ''  # The board to sync; run `pinterest_auth` to list IDs.
 
 # -------------------------
 # Google Drive / Sheets sync

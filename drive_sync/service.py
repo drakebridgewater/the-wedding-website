@@ -142,6 +142,7 @@ def sync_all(spreadsheet_name=None, progress=None):
         ('Seating Tables',        _rows_seating),
         ('Music — Playlist',      _rows_music_playlist),
         ('Music — Do Not Play',   _rows_music_dnp),
+        ('Ideas',                 _rows_ideas),
         ('Venues',                _rows_venues),
         ('Caterers',              _rows_caterers),
         ('Cakes',                 _rows_cakes),
@@ -461,6 +462,26 @@ def _rows_songs(list_type):
             s.source or '',
             s.url or '',
             s.notes or '',
+        ])
+    return headers, rows
+
+
+# ── Ideas (idea board) ────────────────────────────────────────────────────────
+
+def _rows_ideas():
+    from ideas.models import Idea
+
+    headers = ['ID', 'Title', 'Tags', 'Source', 'Source URL', 'Favorite', 'Created']
+    rows = []
+    for idea in Idea.objects.all().prefetch_related('tags'):
+        rows.append([
+            idea.id,
+            idea.title or '',
+            ', '.join(t.name for t in idea.tags.all()),
+            idea.get_source_display(),
+            idea.source_url or '',
+            _bool(idea.is_favorite),
+            idea.created_at.strftime('%Y-%m-%d') if idea.created_at else '',
         ])
     return headers, rows
 

@@ -13,6 +13,7 @@ urlpatterns = [
     path('schedule/', include('schedule.urls', namespace='schedule')),
     path('todos/', include('todos.urls', namespace='todos')),
     path('notes/', include('notes.urls', namespace='notes')),
+    path('ideas/', include('ideas.urls', namespace='ideas')),
     path('vendors/', include('vendors.urls', namespace='vendors')),
     path('music/', include('music.urls', namespace='music')),
     path('drive/', include('drive_sync.urls', namespace='drive_sync')),

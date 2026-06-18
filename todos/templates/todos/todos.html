@@ -4,6 +4,7 @@
 {% block page_head %}
 {% vite_asset 'src/todos/main.tsx' %}
 {% vite_asset 'src/notes/main.tsx' %}
+{% vite_asset 'src/ideas/main.tsx' %}
 {% endblock %}
 
 {% block page_content %}
@@ -24,6 +25,11 @@
       class="px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px">
       Notes
     </button>
+    <button id="tab-btn-ideas"
+      onclick="switchTab('ideas')"
+      class="px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px">
+      Idea Board
+    </button>
   </div>
 
   <div id="panel-todos">
@@ -34,6 +40,9 @@
   <div id="panel-notes" style="display:none">
     <div id="notes-root"></div>
   </div>
+  <div id="panel-ideas" style="display:none">
+    <div id="ideas-root"></div>
+  </div>
 </div>
 
 <script>
@@ -41,7 +50,7 @@
   var INACTIVE = 'border-transparent text-stone-500 hover:text-stone-700';
 
   function switchTab(tab) {
-    ['todos', 'notes'].forEach(function(t) {
+    ['todos', 'notes', 'ideas'].forEach(function(t) {
       var panel = document.getElementById('panel-' + t);
       var btn   = document.getElementById('tab-btn-' + t);
       if (t === tab) {
@@ -52,10 +61,13 @@
         btn.className = 'px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ' + INACTIVE;
       }
     });
-    history.replaceState(null, '', location.pathname + (tab === 'todos' ? '' : '#notes'));
+    history.replaceState(null, '', location.pathname + (tab === 'todos' ? '' : '#' + tab));
   }
 
   // Initialise from hash
-  switchTab(location.hash === '#notes' ? 'notes' : 'todos');
+  var initial = location.hash === '#notes' ? 'notes'
+              : location.hash === '#ideas' ? 'ideas'
+              : 'todos';
+  switchTab(initial);
 </script>
 {% endblock %}

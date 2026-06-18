@@ -103,6 +103,10 @@ jspm_packages/
 # Lerna
 lerna-debug.log
 
+# OAuth tokens
+.token-oauth
+.pinterest-token
+
 # System Files
 .DS_Store
 Thumbs.db
