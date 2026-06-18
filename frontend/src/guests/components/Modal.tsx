@@ -36,7 +36,8 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
+      // z above the global quick-add FAB (z-[1035]) so its buttons never sit under it.
+      className="fixed inset-0 z-[1040] flex items-end sm:items-center justify-center bg-black/40"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div

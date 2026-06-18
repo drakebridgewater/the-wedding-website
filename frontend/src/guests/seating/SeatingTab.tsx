@@ -4,13 +4,12 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  PointerSensor,
-  TouchSensor,
+  MouseSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
 import { toast } from 'sonner'
-import { GripVertical, Plus } from 'lucide-react'
+import { Eye, EyeOff, GripVertical, HelpCircle, Plus } from 'lucide-react'
 import {
   useAssignGuestToTable, useBatchAssignGuests,
   useCreateSeatingTable, useDeleteSeatingTable,
@@ -26,6 +25,7 @@ import { TableCard } from './TableCard'
 import { TableFormModal } from './TableFormModal'
 import { TablePickerSheet } from './TablePickerSheet'
 import { AddGuestsSheet } from './AddGuestsSheet'
+import { SeatingHelp } from './SeatingHelp'
 
 /** What the table-picker sheet is currently seating: one guest or a whole party. */
 interface SeatTarget {
@@ -76,11 +76,13 @@ export function SeatingTab({
   const [pendingDeleteTable, setPendingDeleteTable] = useState<SeatingTable | null>(null)
   const [seatTarget,       setSeatTarget]       = useState<SeatTarget | null>(null)
   const [addToTable,       setAddToTable]       = useState<SeatingTable | null>(null)
+  const [hideFull,         setHideFull]         = useState(false)
+  const [showHelp,         setShowHelp]         = useState(false)
 
-  // Small activation thresholds keep taps/scrolls from starting a drag on touch screens.
+  // Mouse-only: drag is a desktop affordance. On touch screens drag is disabled —
+  // use the Seat / Move / Add guests buttons instead (less fiddly on a phone).
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
   )
 
   const unseated       = seatingGuests.filter((g) => g.seating_table_id === null)
@@ -208,6 +210,10 @@ export function SeatingTab({
   }
 
   const totalSeated = seatingGuests.filter((g) => g.seating_table_id !== null).length
+  const fullTableCount = tables.filter((t) => getAssignedGuests(t.id).length >= t.capacity).length
+  const visibleTables = hideFull
+    ? tables.filter((t) => getAssignedGuests(t.id).length < t.capacity)
+    : tables
 
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -225,11 +231,25 @@ export function SeatingTab({
           </span>
           <span>·</span>
           <span>{tables.length} tables</span>
-          <div className="ml-auto hidden sm:flex items-center gap-3 text-[10px]">
-            <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Confirmed</span>
-            <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-300 inline-block" /> Pending</span>
+          <div className="ml-auto flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-3 text-[10px]">
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Confirmed</span>
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-300 inline-block" /> Pending</span>
+            </div>
+            <button
+              onClick={() => setShowHelp(true)}
+              title="How seating works"
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+            >
+              <HelpCircle size={13} /> How it works
+            </button>
           </div>
         </div>
+
+        {/* One-line description */}
+        <p className="-mt-2 text-xs text-stone-400">
+          Open a table and type a name to seat guests (or drag them from Unseated). Seat one person, a whole party, or tick several at once.
+        </p>
 
         {/*
           Desktop: two independently scrolling columns.
@@ -252,13 +272,25 @@ export function SeatingTab({
 
           {/* Tables */}
           <div className="flex-1 min-w-0 lg:overflow-y-auto">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center justify-between mb-2 gap-2">
               <h3 className="text-xs font-bold uppercase tracking-widest text-stone-400">
-                Tables ({tables.length})
+                Tables ({hideFull && fullTableCount > 0 ? `${visibleTables.length} of ${tables.length}` : tables.length})
               </h3>
-              <Button variant="primary" size="sm" onClick={() => { setEditingTable(null); setShowTableModal(true) }}>
-                <Plus size={12} /> Add Table
-              </Button>
+              <div className="flex items-center gap-2">
+                {fullTableCount > 0 && (
+                  <button
+                    onClick={() => setHideFull((v) => !v)}
+                    title={hideFull ? 'Show full tables' : 'Hide tables that are at capacity'}
+                    className="flex items-center gap-1 rounded-lg border border-stone-300 px-2.5 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                  >
+                    {hideFull ? <Eye size={12} /> : <EyeOff size={12} />}
+                    {hideFull ? `Show full (${fullTableCount})` : `Hide full (${fullTableCount})`}
+                  </button>
+                )}
+                <Button variant="primary" size="sm" onClick={() => { setEditingTable(null); setShowTableModal(true) }}>
+                  <Plus size={12} /> Add Table
+                </Button>
+              </div>
             </div>
 
             {tables.length === 0 ? (
@@ -267,9 +299,16 @@ export function SeatingTab({
                 actionLabel="Add the first one →"
                 onAction={() => setShowTableModal(true)}
               />
+            ) : visibleTables.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-stone-200 py-8 text-center text-sm text-stone-400">
+                All tables are full.{' '}
+                <button onClick={() => setHideFull(false)} className="text-rose-600 underline hover:text-rose-700">
+                  Show full tables
+                </button>
+              </p>
             ) : (
               <div className="space-y-2">
-                {tables.map((table) => (
+                {visibleTables.map((table) => (
                   <TableCard
                     key={table.id}
                     table={table}
@@ -280,6 +319,7 @@ export function SeatingTab({
                     onDelete={() => setPendingDeleteTable(table)}
                     onOpenGuest={onOpenGuest}
                     onSeat={openSeatSheetForGuest}
+                    onRemove={(g) => assignGuestsToTable([g.id], null)}
                     onAddGuests={() => setAddToTable(table)}
                   />
                 ))}
@@ -293,6 +333,7 @@ export function SeatingTab({
         <DragOverlayContent activeDrag={activeDrag} seatingGuests={seatingGuests} />
       </DragOverlay>
 
+      {showHelp && <SeatingHelp onClose={() => setShowHelp(false)} />}
       {showTableModal && (
         <TableFormModal
           initial={editingTable ?? undefined}
@@ -329,11 +370,9 @@ export function SeatingTab({
           table={addToTable}
           groups={unseatedGroups}
           assignedCount={getAssignedGuests(addToTable.id).length}
-          onAssign={(guestIds) => {
-            const table = addToTable
-            setAddToTable(null)
-            assignGuestsToTable(guestIds, table.id)
-          }}
+          // Keep the sheet open so several guests can be seated in a row;
+          // the unseated list refreshes after each assignment.
+          onAssign={(guestIds) => assignGuestsToTable(guestIds, addToTable.id)}
           onClose={() => setAddToTable(null)}
         />
       )}

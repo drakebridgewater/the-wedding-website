@@ -17,7 +17,7 @@ function CapacityDot({ assigned, capacity }: { assigned: number; capacity: numbe
 
 /** One seating table: drop target + assigned guest chips. */
 export function TableCard({
-  table, assignedGuests, collapsed, onToggle, onEdit, onDelete, onOpenGuest, onSeat, onAddGuests,
+  table, assignedGuests, collapsed, onToggle, onEdit, onDelete, onOpenGuest, onSeat, onRemove, onAddGuests,
 }: {
   table: SeatingTable
   assignedGuests: SeatingGuest[]
@@ -27,6 +27,7 @@ export function TableCard({
   onDelete: () => void
   onOpenGuest?: (partyId: number, guestId: number) => void
   onSeat?: (guest: SeatingGuest) => void
+  onRemove?: (guest: SeatingGuest) => void
   onAddGuests?: () => void
 }) {
   const { setNodeRef, isOver } = useDroppable({
@@ -100,8 +101,16 @@ export function TableCard({
           ) : (
             <div className="flex flex-col gap-1 border-t border-stone-100 pt-2">
               {assignedGuests.map((g) => (
-                <GuestChip key={g.id} guest={g} onOpenGuest={onOpenGuest} onSeat={onSeat} />
+                <GuestChip key={g.id} guest={g} onOpenGuest={onOpenGuest} onSeat={onSeat} onRemove={onRemove} />
               ))}
+              {onAddGuests && (
+                <button
+                  onClick={onAddGuests}
+                  className="mt-1 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-stone-300 py-2 text-xs font-medium text-stone-500 transition-colors hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+                >
+                  <UserPlus size={13} /> Add guests
+                </button>
+              )}
             </div>
           )}
         </div>
