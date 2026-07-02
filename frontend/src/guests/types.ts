@@ -29,7 +29,7 @@ export interface Guest {
   party_id: number | null
   first_name: string
   last_name: string
-  email: string
+  email: string | null
   is_attending: boolean | null
   meal: Meal
   is_child: boolean

@@ -12,7 +12,7 @@ const PURPOSE_STAMP_NOTE: Record<string, string> = {
 }
 
 function partyHasEmail(party: Party): boolean {
-  return party.guests.some((g) => g.email.trim() !== '')
+  return party.guests.some((g) => (g.email ?? '').trim() !== '')
 }
 
 function PartyCheckRow({
