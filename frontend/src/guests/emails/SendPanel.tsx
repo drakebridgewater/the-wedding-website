@@ -2,27 +2,30 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Pencil } from 'lucide-react'
-import { useParties, useSendEmailTemplate } from '../api'
+import { useParties, useSendEmailTemplate, useSentEmails } from '../api'
 import type { EmailTemplate, Party } from '../types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 
-type MarkAs = 'save_the_date' | 'invitation' | null
+const PURPOSE_STAMP_NOTE: Record<string, string> = {
+  save_the_date: 'Sending also marks each party’s Save the Date as sent.',
+  invitation: 'Sending also marks each party’s Invitation as sent.',
+}
 
-const MARK_OPTIONS: { value: MarkAs; label: string }[] = [
-  { value: null,            label: 'None' },
-  { value: 'save_the_date', label: 'Save the Date' },
-  { value: 'invitation',    label: 'Invitation' },
-]
+function partyHasEmail(party: Party): boolean {
+  return party.guests.some((g) => g.email.trim() !== '')
+}
 
 function PartyCheckRow({
-  party, checked, onToggle, onOpenGuest,
+  party, checked, alreadySent, onToggle, onOpenGuest,
 }: {
   party: Party
   checked: boolean
+  alreadySent: boolean
   onToggle: () => void
   onOpenGuest?: (partyId: number, guestId?: number) => void
 }) {
   const guestCount = party.guests.length
+  const hasEmail = partyHasEmail(party)
 
   return (
     <label className="flex items-center gap-3 px-3 py-2.5 hover:bg-stone-50 cursor-pointer">
@@ -39,6 +42,16 @@ function PartyCheckRow({
           )}
         </span>
       </div>
+      {!hasEmail && (
+        <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700" title="No guest in this party has an email address — add one from the pencil button.">
+          no email
+        </span>
+      )}
+      {alreadySent && (
+        <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700" title="This party already received this email.">
+          ✓ got it
+        </span>
+      )}
       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
         party.status === 'invited' ? 'bg-emerald-100 text-emerald-700' :
         party.status === 'planned' ? 'bg-amber-100 text-amber-700' :
@@ -68,12 +81,22 @@ export function SendPanel({
   onOpenGuest?: (partyId: number, guestId?: number) => void
 }) {
   const { data: parties = [] } = useParties()
+  const { data: sentEmails = [] } = useSentEmails()
   const sendMutation = useSendEmailTemplate()
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [confirmSend, setConfirmSend] = useState(false)
-  const [markAs, setMarkAs] = useState<MarkAs>(null)
 
-  const invitedParties = parties.filter((p) => p.status === 'invited')
+  // Parties that already received the active template, from the send log
+  const alreadySentIds = new Set(
+    sentEmails
+      .filter((e) => template && e.template_id === template.id && e.party_id != null)
+      .map((e) => e.party_id as number),
+  )
+
+  const needsIt = parties.filter(
+    (p) => p.status === 'invited' && partyHasEmail(p) && !alreadySentIds.has(p.id),
+  )
+  const selectedAlreadySent = Array.from(selected).filter((id) => alreadySentIds.has(id))
 
   const toggle = (id: number) =>
     setSelected((prev) => {
@@ -85,7 +108,7 @@ export function SendPanel({
   const handleSend = () => {
     if (!template || selected.size === 0) return
     sendMutation.mutate(
-      { templateId: template.id, partyIds: Array.from(selected), markAs },
+      { templateId: template.id, partyIds: Array.from(selected) },
       {
         onSuccess: ({ sent, errors }) => {
           toast.success(`Sent to ${sent} ${sent === 1 ? 'party' : 'parties'}`)
@@ -98,6 +121,15 @@ export function SendPanel({
     )
   }
 
+  const confirmMessage = () => {
+    const base = `Send "${template?.name}" to ${selected.size} ${selected.size === 1 ? 'party' : 'parties'}? This will deliver real emails.`
+    if (selectedAlreadySent.length === 0) return base
+    const warning = selected.size === 1
+      ? 'This party already received this email and will get it again.'
+      : `${selectedAlreadySent.length} of the selected parties already received this email and will get it again.`
+    return `${base}\n\n⚠️ ${warning}`
+  }
+
   return (
     <>
       <div className="space-y-3">
@@ -105,10 +137,11 @@ export function SendPanel({
           <h3 className="text-sm font-medium text-stone-700">Send to parties</h3>
           <div className="flex gap-2">
             <button
-              onClick={() => setSelected(new Set(invitedParties.map((p) => p.id)))}
+              onClick={() => setSelected(new Set(needsIt.map((p) => p.id)))}
+              title="Selects every invited party that has an email address and hasn't received this email yet."
               className="text-xs text-indigo-600 hover:underline py-1"
             >
-              All invited ({invitedParties.length})
+              Everyone still waiting ({needsIt.length})
             </button>
             <button onClick={() => setSelected(new Set())} className="text-xs text-stone-400 hover:underline py-1">Clear</button>
           </div>
@@ -124,32 +157,16 @@ export function SendPanel({
               key={party.id}
               party={party}
               checked={selected.has(party.id)}
+              alreadySent={alreadySentIds.has(party.id)}
               onToggle={() => toggle(party.id)}
               onOpenGuest={onOpenGuest}
             />
           ))}
         </div>
 
-        {/* Mark as tracking */}
-        <div>
-          <p className="text-xs font-medium text-stone-500 mb-1.5">Mark send as</p>
-          <div className="flex gap-1 flex-wrap">
-            {MARK_OPTIONS.map(({ value, label }) => (
-              <button
-                key={String(value)}
-                type="button"
-                onClick={() => setMarkAs(value)}
-                className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                  markAs === value
-                    ? 'bg-stone-800 text-white border-stone-800'
-                    : 'border-stone-200 text-stone-600 hover:bg-stone-50'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {template && PURPOSE_STAMP_NOTE[template.purpose] && (
+          <p className="text-xs text-stone-400">{PURPOSE_STAMP_NOTE[template.purpose]}</p>
+        )}
 
         <button
           disabled={!template || selected.size === 0 || sendMutation.isPending}
@@ -163,9 +180,9 @@ export function SendPanel({
       {confirmSend && (
         <ConfirmDialog
           title="Send emails"
-          message={`Send "${template?.name}" to ${selected.size} ${selected.size === 1 ? 'party' : 'parties'}? This will deliver real emails.`}
+          message={confirmMessage()}
           confirmLabel="Send"
-          danger={false}
+          danger={selectedAlreadySent.length > 0}
           onConfirm={handleSend}
           onClose={() => setConfirmSend(false)}
         />

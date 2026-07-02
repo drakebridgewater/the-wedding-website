@@ -151,11 +151,27 @@ DEFAULT_INVITE_BODY = (
 
 
 class EmailTemplate(models.Model):
+    PURPOSES = [
+        ('save_the_date', 'Save the Date'),
+        ('invitation', 'Invitation'),
+        ('other', 'Other'),
+    ]
+
     name = models.CharField(max_length=100)
+    purpose = models.CharField(
+        max_length=20, choices=PURPOSES, default='other',
+        help_text='Sending a Save the Date or Invitation template stamps the '
+                  'matching sent-date on each party automatically.',
+    )
     subject = models.CharField(max_length=200, default="You're invited!")
     body_html = models.TextField(default=DEFAULT_INVITE_BODY)
     footer_html = models.TextField(blank=True, default='')
     main_image = models.ImageField(upload_to='email-images/', blank=True, null=True)
+    show_rsvp_button = models.BooleanField(default=True)
+    rsvp_button_text = models.CharField(max_length=100, default='View Invitation')
+    rsvp_button_color = models.CharField(max_length=7, default='#337ab7')
+    background_color = models.CharField(max_length=7, default='#fff3e8')
+    font_color = models.CharField(max_length=7, default='#666666')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

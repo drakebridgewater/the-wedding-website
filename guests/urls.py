@@ -29,6 +29,7 @@ urlpatterns = [
     path('guests/api/email-templates/', api_views.email_templates, name='api-email-templates'),
     path('guests/api/email-templates/<int:pk>/', api_views.email_template_detail, name='api-email-template-detail'),
     path('guests/api/email-templates/<int:pk>/preview/', api_views.email_template_preview, name='api-email-template-preview'),
+    path('guests/api/email-templates/<int:pk>/test-send/', api_views.email_template_test_send, name='api-email-template-test-send'),
     path('guests/api/email-templates/<int:pk>/send/', api_views.email_template_send, name='api-email-template-send'),
     path('guests/api/email-templates/<int:pk>/upload-image/', api_views.email_template_upload_image, name='api-email-template-upload-image'),
     path('guests/api/sent-emails/', api_views.sent_emails, name='api-sent-emails'),

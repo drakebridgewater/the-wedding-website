@@ -13,18 +13,9 @@ import {
   Link as LinkIcon, Image as ImageIcon,
   Heading1, Heading2,
 } from 'lucide-react'
+import { MERGE_TAGS, MergeTag, pillsToTokens, tokensToPills } from './mergeTag'
 
 type InputMode = null | 'link' | 'image'
-
-const MERGE_TAGS = [
-  { label: '{{party_name}}', tip: 'e.g. "The Smith Family"' },
-  { label: '{{first_name}}', tip: "First guest's first name" },
-  { label: '{{rsvp_link}}',  tip: 'Full RSVP URL' },
-  { label: '{{couple}}',     tip: 'Bride & Groom names' },
-  { label: '{{date}}',       tip: 'Wedding date from settings' },
-  { label: '{{location}}',   tip: 'Wedding location from settings' },
-  { label: '{{site_url}}',   tip: 'Wedding website URL' },
-]
 
 function Sep() {
   return <div className="w-px h-4 bg-stone-300 mx-0.5 self-center shrink-0" />
@@ -50,34 +41,52 @@ function TBtn({
   )
 }
 
-/** Tiptap-based email body editor with merge-tag shortcuts. */
+/** Tiptap-based email body editor.
+ *
+ * Merge tokens ({{party_name}} etc.) display as friendly labeled pills but
+ * are stored as raw tokens — `content` in and `onChange` out always use the
+ * token form the backend expects.
+ *
+ * The editing area mirrors how the final email renders the body: centered
+ * text in Helvetica on the template's background color. Pass the template's
+ * colors so what you type matches what the guest receives.
+ *
+ * `variant="compact"` slims the toolbar down (bold / italic / link + merge
+ * pills) for small fields like the footer.
+ */
 export function RichEditor({
-  content, onChange,
+  content, onChange, backgroundColor, fontColor, variant = 'full', placeholder,
 }: {
   content: string
   onChange: (html: string) => void
+  backgroundColor?: string
+  fontColor?: string
+  variant?: 'full' | 'compact'
+  placeholder?: string
 }) {
   const [inputMode, setInputMode] = useState<InputMode>(null)
   const [inputUrl, setInputUrl] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const compact = variant === 'compact'
 
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Placeholder.configure({ placeholder: 'Write your email body here…' }),
+      Placeholder.configure({ placeholder: placeholder ?? 'Write your email body here…' }),
       Underline,
       Link.configure({ openOnClick: false }),
       Image.configure({ inline: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      MergeTag,
     ],
-    content,
-    onUpdate: ({ editor }) => onChange(editor.getHTML()),
+    content: tokensToPills(content),
+    onUpdate: ({ editor }) => onChange(pillsToTokens(editor.getHTML())),
   })
 
   // Sync when template switches
   useEffect(() => {
-    if (editor && editor.getHTML() !== content) {
-      editor.commands.setContent(content)
+    if (editor && pillsToTokens(editor.getHTML()) !== content) {
+      editor.commands.setContent(tokensToPills(content))
     }
   }, [content]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -87,7 +96,7 @@ export function RichEditor({
   }, [inputMode])
 
   const insertMergeTag = useCallback((tag: string) => {
-    editor?.chain().focus().insertContent(tag).run()
+    editor?.chain().focus().insertContent({ type: 'mergeTag', attrs: { tag } }).run()
   }, [editor])
 
   const openLinkInput = () => {
@@ -118,13 +127,17 @@ export function RichEditor({
     <div className="border border-stone-200 rounded-lg overflow-hidden">
       {/* Toolbar row 1 — formatting */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 bg-stone-50 border-b border-stone-200 flex-wrap">
-        <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive('heading', { level: 1 })} title="Heading 1">
-          <Heading1 size={14} />
-        </TBtn>
-        <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2">
-          <Heading2 size={14} />
-        </TBtn>
-        <Sep />
+        {!compact && (
+          <>
+            <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive('heading', { level: 1 })} title="Heading 1">
+              <Heading1 size={14} />
+            </TBtn>
+            <TBtn onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2">
+              <Heading2 size={14} />
+            </TBtn>
+            <Sep />
+          </>
+        )}
         <TBtn onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold">
           <Bold size={14} />
         </TBtn>
@@ -134,39 +147,45 @@ export function RichEditor({
         <TBtn onClick={() => editor?.chain().focus().toggleUnderline().run()} active={editor?.isActive('underline')} title="Underline">
           <UnderlineIcon size={14} />
         </TBtn>
-        <TBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive('strike')} title="Strikethrough">
-          <Strikethrough size={14} />
-        </TBtn>
-        <Sep />
-        <TBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list">
-          <List size={14} />
-        </TBtn>
-        <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list">
-          <ListOrdered size={14} />
-        </TBtn>
-        <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Blockquote">
-          <Quote size={14} />
-        </TBtn>
-        <TBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Horizontal rule">
-          <Minus size={14} />
-        </TBtn>
-        <Sep />
-        <TBtn onClick={() => editor?.chain().focus().setTextAlign('left').run()} active={editor?.isActive({ textAlign: 'left' })} title="Align left">
-          <AlignLeft size={14} />
-        </TBtn>
-        <TBtn onClick={() => editor?.chain().focus().setTextAlign('center').run()} active={editor?.isActive({ textAlign: 'center' })} title="Align center">
-          <AlignCenter size={14} />
-        </TBtn>
-        <TBtn onClick={() => editor?.chain().focus().setTextAlign('right').run()} active={editor?.isActive({ textAlign: 'right' })} title="Align right">
-          <AlignRight size={14} />
-        </TBtn>
-        <Sep />
+        {!compact && (
+          <>
+            <TBtn onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive('strike')} title="Strikethrough">
+              <Strikethrough size={14} />
+            </TBtn>
+            <Sep />
+            <TBtn onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list">
+              <List size={14} />
+            </TBtn>
+            <TBtn onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list">
+              <ListOrdered size={14} />
+            </TBtn>
+            <TBtn onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Blockquote">
+              <Quote size={14} />
+            </TBtn>
+            <TBtn onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Horizontal rule">
+              <Minus size={14} />
+            </TBtn>
+            <Sep />
+            <TBtn onClick={() => editor?.chain().focus().setTextAlign('left').run()} active={editor?.isActive({ textAlign: 'left' })} title="Align left">
+              <AlignLeft size={14} />
+            </TBtn>
+            <TBtn onClick={() => editor?.chain().focus().setTextAlign('center').run()} active={editor?.isActive({ textAlign: 'center' })} title="Align center">
+              <AlignCenter size={14} />
+            </TBtn>
+            <TBtn onClick={() => editor?.chain().focus().setTextAlign('right').run()} active={editor?.isActive({ textAlign: 'right' })} title="Align right">
+              <AlignRight size={14} />
+            </TBtn>
+            <Sep />
+          </>
+        )}
         <TBtn onClick={openLinkInput} active={editor?.isActive('link')} title="Insert link">
           <LinkIcon size={14} />
         </TBtn>
-        <TBtn onClick={() => { setInputUrl(''); setInputMode('image') }} title="Insert image">
-          <ImageIcon size={14} />
-        </TBtn>
+        {!compact && (
+          <TBtn onClick={() => { setInputUrl(''); setInputMode('image') }} title="Insert image">
+            <ImageIcon size={14} />
+          </TBtn>
+        )}
       </div>
 
       {/* URL input panel (link or image) */}
@@ -201,24 +220,29 @@ export function RichEditor({
 
       {/* Merge tag row */}
       <div className="flex items-center gap-1 px-3 py-1.5 bg-stone-50 border-b border-stone-200 flex-wrap">
-        <span className="text-xs text-stone-400 mr-1">Insert:</span>
-        {MERGE_TAGS.map(({ label, tip }) => (
+        <span className="text-xs text-stone-400 mr-1">Add a detail:</span>
+        {MERGE_TAGS.map(({ tag, label, tip }) => (
           <button
-            key={label}
+            key={tag}
             type="button"
             title={tip}
-            onClick={() => insertMergeTag(label)}
-            className="px-2 py-1 text-xs rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-mono"
+            onClick={() => insertMergeTag(tag)}
+            className="px-2 py-1 text-xs rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-medium"
           >
             {label}
           </button>
         ))}
       </div>
 
-      {/* Editor area */}
+      {/* Editor area — styled like the email body card (centered, Helvetica, template colors) */}
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none p-3 min-h-[200px] focus-within:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-stone-400 [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded"
+        style={{
+          backgroundColor: backgroundColor ?? (compact ? '#ffffff' : '#fff3e8'),
+          color: fontColor ?? '#666666',
+          fontFamily: 'Helvetica, Arial, sans-serif',
+        }}
+        className={`prose prose-sm max-w-none p-3 ${compact ? 'min-h-[80px]' : 'min-h-[200px]'} text-center [&_.ProseMirror]:text-inherit [&_h1]:text-inherit [&_h2]:text-inherit [&_a]:text-inherit [&_.ProseMirror]:outline-none focus-within:outline-none [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-stone-400 [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:w-full [&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0 [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:rounded`}
       />
     </div>
   )

@@ -65,7 +65,12 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = EmailTemplate
-        fields = ['id', 'name', 'subject', 'body_html', 'footer_html', 'image_url', 'created_at', 'updated_at']
+        fields = [
+            'id', 'name', 'purpose', 'subject', 'body_html', 'footer_html', 'image_url',
+            'show_rsvp_button', 'rsvp_button_text', 'rsvp_button_color',
+            'background_color', 'font_color',
+            'created_at', 'updated_at',
+        ]
 
     def get_image_url(self, obj):
         if not obj.main_image:

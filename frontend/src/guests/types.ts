@@ -60,15 +60,39 @@ export interface Party {
   save_the_date_sent: string | null
 }
 
+export type EmailTemplatePurpose = 'save_the_date' | 'invitation' | 'other'
+
 export interface EmailTemplate {
   id: number
   name: string
+  purpose: EmailTemplatePurpose
   subject: string
   body_html: string
   footer_html: string
   image_url: string | null
+  show_rsvp_button: boolean
+  rsvp_button_text: string
+  rsvp_button_color: string
+  background_color: string
+  font_color: string
   created_at: string
   updated_at: string
+}
+
+export type EmailTemplateFormData = Pick<
+  EmailTemplate,
+  'name' | 'purpose' | 'subject' | 'body_html' | 'footer_html'
+  | 'show_rsvp_button' | 'rsvp_button_text' | 'rsvp_button_color'
+  | 'background_color' | 'font_color'
+>
+
+/** Unsaved edits sent along with preview / test-send so they render the draft. */
+export type EmailTemplateDraft = Omit<EmailTemplateFormData, 'name' | 'purpose'>
+
+export interface EmailPreview {
+  subject: string
+  body_html: string
+  html: string
 }
 
 export interface SentEmail {

@@ -327,58 +327,95 @@ def email_template_upload_image(request, pk):
     return Response(EmailTemplateSerializer(obj, context={'request': request}).data)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def email_template_preview(_request, pk):
-    """Return subject + body rendered with dummy party data."""
+# Draft fields the preview/test-send endpoints may substitute without saving,
+# so both always reflect what's currently in the editor.
+_TEMPLATE_DRAFT_FIELDS = [
+    'subject', 'body_html', 'footer_html',
+    'show_rsvp_button', 'rsvp_button_text', 'rsvp_button_color',
+    'background_color', 'font_color',
+]
+
+
+def _template_with_draft(pk, data):
+    """Load a template and apply in-memory (unsaved) draft overrides.
+
+    Returns (template, party, error_response); party is a real Party when
+    party_id is given, otherwise sample data.
+    """
+    from .invitation import sample_party
     try:
         obj = EmailTemplate.objects.get(pk=pk)
     except EmailTemplate.DoesNotExist:
-        return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+        return None, None, Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
 
+    for field in _TEMPLATE_DRAFT_FIELDS:
+        if field in data:
+            setattr(obj, field, data[field])
+
+    party_id = data.get('party_id')
+    if party_id:
+        try:
+            party = Party.objects.prefetch_related('guest_set').get(pk=party_id)
+        except Party.DoesNotExist:
+            return None, None, Response({'error': 'Party not found'}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        party = sample_party()
+    return obj, party, None
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def email_template_preview(request, pk):
+    """Render the template through the real email pipeline.
+
+    Body (all optional): { party_id: <int>, <draft field overrides> }.
+    Draft overrides let the UI preview unsaved edits. Returns the merged
+    subject/body plus `html`, the complete email document exactly as it
+    will be sent.
+    """
     from django.conf import settings
+    from .invitation import render_template_email
 
-    # Dummy party for preview
-    class _DummyParty:
-        name = 'The Smith Family'
-        invitation_id = 'preview'
-        def guest_set(self): pass
+    obj, party, error = _template_with_draft(pk, request.data)
+    if error:
+        return error
 
-    class _DummyGuest:
-        first_name = 'Jane'
-
-    class _Qs:
-        def first(self): return _DummyGuest()
-
-    dummy = _DummyParty()
-    dummy.guest_set = _Qs()
-
-    from guests.save_the_date import _get_wedding_date, _get_wedding_location
     site_url = getattr(settings, 'WEDDING_WEBSITE_URL', 'https://example.com')
-    # Build a fake rsvp_link without reverse (preview only)
-    rsvp_link = site_url.rstrip('/') + '/invite/preview/'
-    body = obj.body_html
-    subject = obj.subject
-    for token, value in {
-        '{{party_name}}': dummy.name,
-        '{{first_name}}': 'Jane',
-        '{{rsvp_link}}': rsvp_link,
-        '{{couple}}': getattr(settings, 'BRIDE_AND_GROOM', 'Drake & Shawna'),
-        '{{date}}': _get_wedding_date(),
-        '{{location}}': _get_wedding_location(),
-        '{{site_url}}': site_url,
-    }.items():
-        body = body.replace(token, value)
-        subject = subject.replace(token, value)
+    subject, body, html = render_template_email(obj, party, site_url, email_mode=False)
+    return Response({'subject': subject, 'body_html': body, 'html': html})
 
-    return Response({'subject': subject, 'body_html': body, 'footer_html': obj.footer_html})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def email_template_test_send(request, pk):
+    """Deliver a real test email to one address; never logged or CC'd.
+
+    Body: { email: <str>, party_id?: <int>, <draft field overrides> }.
+    """
+    from .invitation import send_test_email
+
+    to_email = (request.data.get('email') or '').strip()
+    if not to_email:
+        return Response({'error': 'email required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    obj, party, error = _template_with_draft(pk, request.data)
+    if error:
+        return error
+
+    try:
+        send_test_email(obj, to_email, party=party)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+    return Response({'sent_to': to_email})
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def email_template_send(request, pk):
     """Send template to a list of party IDs.
-    Body: { party_ids: [1, 2, ...], mark_as: 'save_the_date' | 'invitation' | null }
+    Body: { party_ids: [1, 2, ...] }
+    Save-the-date / invitation sent dates are stamped automatically from the
+    template's purpose.
     """
     from datetime import datetime
     try:
@@ -390,8 +427,6 @@ def email_template_send(request, pk):
     if not party_ids:
         return Response({'error': 'party_ids required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    mark_as = request.data.get('mark_as')  # 'save_the_date', 'invitation', or None
-
     from .invitation import send_template_email
     parties_qs = Party.objects.prefetch_related('guest_set').filter(pk__in=party_ids)
     sent_count = 0
@@ -401,10 +436,10 @@ def email_template_send(request, pk):
             result = send_template_email(template, party, user=request.user)
             if result:
                 sent_count += 1
-                if mark_as == 'save_the_date':
+                if template.purpose == 'save_the_date':
                     party.save_the_date_sent = datetime.now()
                     party.save(update_fields=['save_the_date_sent'])
-                elif mark_as == 'invitation':
+                elif template.purpose == 'invitation':
                     party.invitation_sent = datetime.now()
                     party.save(update_fields=['invitation_sent'])
             else:

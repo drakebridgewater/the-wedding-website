@@ -33,6 +33,98 @@ def render_template(body_html, subject, party, site_url):
     return subject, body_html
 
 
+def render_template_email(template, party, site_url, email_mode=True):
+    """Render an EmailTemplate for a party into the full email HTML.
+
+    Returns (rendered_subject, rendered_body, full_html). When email_mode is
+    False the image is referenced by URL instead of cid: so the result can be
+    displayed in a browser (used by the preview endpoint).
+    """
+    rendered_subject, rendered_body = render_template(
+        template.body_html, template.subject, party, site_url
+    )
+
+    context = get_invitation_context(party)
+    context['email_mode'] = email_mode
+    context['site_url'] = site_url
+    context['couple'] = getattr(settings, 'BRIDE_AND_GROOM', '')
+    context['custom_body'] = rendered_body
+    context['footer_html'] = template.footer_html
+    context['show_rsvp_button'] = template.show_rsvp_button
+    context['rsvp_button_text'] = template.rsvp_button_text
+    context['rsvp_button_color'] = template.rsvp_button_color
+    context['main_color'] = template.background_color or context['main_color']
+    context['font_color'] = template.font_color or context['font_color']
+
+    if template.main_image:
+        context['main_image_filename'] = os.path.basename(template.main_image.name)
+        context['main_image_url'] = (
+            site_url.rstrip('/') + template.main_image.url if email_mode
+            else template.main_image.url
+        )
+
+    full_html = render_to_string(INVITATION_TEMPLATE, context=context)
+    return rendered_subject, rendered_body, full_html
+
+
+def _build_template_message(template, subject, html, recipients, cc=None):
+    """Assemble the multipart message for a rendered template, image included."""
+    site_url = getattr(settings, 'WEDDING_WEBSITE_URL', '')
+    text = f"{subject}\n\nPlease visit {site_url} to RSVP online."
+    msg = EmailMultiAlternatives(
+        subject, text,
+        settings.DEFAULT_WEDDING_FROM_EMAIL, recipients,
+        cc=cc,
+        reply_to=[settings.DEFAULT_WEDDING_REPLY_EMAIL],
+    )
+    msg.attach_alternative(html, 'text/html')
+
+    if template.main_image:
+        msg.mixed_subtype = 'related'
+        image_filename = os.path.basename(template.main_image.name)
+        with open(template.main_image.path, 'rb') as image_file:
+            msg_img = MIMEImage(image_file.read())
+            msg_img.add_header('Content-ID', f'<{image_filename}>')
+            msg.attach(msg_img)
+    return msg
+
+
+def send_test_email(template, to_email, party=None):
+    """Deliver the template to a single address, defaulting to sample data.
+
+    Marked [Test] in the subject; skips the CC list and the SentEmail log so
+    tests never touch tracking.
+    """
+    site_url = getattr(settings, 'WEDDING_WEBSITE_URL', '')
+    if party is None:
+        party = sample_party()
+    rendered_subject, _, template_html = render_template_email(
+        template, party, site_url, email_mode=True
+    )
+    msg = _build_template_message(
+        template, f'[Test] {rendered_subject}', template_html, [to_email]
+    )
+    print(f'sending test of "{template.name}" to {to_email}')
+    msg.send()
+
+
+def sample_party():
+    """Stand-in party used for previews and test sends."""
+    class _Guest:
+        first_name = 'Jane'
+
+    class _GuestSet:
+        def first(self):
+            return _Guest()
+
+    class _Party:
+        name = 'The Smith Family'
+        invitation_id = 'preview'
+        guest_set = _GuestSet()
+
+    return _Party()
+
+
 def send_template_email(template, party, user=None, test_only=False, recipients=None):
     """Send an EmailTemplate to a Party, logging the result as a SentEmail."""
     from guests.models import SentEmail
@@ -42,45 +134,13 @@ def send_template_email(template, party, user=None, test_only=False, recipients=
         return None
 
     site_url = getattr(settings, 'WEDDING_WEBSITE_URL', '')
-    rendered_subject, rendered_body = render_template(
-        template.body_html, template.subject, party, site_url
+    rendered_subject, rendered_body, template_html = render_template_email(
+        template, party, site_url, email_mode=True
     )
-
-    context = get_invitation_context(party)
-    context['email_mode'] = True
-    context['site_url'] = site_url
-    context['couple'] = getattr(settings, 'BRIDE_AND_GROOM', '')
-    context['custom_body'] = rendered_body
-    context['footer_html'] = template.footer_html
-
-    # Attach the template's uploaded image if present
-    if template.main_image:
-        image_filename = os.path.basename(template.main_image.name)
-        context['main_image_filename'] = image_filename
-        context['main_image_url'] = site_url.rstrip('/') + template.main_image.url
-    else:
-        context['main_image_filename'] = None
-        context['main_image_url'] = None
-
-    template_html = render_to_string(INVITATION_TEMPLATE, context=context)
-    template_text = (
-        f"{rendered_subject}\n\nPlease visit {site_url} to RSVP online."
-    )
-
-    msg = EmailMultiAlternatives(
-        rendered_subject, template_text,
-        settings.DEFAULT_WEDDING_FROM_EMAIL, recipients,
+    msg = _build_template_message(
+        template, rendered_subject, template_html, recipients,
         cc=settings.WEDDING_CC_LIST,
-        reply_to=[settings.DEFAULT_WEDDING_REPLY_EMAIL],
     )
-    msg.attach_alternative(template_html, 'text/html')
-
-    if template.main_image:
-        msg.mixed_subtype = 'related'
-        with open(template.main_image.path, 'rb') as image_file:
-            msg_img = MIMEImage(image_file.read())
-            msg_img.add_header('Content-ID', f'<{context["main_image_filename"]}>')
-            msg.attach(msg_img)
 
     print(f'sending template "{template.name}" to {party.name} ({", ".join(recipients)})')
     if not test_only:
@@ -117,6 +177,9 @@ def get_invitation_context(party):
         'preheader_text': "You are invited!",
         'main_image_filename': None,
         'main_image_url': None,
+        'show_rsvp_button': True,
+        'rsvp_button_text': 'View Invitation',
+        'rsvp_button_color': '#337ab7',
         'invitation_id': party.invitation_id,
         'party': party,
         'meals': MEALS,

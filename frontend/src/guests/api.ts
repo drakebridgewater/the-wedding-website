@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
-  EmailTemplate, Guest, GuestFormData, MemberFormData, MemberRole,
+  EmailPreview, EmailTemplate, EmailTemplateDraft, EmailTemplateFormData, Guest, GuestFormData, MemberFormData, MemberRole,
   Party, PartyFormData, SentEmail,
   SeatingGuest, SeatingTable, TableFormData,
   WeddingPartyMember,
@@ -211,7 +211,7 @@ export function useEmailTemplates() {
 export function useCreateEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: Pick<EmailTemplate, 'name' | 'subject' | 'body_html' | 'footer_html'>) =>
+    mutationFn: (data: EmailTemplateFormData) =>
       apiFetch<EmailTemplate>('/guests/api/email-templates/', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
   })
@@ -220,7 +220,7 @@ export function useCreateEmailTemplate() {
 export function useUpdateEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Pick<EmailTemplate, 'name' | 'subject' | 'body_html' | 'footer_html'>> }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<EmailTemplateFormData> }) =>
       apiFetch<EmailTemplate>(`/guests/api/email-templates/${id}/`, { method: 'PUT', body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.emailTemplates }),
   })
@@ -236,18 +236,31 @@ export function useDeleteEmailTemplate() {
 
 export function usePreviewEmailTemplate() {
   return useMutation({
-    mutationFn: (id: number) =>
-      apiFetch<{ subject: string; body_html: string }>(`/guests/api/email-templates/${id}/preview/`, { method: 'POST' }),
+    mutationFn: ({ id, partyId, draft }: { id: number; partyId?: number; draft?: EmailTemplateDraft }) =>
+      apiFetch<EmailPreview>(`/guests/api/email-templates/${id}/preview/`, {
+        method: 'POST',
+        body: JSON.stringify({ ...(draft ?? {}), ...(partyId ? { party_id: partyId } : {}) }),
+      }),
+  })
+}
+
+export function useTestSendEmailTemplate() {
+  return useMutation({
+    mutationFn: ({ id, email, partyId, draft }: { id: number; email: string; partyId?: number; draft?: EmailTemplateDraft }) =>
+      apiFetch<{ sent_to: string }>(`/guests/api/email-templates/${id}/test-send/`, {
+        method: 'POST',
+        body: JSON.stringify({ ...(draft ?? {}), email, ...(partyId ? { party_id: partyId } : {}) }),
+      }),
   })
 }
 
 export function useSendEmailTemplate() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ templateId, partyIds, markAs }: { templateId: number; partyIds: number[]; markAs?: 'save_the_date' | 'invitation' | null }) =>
+    mutationFn: ({ templateId, partyIds }: { templateId: number; partyIds: number[] }) =>
       apiFetch<{ sent: number; errors: string[] }>(
         `/guests/api/email-templates/${templateId}/send/`,
-        { method: 'POST', body: JSON.stringify({ party_ids: partyIds, mark_as: markAs ?? null }) }
+        { method: 'POST', body: JSON.stringify({ party_ids: partyIds }) }
       ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.sentEmails })
