@@ -31,4 +31,7 @@ python manage.py createsuperuser --noinput 2>/dev/null || true
 
 /usr/sbin/nginx -g 'daemon off;' &
 
-gunicorn config.wsgi --bind 0.0.0.0:8000
+# --timeout 300: the Google Sheets sync request legitimately runs ~2 min
+#   (it sleeps between sheet writes to stay under the Sheets 60 writes/min quota).
+# --workers 2 --threads 4: keep serving other requests while a sync is running.
+gunicorn config.wsgi --bind 0.0.0.0:8000 --timeout 300 --workers 2 --threads 4

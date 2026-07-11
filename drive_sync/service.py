@@ -12,6 +12,7 @@ Setup
 5. Run: python manage.py sync_to_drive
 """
 
+import json
 import logging
 import time
 from datetime import date, datetime
@@ -64,6 +65,14 @@ def _cell(v):
 
 # ── Spreadsheet helpers ───────────────────────────────────────────────────────
 
+def _service_account_email(creds_file):
+    try:
+        with open(creds_file) as f:
+            return json.load(f).get('client_email', 'the service account')
+    except OSError:
+        return 'the service account'
+
+
 def _get_spreadsheet(spreadsheet_name=None):
     creds_file = getattr(settings, 'GOOGLE_CREDENTIALS_FILE', None)
     if not creds_file:
@@ -89,7 +98,7 @@ def _get_spreadsheet(spreadsheet_name=None):
                     f'No spreadsheet named "{title}" is shared with the service account, '
                     'and it cannot create one itself (service accounts have no Drive '
                     f'storage). Create "{title}" in your own Google Drive and share it '
-                    f'with {gc.auth.service_account_email} as Editor.'
+                    f'with {_service_account_email(creds_file)} as Editor.'
                 ) from exc
             raise
         log.info('Created new spreadsheet "%s" (folder_id=%s)', title, folder_id)
