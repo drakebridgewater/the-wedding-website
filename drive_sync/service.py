@@ -81,10 +81,61 @@ def _get_spreadsheet(spreadsheet_name=None):
     try:
         sh = gc.open(title)
     except gspread.SpreadsheetNotFound:
-        sh = gc.create(title, folder_id=folder_id)
+        try:
+            sh = gc.create(title, folder_id=folder_id)
+        except gspread.exceptions.APIError as exc:
+            if 'storage quota' in str(exc).lower():
+                raise RuntimeError(
+                    f'No spreadsheet named "{title}" is shared with the service account, '
+                    'and it cannot create one itself (service accounts have no Drive '
+                    f'storage). Create "{title}" in your own Google Drive and share it '
+                    f'with {gc.auth.service_account_email} as Editor.'
+                ) from exc
+            raise
         log.info('Created new spreadsheet "%s" (folder_id=%s)', title, folder_id)
 
     return sh
+
+
+def get_drive_info():
+    """
+    Call the Drive v3 about.get endpoint with the service-account credentials
+    and return the account email plus its storageQuota numbers. Useful for
+    diagnosing "storage quota has been exceeded" errors: the quota reported
+    here is the SERVICE ACCOUNT's own Drive, which only matters for files the
+    service account owns (i.e. spreadsheets it created itself, rather than
+    ones you created and shared with it).
+    """
+    from google.oauth2.service_account import Credentials
+    from google.auth.transport.requests import AuthorizedSession
+
+    creds_file = getattr(settings, 'GOOGLE_CREDENTIALS_FILE', None)
+    if not creds_file:
+        raise RuntimeError('GOOGLE_CREDENTIALS_FILE is not configured in settings.')
+
+    creds = Credentials.from_service_account_file(
+        creds_file, scopes=['https://www.googleapis.com/auth/drive'],
+    )
+    session = AuthorizedSession(creds)
+    resp = session.get(
+        'https://www.googleapis.com/drive/v3/about',
+        params={'fields': 'storageQuota,user'},
+        timeout=15,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    quota = data.get('storageQuota', {})
+
+    def _int(key):
+        return int(quota[key]) if key in quota else None
+
+    return {
+        'account_email': data.get('user', {}).get('emailAddress', ''),
+        'limit': _int('limit'),  # None = unlimited
+        'usage': _int('usage'),
+        'usage_in_drive': _int('usageInDrive'),
+        'usage_in_drive_trash': _int('usageInDriveTrash'),
+    }
 
 
 def _write_sheet(sh, title, headers, rows, *, freeze_rows=1):
