@@ -43,13 +43,16 @@ def render_template_email(template, party, site_url, email_mode=True):
     rendered_subject, rendered_body = render_template(
         template.body_html, template.subject, party, site_url
     )
+    _, rendered_footer = render_template(
+        template.footer_html or '', '', party, site_url
+    )
 
     context = get_invitation_context(party)
     context['email_mode'] = email_mode
     context['site_url'] = site_url
     context['couple'] = getattr(settings, 'BRIDE_AND_GROOM', '')
     context['custom_body'] = rendered_body
-    context['footer_html'] = template.footer_html
+    context['footer_html'] = rendered_footer
     context['show_rsvp_button'] = template.show_rsvp_button
     context['rsvp_button_text'] = template.rsvp_button_text
     context['rsvp_button_color'] = template.rsvp_button_color
