@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.db.models import Exists, OuterRef
-from .models import Guest, Party, WeddingPartyMember, WeddingPartyGroup
+from .models import Guest, MealOption, Party, WeddingPartyMember, WeddingPartyGroup
 
 
 class _HasEmailSubquery:
@@ -66,6 +66,14 @@ class GuestForm(forms.ModelForm):
             'dietary_restrictions': forms.Textarea(attrs={'rows': 3}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        options = [('', '---------')] + MealOption.choices()
+        current = self.instance.meal if self.instance.pk else None
+        if current and current not in dict(options):
+            options.append((current, current))
+        self.fields['meal'] = forms.ChoiceField(choices=options, required=False)
+
 
 class PartyForm(forms.ModelForm):
     class Meta:
@@ -108,6 +116,14 @@ class GuestAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'last_name', 'party', 'email', 'is_attending', 'is_child', 'meal', 'dietary_restrictions')
     list_filter = ('is_attending', 'is_child', 'meal', 'party__status', 'party__category', 'party__rehearsal_dinner')
     search_fields = ('first_name', 'last_name', 'email', 'dietary_restrictions')
+
+
+@admin.register(MealOption)
+class MealOptionAdmin(admin.ModelAdmin):
+    list_display = ('label', 'key', 'ordering', 'is_active')
+    list_editable = ('ordering', 'is_active')
+    prepopulated_fields = {'key': ('label',)}
+    ordering = ('ordering', 'label')
 
 
 @admin.register(WeddingPartyMember)

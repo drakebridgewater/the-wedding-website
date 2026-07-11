@@ -219,7 +219,9 @@ def _rows_summary():
 # ── Guests ────────────────────────────────────────────────────────────────────
 
 def _rows_guests():
-    from guests.models import Guest
+    from guests.models import Guest, MealOption
+
+    meal_labels = MealOption.label_map()
 
     headers = [
         'ID', 'First Name', 'Last Name', 'Email',
@@ -243,7 +245,7 @@ def _rows_guests():
             g.party.get_type_display() if g.party and g.party.type else '',
             g.party.category if g.party else '',
             _yn_null(g.is_attending),
-            g.get_meal_display() if g.meal else '',
+            meal_labels.get(g.meal, g.meal) if g.meal else '',
             _bool(g.is_child),
             g.seating_table.name if g.seating_table else '',
             g.seat_color or '',

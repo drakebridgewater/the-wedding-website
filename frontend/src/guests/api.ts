@@ -1,6 +1,7 @@
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type {
-  EmailPreview, EmailTemplate, EmailTemplateDraft, EmailTemplateFormData, Guest, GuestFormData, MemberFormData, MemberRole,
+  EmailPreview, EmailTemplate, EmailTemplateDraft, EmailTemplateFormData, Guest, GuestFormData, MealOption, MemberFormData, MemberRole,
   Party, PartyFormData, SentEmail,
   SeatingGuest, SeatingTable, TableFormData,
   WeddingPartyMember,
@@ -26,6 +27,7 @@ async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
 }
 
 const QK = {
+  mealOptions:    ['guests', 'mealOptions']    as const,
   members:        ['guests', 'members']        as const,
   parties:        ['guests', 'parties']        as const,
   unassigned:     ['guests', 'unassigned']     as const,
@@ -33,6 +35,25 @@ const QK = {
   sentEmails:     ['guests', 'sentEmails']     as const,
   seatingTables:  ['seating', 'tables']        as const,
   seatingGuests:  ['seating', 'guests']        as const,
+}
+
+// ── Meal options ──────────────────────────────────────────────────────────────
+
+export function useMealOptions() {
+  return useQuery<MealOption[]>({
+    queryKey: QK.mealOptions,
+    queryFn: () => apiFetch('/guests/api/meal-options/'),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+/** key → label map for display; falls back to {} while loading. */
+export function useMealLabels(): Record<string, string> {
+  const { data } = useMealOptions()
+  return useMemo(
+    () => Object.fromEntries((data ?? []).map((o) => [o.key, o.label])),
+    [data],
+  )
 }
 
 // ── Members ───────────────────────────────────────────────────────────────────

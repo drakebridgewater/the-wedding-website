@@ -6,7 +6,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.urls import reverse
 from django.http import Http404
 from django.template.loader import render_to_string
-from guests.models import Party, MEALS
+from guests.models import Party, MealOption
 
 INVITATION_TEMPLATE = 'guests/email_templates/invitation.html'
 
@@ -185,7 +185,7 @@ def get_invitation_context(party):
         'rsvp_button_color': '#337ab7',
         'invitation_id': party.invitation_id,
         'party': party,
-        'meals': MEALS,
+        'meals': MealOption.choices(),
     }
 
 

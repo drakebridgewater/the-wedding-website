@@ -2,7 +2,13 @@ export type MemberRole =
   | 'bride' | 'groom' | 'maid_of_honor' | 'best_man'
   | 'bridesmaid' | 'groomsman' | 'officiant' | 'other'
 
-export type Meal = 'beef' | 'fish' | 'hen' | 'vegetarian' | ''
+// Meal keys are configured in the Django admin (MealOption); fetched via /guests/api/meal-options/
+export type Meal = string
+
+export interface MealOption {
+  key: string
+  label: string
+}
 export type PartyType = 'formal' | 'fun' | 'family' | 'work' | ''
 
 export interface WeddingPartyMember {
@@ -163,14 +169,6 @@ export const ROLE_LABELS: Record<MemberRole, string> = {
   groomsman: 'Groomsman',
   officiant: 'Officiant',
   other: 'Other',
-}
-
-export const MEAL_LABELS: Record<string, string> = {
-  '': '—',
-  beef: 'Beef',
-  fish: 'Fish',
-  hen: 'Chicken',
-  vegetarian: 'Vegetarian',
 }
 
 export const PARTY_TYPE_LABELS: Record<string, string> = {

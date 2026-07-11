@@ -44,8 +44,8 @@
             {% endwith %}
           </div>
 
-          <!-- Meal selection (adults only) -->
-          {% if not guest.is_child %}
+          <!-- Meal selection (adults only, hidden when no options are configured) -->
+          {% if meals and not guest.is_child %}
           <div class="meal-group {% if guest.is_attending == False %}opacity-40 pointer-events-none{% endif %}">
             <p class="text-sm text-stone-600 mb-2">… and will eat</p>
             <div class="flex flex-wrap gap-3">

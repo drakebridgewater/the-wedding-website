@@ -6,7 +6,8 @@ import {
   useUploadMemberPhoto,
 } from '../api'
 import type { Guest, MemberRole, WeddingPartyMember } from '../types'
-import { MEAL_LABELS, ROLE_LABELS, ROLE_ORDER } from '../types'
+import { ROLE_LABELS, ROLE_ORDER } from '../types'
+import { MealSelectOptions } from '../components/MealSelectOptions'
 import { BlurField } from '../components/BlurField'
 import { CheckboxField } from '../components/FormField'
 import { attendingLabel } from '../components/badges'
@@ -143,9 +144,7 @@ export function GuestPanel({
             onChange={(e) => save({ meal: e.target.value as Guest['meal'] }).catch(() => toast.error('Failed'))}
             className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400"
           >
-            {Object.entries(MEAL_LABELS).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
-            ))}
+            <MealSelectOptions current={guest.meal ?? ''} />
           </select>
         </div>
       </div>

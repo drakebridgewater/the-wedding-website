@@ -49,7 +49,7 @@
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">Pending</span>
               {% endif %}
             </td>
-            <td class="px-4 py-2.5 text-stone-600">{{ guest.get_meal_display|default:"—" }}</td>
+            <td class="px-4 py-2.5 text-stone-600">{{ guest.meal_display|default:"—" }}</td>
             <td class="px-4 py-2.5 text-stone-600">{% if guest.is_child %}Yes{% else %}—{% endif %}</td>
             <td class="px-4 py-2.5 text-stone-600">{{ guest.seating_table.name|default:"—" }}</td>
           </tr>
