@@ -42,6 +42,7 @@
           </li>
           {% endfor %}
         </ul>
+        <div id="sync-drive-info" class="px-5 py-2.5 border-t border-stone-100 text-[11px] text-stone-400 hidden"></div>
         <div id="sync-footer" class="px-5 py-3 border-t border-stone-100 text-xs text-stone-400 flex items-center gap-2">
           <svg id="sync-spinner" class="w-3.5 h-3.5 animate-spin text-stone-400" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -60,12 +61,56 @@
       document.getElementById('sync-btn').disabled = false;
     }
 
+    function formatBytes(b) {
+      if (b == null) return '?';
+      if (b >= 1e9) return (b / 1e9).toFixed(2) + ' GB';
+      if (b >= 1e6) return (b / 1e6).toFixed(1) + ' MB';
+      if (b >= 1e3) return (b / 1e3).toFixed(1) + ' KB';
+      return b + ' B';
+    }
+
+    function loadDriveInfo() {
+      const box = document.getElementById('sync-drive-info');
+      box.classList.add('hidden');
+      box.classList.remove('text-red-600');
+      box.classList.add('text-stone-400');
+      fetch('/drive/info/')
+        .then(r => r.json())
+        .then(info => {
+          box.classList.remove('hidden');
+          if (info.error) {
+            box.textContent = 'Drive info unavailable: ' + info.error;
+            return;
+          }
+          const limitTxt = info.limit == null ? 'unlimited' : formatBytes(info.limit);
+          let line = 'Service account ' + info.account_email +
+                     ' — Drive storage: ' + formatBytes(info.usage) + ' of ' + limitTxt;
+          if (info.limit != null && info.usage != null) {
+            line += ' (' + (100 * info.usage / info.limit).toFixed(1) + '%)';
+            if (info.usage >= info.limit) {
+              box.classList.replace('text-stone-400', 'text-red-600');
+              line += ' — quota full! The sheet must be owned by your account and shared with the service account, not created by it.';
+            }
+          }
+          if (info.usage_in_drive_trash) {
+            line += ' · trash: ' + formatBytes(info.usage_in_drive_trash);
+          }
+          box.textContent = line;
+        })
+        .catch(() => {
+          box.classList.remove('hidden');
+          box.textContent = 'Drive info unavailable';
+        });
+    }
+
     function triggerSync() {
       const modal = document.getElementById('sync-modal');
       const btn = document.getElementById('sync-btn');
       const closeBtn = document.getElementById('sync-close-btn');
       const footer = document.getElementById('sync-footer-text');
       const spinner = document.getElementById('sync-spinner');
+
+      loadDriveInfo();
 
       // Reset all sheet icons to pending
       document.querySelectorAll('.sync-sheet-item').forEach(li => {

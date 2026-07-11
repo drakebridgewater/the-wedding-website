@@ -5,4 +5,5 @@ app_name = 'drive_sync'
 
 urlpatterns = [
     path('sync/', views.trigger_sync, name='sync'),
+    path('info/', views.drive_info, name='info'),
 ]
