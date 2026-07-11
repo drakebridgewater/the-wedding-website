@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import EmailTemplate, Guest, Party, SaveTheDateSettings, SentEmail, WeddingPartyGroup, WeddingPartyMember
+from .models import EmailTemplate, Guest, MealOption, Party, SaveTheDateSettings, SentEmail, WeddingPartyGroup, WeddingPartyMember
 from .serializers import (
     EmailTemplateSerializer,
     GuestSerializer,
@@ -20,6 +20,17 @@ def _parse_name(full_name):
     """Split 'First Last Name' into (first, rest)."""
     parts = full_name.strip().split(' ', 1)
     return parts[0], parts[1] if len(parts) > 1 else ''
+
+
+# ── Meal options ───────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def meal_options(request):
+    return Response([
+        {'key': key, 'label': label}
+        for key, label in MealOption.choices()
+    ])
 
 
 # ── Wedding party members ──────────────────────────────────────────────────────

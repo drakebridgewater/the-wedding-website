@@ -3,7 +3,8 @@ import { createColumnHelper, type VisibilityState } from '@tanstack/react-table'
 import { DataTable } from '../components/DataTable'
 import { Badge, AttendingBadge, GuestFlags } from '../components/badges'
 import type { Guest, Party, InviteStatus, WeddingPartyMember } from '../types'
-import { MEAL_LABELS, INVITE_STATUS_LABELS, INVITE_STATUS_COLORS } from '../types'
+import { INVITE_STATUS_LABELS, INVITE_STATUS_COLORS } from '../types'
+import { useMealLabels } from '../api'
 
 export type FlatRow = { guest: Guest; party: Party }
 
@@ -34,6 +35,7 @@ export function GuestTable({
   memberByGuestId: Map<number, WeddingPartyMember>
   onOpenGuest: (partyId: number, guestId: number) => void
 }) {
+  const mealLabels = useMealLabels()
   const columns = useMemo(() => [
     columnHelper.accessor((row) => `${row.guest.first_name} ${row.guest.last_name}`.trim(), {
       id: 'name',
@@ -85,7 +87,7 @@ export function GuestTable({
     columnHelper.accessor((row) => row.guest.meal ?? '', {
       id: 'meal',
       header: 'Meal',
-      cell: (info) => <span className="text-stone-500 text-[11px]">{MEAL_LABELS[info.getValue()] || '—'}</span>,
+      cell: (info) => <span className="text-stone-500 text-[11px]">{mealLabels[info.getValue()] || info.getValue() || '—'}</span>,
     }),
     columnHelper.accessor((row) => row.guest.dietary_restrictions ?? '', {
       id: 'dietary',
@@ -104,7 +106,7 @@ export function GuestTable({
         )
       },
     }),
-  ], [memberByGuestId])
+  ], [memberByGuestId, mealLabels])
 
   return (
     <DataTable

@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useUpdateGuest, useDeleteGuest } from '../api'
 import type { Guest, Party, WeddingPartyMember } from '../types'
-import { MEAL_LABELS } from '../types'
+import { MealSelectOptions } from '../components/MealSelectOptions'
 import { InlineEditCell } from '../components/InlineEditCell'
 import { AttendingBadge, GuestFlags } from '../components/badges'
 import { ConfirmDialog } from '../components/ConfirmDialog'
@@ -80,9 +80,7 @@ export function GuestRow({
             }
             className="text-[11px] border-0 bg-transparent text-stone-500 focus:outline-none cursor-pointer"
           >
-            {Object.entries(MEAL_LABELS).map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
+            <MealSelectOptions current={guest.meal ?? ''} />
           </select>
         </td>
         <td className="px-2 py-2 hidden md:table-cell text-stone-400 text-[11px] max-w-[140px]">

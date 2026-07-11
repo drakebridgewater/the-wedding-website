@@ -13,6 +13,7 @@ urlpatterns = [
     path('guests/manage/', manage_page, name='manage'),
 
     # REST API
+    path('guests/api/meal-options/', api_views.meal_options, name='api-meal-options'),
     path('guests/api/members/', api_views.members, name='api-members'),
     path('guests/api/members/<int:pk>/', api_views.member_detail, name='api-member-detail'),
     path('guests/api/members/<int:pk>/photo/', api_views.member_photo, name='api-member-photo'),

@@ -104,11 +104,14 @@ def dashboard(request):
         Q(meal__isnull=True) | Q(meal='')
     ).count()
 
-    meal_breakdown = (
-        Guest.objects.filter(is_attending=True)
+    from guests.models import MealOption
+    meal_labels = MealOption.label_map()
+    meal_breakdown = [
+        {'meal': meal_labels.get(row['meal'], row['meal']), 'count': row['count']}
+        for row in Guest.objects.filter(is_attending=True)
         .exclude(meal=None).exclude(meal='')
         .values('meal').annotate(count=Count('*'))
-    )
+    ]
 
     # --- Budget stats ---
     # Mirror the budget page API: sum Expense records first; fall back to actual_cost.

@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import { useParties } from '../api'
-import { MEAL_LABELS } from '../types'
+import { useMealLabels, useParties } from '../api'
 import { AttendingBadge, Badge, GuestFlags } from '../components/badges'
 import { EmptyState } from '../components/EmptyState'
 
@@ -11,6 +10,7 @@ export function RehearsalDinnerTab({
   onOpenGuest: (partyId: number, guestId: number) => void
 }) {
   const { data: parties = [], isLoading } = useParties()
+  const mealLabels = useMealLabels()
 
   const rehearsalParties = useMemo(
     () => parties.filter((p) => p.rehearsal_dinner),
@@ -91,7 +91,7 @@ export function RehearsalDinnerTab({
                         <AttendingBadge value={guest.is_attending} />
                       </td>
                       <td className="px-3 py-2.5 hidden sm:table-cell text-stone-500">
-                        {MEAL_LABELS[guest.meal ?? ''] || '—'}
+                        {mealLabels[guest.meal ?? ''] || guest.meal || '—'}
                       </td>
                       <td className="px-3 py-2.5 text-stone-600">
                         {guest.dietary_restrictions || <span className="text-stone-300">None</span>}

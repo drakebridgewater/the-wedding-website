@@ -99,12 +99,29 @@ class Party(models.Model):
         return list(filter(None, self.guest_set.values_list('email', flat=True)))
 
 
-MEALS = [
-    ('beef', 'beef'),
-    ('fish', 'fish'),
-    ('hen', 'chicken'),
-    ('vegetarian', 'vegetarian'),
-]
+class MealOption(models.Model):
+    """
+    A food choice offered on the RSVP form. Managed in the Django admin;
+    Guest.meal stores the key.
+    """
+    key = models.SlugField(max_length=20, unique=True)
+    label = models.CharField(max_length=100)
+    ordering = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True, help_text='Inactive options are hidden from the RSVP form but stay valid on existing guests.')
+
+    class Meta:
+        ordering = ['ordering', 'label']
+
+    def __str__(self):
+        return self.label
+
+    @classmethod
+    def choices(cls):
+        return list(cls.objects.filter(is_active=True).values_list('key', 'label'))
+
+    @classmethod
+    def label_map(cls):
+        return dict(cls.objects.values_list('key', 'label'))
 
 
 class Guest(models.Model):
@@ -116,7 +133,7 @@ class Guest(models.Model):
     last_name = models.TextField(null=True, blank=True)
     email = models.TextField(null=True, blank=True)
     is_attending = models.BooleanField(default=None, null=True)
-    meal = models.CharField(max_length=20, choices=MEALS, null=True, blank=True)
+    meal = models.CharField(max_length=20, null=True, blank=True)
     is_child = models.BooleanField(default=False)
     dietary_restrictions = models.TextField(blank=True)
     label = models.CharField(max_length=100, blank=True)
@@ -137,6 +154,12 @@ class Guest(models.Model):
     def unique_id(self):
         # convert to string so it can be used in the "add" templatetag
         return str(self.pk)
+
+    @property
+    def meal_display(self):
+        if not self.meal:
+            return ''
+        return MealOption.label_map().get(self.meal, self.meal)
 
     def __str__(self):
         return 'Guest: {} {}'.format(self.first_name, self.last_name)

@@ -13,7 +13,7 @@ from django.views.generic import ListView
 from guests import csv_import
 from guests.invitation import get_invitation_context, INVITATION_TEMPLATE, guess_party_by_invite_id_or_404, \
     send_invitation_email
-from guests.models import Guest, MEALS, Party
+from guests.models import Guest, MealOption, Party
 from guests.save_the_date import get_save_the_date_context_from_settings, send_save_the_date_email, SAVE_THE_DATE_TEMPLATE
 
 
@@ -57,7 +57,7 @@ def invitation(request, invite_id):
         return HttpResponseRedirect(reverse('rsvp-confirm', args=[invite_id]))
     return render(request, template_name='guests/invitation.html', context={
         'party': party,
-        'meals': MEALS,
+        'meals': MealOption.choices(),
         'couple_name' : settings.BRIDE_AND_GROOM,
         'website_url': settings.WEDDING_WEBSITE_URL,        
     })
