@@ -1,11 +1,33 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from guests.models import WeddingPartyMember
 from .models import FundMessage, PageSectionItem, Question, WeddingSettings
+
+log = logging.getLogger(__name__)
+
+
+def _notify_support(subject, body):
+    """Email the couple's support address about a new guest submission.
+
+    Failures are logged but never surfaced to the guest — the submission
+    itself has already been saved.
+    """
+    try:
+        send_mail(
+            subject,
+            body,
+            settings.DEFAULT_WEDDING_FROM_EMAIL,
+            [settings.DEFAULT_WEDDING_REPLY_EMAIL],
+        )
+    except Exception:
+        log.exception('Failed to send support notification: %s', subject)
 
 ROLE_LABELS = {
     'bride': 'Bride', 'groom': 'Groom', 'maid_of_honor': 'Maid of Honor',
@@ -93,9 +115,14 @@ def upload_hero_photo(request):
 def submit_question(request):
     question_text = request.POST.get('question_text', '').strip()
     if question_text:
-        Question.objects.create(
-            name=request.POST.get('name', '').strip(),
-            question_text=question_text,
+        name = request.POST.get('name', '').strip()
+        Question.objects.create(name=name, question_text=question_text)
+        _notify_support(
+            'New question on the wedding website',
+            f'From: {name or "Anonymous"}\n\n'
+            f'{question_text}\n\n'
+            f'Approve it to show it on the site: '
+            f'{settings.WEDDING_WEBSITE_URL}/admin/wedding/question/',
         )
     return redirect('/#questions?submitted=1')
 
@@ -115,8 +142,13 @@ def honeymoon_fund(request):
 def submit_fund_message(request):
     message = request.POST.get('message', '').strip()
     if message:
-        FundMessage.objects.create(
-            name=request.POST.get('name', '').strip(),
-            message=message,
+        name = request.POST.get('name', '').strip()
+        FundMessage.objects.create(name=name, message=message)
+        _notify_support(
+            'New honeymoon fund message',
+            f'From: {name or "Anonymous"}\n\n'
+            f'{message}\n\n'
+            f'Approve it to show it on the honeymoon page: '
+            f'{settings.WEDDING_WEBSITE_URL}/admin/wedding/fundmessage/',
         )
     return redirect('/honeymoon/?submitted=1')
