@@ -9,6 +9,7 @@ export const MERGE_TAGS: { tag: string; label: string; tip: string }[] = [
   { tag: 'party_name', label: 'Family name', tip: 'e.g. "The Smith Family"' },
   { tag: 'first_name', label: 'First name', tip: "The first guest's first name" },
   { tag: 'rsvp_link', label: 'RSVP link', tip: 'Full link to their invitation' },
+  { tag: 'details_link', label: 'Details form link', tip: 'Link where the party can update names, emails, phones & address' },
   { tag: 'couple', label: "Couple's names", tip: 'From the site settings' },
   { tag: 'date', label: 'Wedding date', tip: 'From the site settings' },
   { tag: 'location', label: 'Location', tip: 'From the site settings' },

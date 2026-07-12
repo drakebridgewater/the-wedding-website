@@ -5,7 +5,7 @@ from django.views.generic import RedirectView
 from guests import api_views
 from guests.views import test_email, save_the_date_preview, save_the_date_random, export_guests, \
     invitation, invitation_email_preview, invitation_email_test, rsvp_confirm, \
-    invitations_list, send_party_invitation, manage_page
+    invitations_list, send_party_invitation, manage_page, contact_details
 
 
 urlpatterns = [
@@ -42,6 +42,7 @@ urlpatterns = [
     re_path(r'^guests/$', login_required(RedirectView.as_view(url='/guests/manage/', permanent=True)), name='guest-list'),
     re_path(r'^guests/export$', export_guests, name='export-guest-list'),
     re_path(r'^invite/(?P<invite_id>[\w-]+)/$', invitation, name='invitation'),
+    re_path(r'^details/(?P<invite_id>[\w-]+)/$', contact_details, name='guest-details'),
     re_path(r'^invite-email/(?P<invite_id>[\w-]+)/$', invitation_email_preview, name='invitation-email'),
     re_path(r'^invite-email-test/(?P<invite_id>[\w-]+)/$', invitation_email_test, name='invitation-email-test'),
     re_path(r'^save-the-date/$', save_the_date_random, name='save-the-date-random'),

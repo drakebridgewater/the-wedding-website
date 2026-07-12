@@ -102,12 +102,20 @@ export function GuestPanel({
         />
       </div>
 
-      <BlurField
-        label="Email"
-        value={guest.email ?? ''}
-        onSave={(v) => save({ email: v })}
-        type="email"
-      />
+      <div className="grid grid-cols-2 gap-3">
+        <BlurField
+          label="Email"
+          value={guest.email ?? ''}
+          onSave={(v) => save({ email: v })}
+          type="email"
+        />
+        <BlurField
+          label="Phone"
+          value={guest.phone ?? ''}
+          onSave={(v) => save({ phone: v })}
+          type="tel"
+        />
+      </div>
 
       <BlurField
         label="Label / Role"

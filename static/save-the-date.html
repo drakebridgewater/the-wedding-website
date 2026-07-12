@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Save the Date</title>
+
+<!-- ============================================================
+     CONFIG — pages is an array of strips; each strip is an array
+     of photo paths. Strips print automatically, one after another,
+     and stack behind each other. Theme: :root CSS variables below.
+     ============================================================ -->
+<script>
+  const CONFIG = {
+    names: "Drake & Shawna",
+    dateLabel: "Save the Date",
+    dateValue: "05 . 29 . 2027",
+    targetDate: "2027-05-29T16:00:00",   // local time — drives the countdown
+    afterMessage: "Just married",         // shown once the date has passed
+    subtext: "Formal invitation to follow",
+    pages: [
+      ["bigday/images/bw_cake.JPG", "bigday/images/bw_ds_bench_01.JPG", "bigday/images/des_bench_01.JPG", "bigday/images/ds_kiss.JPG"],
+      ["bigday/images/ds_bench_bridge.JPG", "bigday/images/bw_ds_bench_01.JPG", "bigday/images/des_bench_01.JPG", "bigday/images/ds_kiss.JPG"],
+    ],
+    printSegmentMs: 800,   // ms per photo-frame print segment
+    segmentPauseMs: 250,    // motor rest between segments
+    betweenPagesMs: 300    // pause before the next strip auto-prints
+  };
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  /* ---------- THEME ---------- */
+  --bg:      #0e1526;
+  --bg-glow: #650036;
+  --accent:  #d9bf8f;
+  --paper:   #f4f0e6;
+  /* --------------------------- */
+  --ink: rgba(14, 21, 38, 1);
+  --strip-w: min(210px, 56vw);
+  --frame-gap: 9px;
+  --chute-pad-x: 30px;   /* room for the behind strip to peek */
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; width: 100%; }
+
+body {
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 34%, var(--bg-glow) 0%, var(--bg) 68%);
+  color: var(--accent);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#fit {
+  transform-origin: center center;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(10px, 2vh, 22px);
+  padding: 20px 16px;
+}
+
+/* ---------- Names ---------- */
+.names {
+  font-family: "Pinyon Script", cursive;
+  font-size: clamp(2.2rem, 8vw, 3.4rem);
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 0 24px rgba(217, 191, 143, 0.25);
+  opacity: 0;
+  transform: translateY(8px);
+  animation: rise 1.4s 0.3s ease-out forwards;
+}
+
+/* ---------- Printer ---------- */
+.printer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.slot {
+  position: relative;
+  z-index: 5;
+  width: calc(var(--strip-w) + 56px);
+  height: 26px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #2a3550, #131b30 55%, #2a3550);
+  box-shadow:
+    inset 0 2px 3px rgba(255,255,255,0.10),
+    inset 0 -2px 4px rgba(0,0,0,0.6),
+    0 6px 24px rgba(0,0,0,0.55);
+}
+.slot::after {
+  content: "";
+  position: absolute;
+  left: 22px; right: 22px; top: 50%;
+  height: 7px;
+  transform: translateY(-50%);
+  border-radius: 4px;
+  background: #05070d;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.9);
+}
+
+.status-light {
+  position: absolute;
+  right: 9px; top: 50%;
+  width: 7px; height: 7px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #3a4666;
+  z-index: 6;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.printer.printing .status-light {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: blink 0.9s steps(2, jump-none) infinite;
+}
+
+/* The chute holds ALL strips. It clips only while printing. */
+.chute {
+  position: relative;
+  width: calc(var(--strip-w) + var(--chute-pad-x) * 2);
+  padding: 13px var(--chute-pad-x) 18px;
+  margin-top: -13px;
+  z-index: 2;
+}
+.chute.clipping { overflow: hidden; }
+.printer.printing .chute { animation: jitter 0.12s linear infinite; }
+
+/* ---------- Strips ---------- */
+.strip {
+  width: var(--strip-w);
+  background: var(--paper);
+  padding: calc(var(--frame-gap) + 4px) var(--frame-gap) 14px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--frame-gap);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.5);
+  transform-origin: top center;
+  will-change: transform;
+  transition: transform 0.65s cubic-bezier(0.3, 0.9, 0.35, 1),
+              filter 0.65s ease;
+}
+
+/* Front strip: in flow, defines chute height */
+.strip.front {
+  position: relative;
+  z-index: 3;
+  filter: none;
+}
+.strip.settled { animation: sway 4.5s 0.2s ease-in-out; }
+
+/* Behind strips: absolute at identical coordinates, offset by vars */
+.strip.behind {
+  position: absolute;
+  top: 13px;
+  left: var(--chute-pad-x);
+  z-index: 1;
+  transform: translate(var(--bx, -18px), var(--by, 8px))
+             rotate(var(--br, -2.4deg)) scale(0.98);
+  filter: brightness(0.72);
+  cursor: pointer;
+}
+.strip.behind:hover,
+.strip.behind:focus-visible {
+  transform: translate(calc(var(--bx, -18px) * 1.6), var(--by, 8px))
+             rotate(calc(var(--br, -2.4deg) * 1.3)) scale(0.98);
+  filter: brightness(0.9);
+}
+.strip.behind:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.strip.behind .frame { pointer-events: none; }
+.strip.printing-now { transition: none; }   /* JS drives transform during print */
+
+/* ---------- Frames ---------- */
+.frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #d8d2c4;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  display: block;
+  width: 100%;
+  cursor: default;
+  font: inherit;
+}
+.frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: filter 2s ease, transform 0.35s ease;
+}
+.front .frame.developed { cursor: zoom-in; }
+.front .frame.developed:hover img,
+.front .frame.developed:focus-visible img { transform: scale(1.04); }
+.frame:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.frame .placeholder {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8b8574;
+  background:
+    repeating-linear-gradient(45deg, #ddd7c9 0 12px, #d3cdbe 12px 24px);
+}
+.frame.missing .placeholder { display: grid; }
+
+.strip-caption {
+  text-align: center;
+  color: var(--ink);
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+
+/* ---------- Flash ---------- */
+.flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.flash.fire { animation: flash 0.4s ease-out; }
+
+/* ---------- Header date (under the names) ---------- */
+.header-date {
+  text-align: center;
+  margin-top: -8px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: rise 1.4s 0.7s ease-out forwards;
+}
+.date-label {
+  font-family: "Pinyon Script", cursive;
+  font-size: clamp(1.5rem, 5.5vw, 2rem);
+}
+.date-value {
+  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  letter-spacing: 0.28em;
+  margin-top: 2px;
+}
+
+/* ---------- Countdown (bottom, revealed after first print) ---------- */
+.date-block {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+}
+.date-block.show { animation: rise 1.6s ease-out forwards; }
+.countdown {
+  display: flex;
+  justify-content: center;
+  gap: clamp(14px, 4vw, 28px);
+}
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 3.2ch;
+}
+.unit .num {
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.unit .lbl {
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-top: 2px;
+}
+.countdown .after-message {
+  font-family: "Pinyon Script", cursive;
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+}
+.date-sub {
+  font-style: italic;
+  font-size: 0.95rem;
+  opacity: 0.65;
+  margin-top: 8px;
+}
+
+/* ---------- Replay ---------- */
+.replay {
+  border: 1px solid rgba(217,191,143,0.35);
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s, background 0.3s;
+}
+.replay.show { opacity: 0.75; pointer-events: auto; }
+.replay:hover { background: rgba(217,191,143,0.08); }
+
+/* ---------- Start overlay ---------- */
+.start {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 12, 22, 0.55);
+  backdrop-filter: blur(3px);
+  border: 0;
+  cursor: pointer;
+  transition: opacity 0.6s;
+}
+.start.hidden { opacity: 0; pointer-events: none; }
+.start .ring {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  font-size: 0.8rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+/* ---------- Lightbox ---------- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: none;
+  place-items: center;
+  background: rgba(5, 8, 15, 0.88);
+  backdrop-filter: blur(4px);
+}
+.lightbox.open { display: grid; }
+.lb-stage { position: relative; max-width: min(92vw, 720px); }
+.lb-photo {
+  width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  background: var(--paper);
+  padding: 12px 12px 40px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.7);
+}
+.lb-photo.missing {
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  color: #8b8574;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background:
+    repeating-linear-gradient(45deg, #ddd7c9 0 12px, #d3cdbe 12px 24px)
+    padding-box, var(--paper);
+}
+.lb-caption {
+  position: absolute;
+  left: 0; right: 0; bottom: 10px;
+  text-align: center;
+  color: var(--ink);
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.lb-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid rgba(217,191,143,0.4);
+  background: rgba(14,21,38,0.6);
+  color: var(--accent);
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.lb-prev { left: -54px; }
+.lb-next { right: -54px; }
+.lb-close {
+  position: absolute;
+  top: -50px; right: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+@media (max-width: 620px) {
+  .lb-prev { left: 6px; }
+  .lb-next { right: 6px; }
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes rise  { to { opacity: 1; transform: translateY(0); } }
+@keyframes blink { 50% { opacity: 0.35; } }
+@keyframes flash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
+@keyframes pulse { 50% { transform: scale(1.07); opacity: 0.8; } }
+@keyframes sway {
+  0%   { transform: translateY(0) rotate(0deg); }
+  20%  { transform: translateY(0) rotate(0.7deg); }
+  50%  { transform: translateY(0) rotate(-0.5deg); }
+  80%  { transform: translateY(0) rotate(0.25deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes jitter {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(0.6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .names, .date-block.show { animation-duration: 0.01s; }
+  .strip { transition: none; }
+  .strip.settled,
+  .printer.printing .chute { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="flash" id="flash"></div>
+
+<button class="start" id="start" aria-label="Play the save the date reveal">
+  <span class="ring">Open</span>
+</button>
+
+<div id="fit">
+  <main class="scene" id="scene">
+    <h1 class="names" id="names"></h1>
+    <div class="header-date">
+      <div class="date-label" id="dateLabel"></div>
+      <div class="date-value" id="dateValue"></div>
+    </div>
+
+    <div class="printer" id="printer">
+      <div class="slot"><span class="status-light"></span></div>
+      <div class="chute" id="chute"></div>
+    </div>
+
+    <div class="date-block" id="dateBlock">
+      <div class="countdown" id="countdown" aria-label="Countdown to the wedding" role="timer">
+        <div class="unit"><span class="num" id="cdD">0</span><span class="lbl">Days</span></div>
+        <div class="unit"><span class="num" id="cdH">0</span><span class="lbl">Hours</span></div>
+        <div class="unit"><span class="num" id="cdM">0</span><span class="lbl">Minutes</span></div>
+        <div class="unit"><span class="num" id="cdS">0</span><span class="lbl">Seconds</span></div>
+      </div>
+      <div class="date-sub" id="dateSub"></div>
+    </div>
+
+    <button class="replay" id="replay">Start over</button>
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <div class="lb-stage">
+    <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+    <button class="lb-btn lb-prev" id="lbPrev" aria-label="Previous photo">&#8249;</button>
+    <img class="lb-photo" id="lbPhoto" alt="">
+    <div class="lb-photo missing" id="lbMissing" style="display:none"></div>
+    <div class="lb-caption" id="lbCaption"></div>
+    <button class="lb-btn lb-next" id="lbNext" aria-label="Next photo">&#8250;</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const chute = $("chute"), printer = $("printer"), fit = $("fit"),
+        scene = $("scene"), dateBlock = $("dateBlock"), flash = $("flash"),
+        startBtn = $("start"), replayBtn = $("replay"),
+        lightbox = $("lightbox"), lbPhoto = $("lbPhoto"),
+        lbMissing = $("lbMissing"), lbCaption = $("lbCaption");
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  $("names").textContent     = CONFIG.names;
+  $("dateLabel").textContent = CONFIG.dateLabel;
+  $("dateValue").textContent = CONFIG.dateValue;
+  $("dateSub").textContent   = CONFIG.subtext;
+
+  /* ---------------- live countdown ---------------- */
+  (() => {
+    const target = new Date(CONFIG.targetDate).getTime();
+    const cd = $("countdown");
+    const D = $("cdD"), H = $("cdH"), M = $("cdM"), S = $("cdS");
+    if (Number.isNaN(target)) {
+      cd.innerHTML = `<span class="after-message">${CONFIG.dateValue}</span>`;
+      return;
+    }
+    function tick() {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        cd.innerHTML = `<span class="after-message">${CONFIG.afterMessage}</span>`;
+        clearInterval(timer);
+        return;
+      }
+      const s = Math.floor(diff / 1000);
+      D.textContent = String(Math.floor(s / 86400));
+      H.textContent = String(Math.floor(s / 3600) % 24).padStart(2, "0");
+      M.textContent = String(Math.floor(s / 60) % 60).padStart(2, "0");
+      S.textContent = String(s % 60).padStart(2, "0");
+    }
+    const timer = setInterval(tick, 1000);
+    tick();
+  })();
+
+  /* ---------------- viewport-fit scaling ---------------- */
+  /* Reserve the chute's final height up front so the layout never
+     changes when a strip prints — measured with a hidden ghost strip. */
+  function reserveChute() {
+    const n = Math.max(...CONFIG.pages.map(p => p.length));
+    const ghost = document.createElement("div");
+    ghost.className = "strip";
+    ghost.style.visibility = "hidden";
+    for (let i = 0; i < n; i++) {
+      const f = document.createElement("div");
+      f.className = "frame";
+      ghost.appendChild(f);
+    }
+    const cap = document.createElement("div");
+    cap.className = "strip-caption";
+    cap.textContent = CONFIG.dateValue;
+    ghost.appendChild(cap);
+    chute.appendChild(ghost);
+    const h = ghost.offsetHeight;
+    chute.removeChild(ghost);
+    chute.style.minHeight = (h + 13 + 18) + "px";  // + chute's own padding
+  }
+
+  function rescale() {
+    fit.style.transform = "none";
+    reserveChute();
+    const w = scene.offsetWidth;
+    const h = scene.offsetHeight;
+    if (!w || !h) return;
+    const s = Math.min(1, (innerWidth * 0.96) / w, (innerHeight * 0.95) / h);
+    fit.style.transform = `scale(${s})`;
+  }
+  addEventListener("resize", rescale);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rescale);
+  // Initial rescale after first paint
+  requestAnimationFrame(() => requestAnimationFrame(rescale));
+
+  /* ---------------- state ---------------- */
+  let pageIndex = 0;
+  let printing = false;
+  let frontStrip = null;
+  const stripOrder = [];      // most-recently-fronted first (excl. front)
+  const gallery = [];         // {src, ok, label}
+  let lbIndex = 0;
+
+  /* Behind-offset table, cycled for 3+ strips */
+  const OFFSETS = [
+    { bx: "-20px", by: "8px",  br: "-2.6deg" },
+    { bx: "22px",  by: "10px", br: "2.2deg"  },
+    { bx: "-34px", by: "14px", br: "-4deg"   },
+    { bx: "36px",  by: "16px", br: "3.6deg"  }
+  ];
+
+  function layoutStack() {
+    stripOrder.forEach((el, i) => {
+      const o = OFFSETS[i % OFFSETS.length];
+      el.classList.add("behind");
+      el.classList.remove("front", "settled");
+      el.style.setProperty("--bx", o.bx);
+      el.style.setProperty("--by", o.by);
+      el.style.setProperty("--br", o.br);
+      el.style.zIndex = String(Math.max(0, 2 - i)); // deeper = lower
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-label", `Bring photo strip ${el.dataset.pageNo} to front`);
+    });
+    if (frontStrip) {
+      frontStrip.classList.add("front");
+      frontStrip.classList.remove("behind");
+      frontStrip.style.transform = "";
+      frontStrip.style.zIndex = "3";
+      frontStrip.removeAttribute("tabindex");
+      frontStrip.removeAttribute("role");
+      frontStrip.removeAttribute("aria-label");
+    }
+  }
+
+  function bringToFront(el) {
+    if (printing || el === frontStrip) return;
+    const i = stripOrder.indexOf(el);
+    if (i === -1) return;
+    stripOrder.splice(i, 1);
+    if (frontStrip) stripOrder.unshift(frontStrip);
+    frontStrip = el;
+    layoutStack();
+  }
+
+  /* ---------------- strip builder ---------------- */
+  function buildStrip(page, pageNo) {
+    const strip = document.createElement("div");
+    strip.className = "strip";
+    strip.dataset.pageNo = String(pageNo + 1);
+    const frames = page.map((src, i) => {
+      const f = document.createElement("button");
+      f.className = "frame";
+      f.type = "button";
+      f.disabled = true;
+      const entry = { src, ok: true, label: `Strip ${pageNo + 1} · Photo ${i + 1}` };
+      f.dataset.galleryIndex = String(gallery.length);
+      gallery.push(entry);
+
+      const img = new Image();
+      img.alt = entry.label;
+      img.src = src;
+      img.onerror = () => { f.classList.add("missing"); entry.ok = false; };
+      const ph = document.createElement("div");
+      ph.className = "placeholder";
+      ph.textContent = `Photo ${i + 1}`;
+      f.append(img, ph);
+      f.addEventListener("click", e => {
+        e.stopPropagation();
+        openLightbox(+f.dataset.galleryIndex);
+      });
+      strip.appendChild(f);
+      return f;
+    });
+    const caption = document.createElement("div");
+    caption.className = "strip-caption";
+    caption.textContent = CONFIG.dateValue;
+    strip.appendChild(caption);
+
+    strip.addEventListener("click", () => bringToFront(strip));
+    strip.addEventListener("keydown", e => {
+      if ((e.key === "Enter" || e.key === " ") && strip.classList.contains("behind")) {
+        e.preventDefault();
+        bringToFront(strip);
+      }
+    });
+    return { strip, frames };
+  }
+
+  /* ---------------- print animation ---------------- */
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const easeOut = t => 1 - Math.pow(1 - t, 2.4);
+
+  function segment(strip, from, to, ms) {
+    return new Promise(res => {
+      const t0 = performance.now();
+      (function tick(now) {
+        const p = Math.min(1, (now - t0) / ms);
+        const y = -100 + (from + (to - from) * easeOut(p)) * 100;
+        strip.style.transform = `translateY(${y}%)`;
+        p < 1 ? requestAnimationFrame(tick) : res();
+      })(t0);
+    });
+  }
+
+  async function printPage() {
+    if (printing || pageIndex >= CONFIG.pages.length) return;
+    printing = true;
+    replayBtn.classList.remove("show");
+
+    /* demote current front to the stack — freeze height first to prevent jump */
+    if (frontStrip) {
+      // Pin chute to its current pixel height so nothing collapses when the
+      // front strip leaves the normal flow and becomes absolute
+      chute.style.height = chute.offsetHeight + "px";
+      stripOrder.unshift(frontStrip);
+      frontStrip = null;
+      // layoutStack runs synchronously — the strip is now absolute,
+      // so chute height stays from the pinned value above
+      layoutStack();
+      if (!reduced) await sleep(700);          // let it glide to behind position
+      // Release the pinned height; the NEW front strip will define it
+      chute.style.height = "";
+    }
+
+    const { strip, frames } = buildStrip(CONFIG.pages[pageIndex], pageIndex);
+    strip.classList.add("front", "printing-now");
+    strip.style.transform = "translateY(-100%)";
+    chute.appendChild(strip);
+    frontStrip = strip;
+    chute.classList.add("clipping");
+
+    if (reduced) {
+      strip.style.transform = "";
+      strip.classList.remove("printing-now");
+      chute.classList.remove("clipping");
+      frames.forEach(develop);
+      return finishPage();
+    }
+
+    await sleep(pageIndex === 0 ? 500 : 200);
+    if (pageIndex === 0) {
+      flash.classList.remove("fire");
+      void flash.offsetWidth;
+      flash.classList.add("fire");
+      await sleep(650);
+    }
+
+    printer.classList.add("printing");
+    const n = frames.length;
+    for (let i = 0; i < n; i++) {
+      await segment(strip, i / n, (i + 1) / n, CONFIG.printSegmentMs);
+      develop(frames[i]);
+      if (i < n - 1) await sleep(CONFIG.segmentPauseMs);
+    }
+    strip.style.transform = "";
+    strip.classList.remove("printing-now");
+    printer.classList.remove("printing");
+    chute.classList.remove("clipping");
+    strip.classList.add("settled");
+    await sleep(400);
+    finishPage();
+  }
+
+  function develop(frame) {
+    frame.classList.add("developed");
+    frame.disabled = false;
+  }
+
+  async function finishPage() {
+    pageIndex++;
+    printing = false;
+    if (!dateBlock.classList.contains("show")) {
+      dateBlock.classList.add("show");
+    }
+    if (pageIndex < CONFIG.pages.length) {
+      await sleep(reduced ? 50 : CONFIG.betweenPagesMs);
+      printPage();                              // auto-print the next strip
+    } else {
+      replayBtn.classList.add("show");
+    }
+  }
+
+  /* ---------------- lightbox ---------------- */
+  function openLightbox(i) {
+    lbIndex = i;
+    renderLightbox();
+    lightbox.classList.add("open");
+  }
+  function renderLightbox() {
+    const entry = gallery[lbIndex];
+    lbCaption.textContent = entry.label;
+    if (entry.ok) {
+      lbPhoto.src = entry.src;
+      lbPhoto.alt = entry.label;
+      lbPhoto.style.display = "";
+      lbMissing.style.display = "none";
+    } else {
+      lbPhoto.style.display = "none";
+      lbMissing.style.display = "grid";
+      lbMissing.textContent = entry.label;
+    }
+  }
+  function closeLightbox() { lightbox.classList.remove("open"); }
+  function step(d) {
+    lbIndex = (lbIndex + d + gallery.length) % gallery.length;
+    renderLightbox();
+  }
+  $("lbClose").addEventListener("click", closeLightbox);
+  $("lbPrev").addEventListener("click", () => step(-1));
+  $("lbNext").addEventListener("click", () => step(1));
+  lightbox.addEventListener("click", e => {
+    if (e.target === lightbox) closeLightbox();
+  });
+  document.addEventListener("keydown", e => {
+    if (!lightbox.classList.contains("open")) return;
+    if (e.key === "Escape")     closeLightbox();
+    if (e.key === "ArrowLeft")  step(-1);
+    if (e.key === "ArrowRight") step(1);
+  });
+
+  /* ---------------- controls ---------------- */
+  function resetAll() {
+    chute.innerHTML = "";
+    gallery.length = 0;
+    stripOrder.length = 0;
+    frontStrip = null;
+    pageIndex = 0;
+    printing = false;
+    dateBlock.classList.remove("show");
+    replayBtn.classList.remove("show");
+    rescale();
+    printPage();
+  }
+  replayBtn.addEventListener("click", resetAll);
+
+  startBtn.addEventListener("click", () => {
+    startBtn.classList.add("hidden");
+    printPage();
+  }, { once: true });
+})();
+</script>
+</body>
+</html>

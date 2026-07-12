@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from .models import FundMessage, PageSectionItem, Question, Theme, WeddingSettings
 
@@ -62,9 +63,18 @@ class PageSectionItemAdmin(admin.ModelAdmin):
     )
 
 
+class _EditButtonMixin:
+    """First list_display column is the row's change-form link; a blank name
+    would render an empty, unclickable link, so lead with an Edit button."""
+
+    @admin.display(description='')
+    def edit_button(self, obj):
+        return mark_safe('<span class="button">Edit</span>')
+
+
 @admin.register(FundMessage)
-class FundMessageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'message', 'is_approved', 'created_at']
+class FundMessageAdmin(_EditButtonMixin, admin.ModelAdmin):
+    list_display = ['edit_button', 'name', 'message', 'is_approved', 'created_at']
     list_filter = ['is_approved']
     list_editable = ['is_approved']
     search_fields = ['name', 'message']
@@ -72,8 +82,8 @@ class FundMessageAdmin(admin.ModelAdmin):
 
 
 @admin.register(Question)
-class QuestionAdmin(admin.ModelAdmin):
-    list_display = ['name', 'question_text', 'is_approved', 'created_at']
+class QuestionAdmin(_EditButtonMixin, admin.ModelAdmin):
+    list_display = ['edit_button', 'name', 'question_text', 'is_approved', 'created_at']
     list_filter = ['is_approved']
     list_editable = ['is_approved']
     search_fields = ['name', 'question_text', 'answer']

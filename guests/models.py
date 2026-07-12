@@ -53,6 +53,15 @@ class Party(models.Model):
     rsvp_responded_at = models.DateTimeField(null=True, blank=True, default=None)
     comments = models.TextField(null=True, blank=True)
     address = models.TextField(blank=True)
+    # Structured components, filled when the guest picks a Google Places
+    # suggestion on the RSVP form. address_verified means the address came
+    # from a Places suggestion rather than being free-typed.
+    address_street = models.CharField(max_length=200, blank=True)
+    address_city = models.CharField(max_length=100, blank=True)
+    address_state = models.CharField(max_length=100, blank=True)
+    address_zip = models.CharField(max_length=20, blank=True)
+    address_country = models.CharField(max_length=100, blank=True)
+    address_verified = models.BooleanField(default=False)
     wants_physical_card = models.BooleanField(default=False)
     side = models.CharField(max_length=10, choices=SIDE_CHOICES, blank=True)
     plus_one_allowed = models.BooleanField(default=False)
@@ -132,6 +141,7 @@ class Guest(models.Model):
     first_name = models.TextField()
     last_name = models.TextField(null=True, blank=True)
     email = models.TextField(null=True, blank=True)
+    phone = models.CharField(max_length=30, blank=True, default='')
     is_attending = models.BooleanField(default=None, null=True)
     meal = models.CharField(max_length=20, null=True, blank=True)
     is_child = models.BooleanField(default=False)
@@ -163,6 +173,25 @@ class Guest(models.Model):
 
     def __str__(self):
         return 'Guest: {} {}'.format(self.first_name, self.last_name)
+
+
+class ContactUpdate(models.Model):
+    """
+    One submission from the public contact-details form (linked from the
+    save-the-date email via {{details_link}}). The changes are applied to the
+    Party/Guest records immediately; this row keeps the before/after values so
+    guest edits are reviewable (and recoverable) in the admin.
+    """
+    party = models.ForeignKey(Party, on_delete=models.CASCADE, related_name='contact_updates')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    # List of {"target": "party"|"guest", "label": ..., "field": ..., "old": ..., "new": ...}
+    changes = models.JSONField(default=list)
+
+    class Meta:
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return 'Contact update for {} at {:%Y-%m-%d %H:%M}'.format(self.party.name, self.submitted_at)
 
 
 DEFAULT_INVITE_BODY = (

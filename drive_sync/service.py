@@ -284,7 +284,7 @@ def _rows_guests():
     meal_labels = MealOption.label_map()
 
     headers = [
-        'ID', 'First Name', 'Last Name', 'Email',
+        'ID', 'First Name', 'Last Name', 'Email', 'Phone',
         'Party', 'Party Type', 'Party Category',
         'Attending', 'Meal', 'Is Child',
         'Seating Table', 'Seat Color', 'Wedding Party Role',
@@ -301,6 +301,7 @@ def _rows_guests():
             g.first_name,
             g.last_name or '',
             g.email or '',
+            g.phone or '',
             g.party.name if g.party else '',
             g.party.get_type_display() if g.party and g.party.type else '',
             g.party.category if g.party else '',
@@ -326,6 +327,7 @@ def _rows_parties():
         'Save-the-Date Sent', 'Save-the-Date Opened',
         'Invitation Sent', 'Invitation Opened',
         'Comments',
+        'Address', 'Street', 'City', 'State', 'Zip', 'Country', 'Address Verified',
     ]
     rows = []
     for p in Party.in_default_order().prefetch_related('guest_set'):
@@ -346,6 +348,13 @@ def _rows_parties():
             _dt(p.invitation_sent),
             _dt(p.invitation_opened),
             p.comments or '',
+            p.address or '',
+            p.address_street or '',
+            p.address_city or '',
+            p.address_state or '',
+            p.address_zip or '',
+            p.address_country or '',
+            _bool(p.address_verified),
         ])
     return headers, rows
 

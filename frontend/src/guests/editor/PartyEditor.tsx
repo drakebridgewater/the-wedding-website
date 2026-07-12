@@ -145,7 +145,11 @@ export function PartyEditor({
                 <BlurField label="Category" value={party.category ?? ''} onSave={(v) => patchParty({ category: v })} />
               </div>
 
-              <AddressField value={party.address ?? ''} onSave={(v) => patchParty({ address: v })} />
+              <AddressField
+                value={party.address ?? ''}
+                verified={party.address_verified ?? false}
+                onSave={(patch) => patchParty(patch)}
+              />
 
               <BlurField label="Notes" value={party.comments ?? ''} onSave={(v) => patchParty({ comments: v })} textarea placeholder="Internal notes…" />
 

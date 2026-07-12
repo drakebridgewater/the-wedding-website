@@ -16,12 +16,15 @@ def render_template(body_html, subject, party, site_url):
     from guests.save_the_date import _get_wedding_date, _get_wedding_location
     rsvp_path = reverse('invitation', args=[party.invitation_id])
     rsvp_link = site_url.rstrip('/') + rsvp_path
+    details_path = reverse('guest-details', args=[party.invitation_id])
+    details_link = site_url.rstrip('/') + details_path
     first_guest = party.guest_set.first()
     first_name = first_guest.first_name if first_guest else party.name
     replacements = {
         '{{party_name}}': party.name,
         '{{first_name}}': first_name,
         '{{rsvp_link}}': rsvp_link,
+        '{{details_link}}': details_link,
         '{{couple}}': getattr(settings, 'BRIDE_AND_GROOM', ''),
         '{{date}}': _get_wedding_date(),
         '{{location}}': _get_wedding_location(),

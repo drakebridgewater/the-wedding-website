@@ -5,7 +5,7 @@ services:
     build: .
     image: ghcr.io/drakebridgewater/the-wedding-website:latest
     pull_policy: always
-    env_file: .env.dockhand
+    env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - POSTGRES_SERVER=${POSTGRES_SERVER}

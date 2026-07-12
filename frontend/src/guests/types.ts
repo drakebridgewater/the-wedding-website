@@ -36,6 +36,7 @@ export interface Guest {
   first_name: string
   last_name: string
   email: string | null
+  phone: string
   is_attending: boolean | null
   meal: Meal
   is_child: boolean
@@ -55,6 +56,12 @@ export interface Party {
   comments: string
   guests: Guest[]
   address: string
+  address_street: string
+  address_city: string
+  address_state: string
+  address_zip: string
+  address_country: string
+  address_verified: boolean
   wants_physical_card: boolean
   side: PartySide
   plus_one_allowed: boolean
@@ -133,6 +140,12 @@ export interface PartyFormData {
   rehearsal_dinner: boolean
   comments: string
   address: string
+  address_street?: string
+  address_city?: string
+  address_state?: string
+  address_zip?: string
+  address_country?: string
+  address_verified?: boolean
   wants_physical_card: boolean
   side: PartySide
   plus_one_allowed: boolean
@@ -150,6 +163,7 @@ export interface GuestFormData {
   first_name: string
   last_name: string
   email: string
+  phone?: string
   is_child: boolean
   dietary_restrictions: string
   label: string

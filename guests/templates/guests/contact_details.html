@@ -1,0 +1,171 @@
+{% extends 'base_public.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="min-h-screen py-12 px-4 bg-stone-50">
+  <div class="max-w-xl mx-auto">
+
+    <!-- Wedding details header -->
+    <div class="text-center mb-10">
+      <h1 class="text-3xl font-light text-stone-800 mb-3">{{ wedding.couple_name }}</h1>
+      <p class="text-stone-500">
+        {{ wedding.wedding_date_display }}<br>
+        {{ wedding.wedding_location }}
+      </p>
+    </div>
+
+    {% if saved %}
+    <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-center">
+      <p class="text-emerald-700 font-medium">Thank you! Your details have been saved.</p>
+      <p class="text-emerald-600 text-sm mt-1">You can come back to this page any time to update them.</p>
+    </div>
+    {% endif %}
+
+    <!-- Contact details form card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-6 sm:p-8">
+      <h2 class="text-2xl font-light text-stone-800 text-center mb-2">Your Details</h2>
+      <p class="text-sm text-stone-500 text-center mb-6">
+        Help us keep our guest list up to date — check your names and address,
+        and add an email or phone number so we can reach you.
+      </p>
+
+      <form id="details-form" method="post">
+        {% csrf_token %}
+
+        <!-- Party name -->
+        <div class="mb-6">
+          <label for="party_name" class="block text-sm font-medium text-stone-700 mb-1">
+            Household / party name
+          </label>
+          <input type="text" id="party_name" name="party_name" maxlength="200"
+                 value="{{ party.name }}"
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base">
+          <p class="mt-1 text-xs text-stone-400">How your invitation should be addressed, e.g. "The Smith Family".</p>
+        </div>
+
+        <!-- Guests -->
+        {% for guest in party.ordered_guests %}
+        <div class="mb-6 pb-6 {% if not forloop.last %}border-b border-stone-100{% endif %}">
+          <p class="font-medium text-stone-800 mb-3">{{ guest.name }}</p>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label for="first_name-{{ guest.pk }}" class="block text-xs text-stone-500 mb-1">First name</label>
+              <input type="text" id="first_name-{{ guest.pk }}" name="first_name-{{ guest.pk }}" maxlength="100"
+                     value="{{ guest.first_name }}" autocomplete="off"
+                     class="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400">
+            </div>
+            <div>
+              <label for="last_name-{{ guest.pk }}" class="block text-xs text-stone-500 mb-1">Last name</label>
+              <input type="text" id="last_name-{{ guest.pk }}" name="last_name-{{ guest.pk }}" maxlength="100"
+                     value="{{ guest.last_name|default:'' }}" autocomplete="off"
+                     class="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="email-{{ guest.pk }}" class="block text-xs text-stone-500 mb-1">Email</label>
+              <input type="email" id="email-{{ guest.pk }}" name="email-{{ guest.pk }}" maxlength="254"
+                     value="{{ guest.email|default:'' }}" placeholder="you@example.com" autocomplete="off"
+                     class="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm text-stone-700 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400">
+            </div>
+            <div>
+              <label for="phone-{{ guest.pk }}" class="block text-xs text-stone-500 mb-1">Phone</label>
+              <input type="tel" id="phone-{{ guest.pk }}" name="phone-{{ guest.pk }}" maxlength="30"
+                     value="{{ guest.phone }}" placeholder="(555) 555-5555" autocomplete="off"
+                     class="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm text-stone-700 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400">
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        <!-- Mailing address -->
+        <div class="mb-6">
+          <label for="address" class="block text-sm font-medium text-stone-700 mb-1">
+            Mailing address <span class="text-stone-400 font-normal">(for your invitation)</span>
+          </label>
+          <input type="text" id="address" name="address"
+                 value="{{ party.address }}"
+                 placeholder="Start typing your address…"
+                 autocomplete="street-address"
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base">
+          <p id="address-verified-note" class="mt-1 text-xs text-emerald-600 {% if not party.address_verified %}hidden{% endif %}">✓ Verified address</p>
+          <input type="hidden" name="address_street" id="address_street" value="{{ party.address_street }}">
+          <input type="hidden" name="address_city" id="address_city" value="{{ party.address_city }}">
+          <input type="hidden" name="address_state" id="address_state" value="{{ party.address_state }}">
+          <input type="hidden" name="address_zip" id="address_zip" value="{{ party.address_zip }}">
+          <input type="hidden" name="address_country" id="address_country" value="{{ party.address_country }}">
+          <input type="hidden" name="address_verified" id="address_verified" value="{% if party.address_verified %}1{% else %}0{% endif %}">
+        </div>
+
+        <!-- Physical card request -->
+        <div class="mb-6">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" name="wants_physical_card"
+                   {% if party.wants_physical_card %}checked{% endif %}
+                   class="w-4 h-4 rounded accent-rose-600">
+            <span class="text-sm text-stone-700">I'd like to receive a physical card in the mail</span>
+          </label>
+        </div>
+
+        <button type="submit"
+                class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-medium rounded-xl transition-colors text-base">
+          Save My Details
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block page_js %}
+{% if GOOGLE_PLACES_API_KEY %}
+<script>
+(function() {
+  var s = document.createElement('script');
+  s.src = 'https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_PLACES_API_KEY }}&libraries=places&callback=initAddrAC';
+  s.async = true; s.defer = true;
+  document.head.appendChild(s);
+})();
+window.initAddrAC = function() {
+  var el = document.getElementById('address');
+  if (!el || !window.google) return;
+
+  function setField(id, value) {
+    document.getElementById(id).value = value;
+  }
+  function setVerified(on) {
+    setField('address_verified', on ? '1' : '0');
+    document.getElementById('address-verified-note').classList.toggle('hidden', !on);
+  }
+  function component(place, type, useShort) {
+    var match = (place.address_components || []).find(function (c) {
+      return c.types.indexOf(type) !== -1;
+    });
+    return match ? (useShort ? match.short_name : match.long_name) : '';
+  }
+
+  var ac = new google.maps.places.Autocomplete(el, { types: ['address'] });
+  ac.addListener('place_changed', function() {
+    var p = ac.getPlace();
+    if (!p.formatted_address) return;
+    el.value = p.formatted_address;
+    setField('address_street', (component(p, 'street_number') + ' ' + component(p, 'route')).trim());
+    setField('address_city', component(p, 'locality') || component(p, 'sublocality') || component(p, 'postal_town'));
+    setField('address_state', component(p, 'administrative_area_level_1', true));
+    setField('address_zip', component(p, 'postal_code'));
+    setField('address_country', component(p, 'country'));
+    setVerified(true);
+  });
+
+  // Hand-typed edits invalidate the verified components. (place_changed sets
+  // el.value programmatically, which doesn't fire 'input'.)
+  el.addEventListener('input', function() {
+    ['address_street', 'address_city', 'address_state', 'address_zip', 'address_country']
+      .forEach(function (id) { setField(id, ''); });
+    setVerified(false);
+  });
+};
+</script>
+{% endif %}
+{% endblock %}

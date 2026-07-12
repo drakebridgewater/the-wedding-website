@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.db.models import Exists, OuterRef
-from .models import Guest, MealOption, Party, WeddingPartyMember, WeddingPartyGroup
+from .models import ContactUpdate, Guest, MealOption, Party, WeddingPartyMember, WeddingPartyGroup
 
 
 class _HasEmailSubquery:
@@ -63,6 +63,7 @@ class GuestForm(forms.ModelForm):
             'first_name': forms.TextInput(),
             'last_name': forms.TextInput(),
             'email': forms.TextInput(),
+            'phone': forms.TextInput(),
             'dietary_restrictions': forms.Textarea(attrs={'rows': 3}),
         }
 
@@ -89,7 +90,7 @@ class PartyForm(forms.ModelForm):
 class GuestInline(admin.StackedInline):
     model = Guest
     form = GuestForm
-    fields = ('first_name', 'last_name', 'email', 'is_attending', 'is_child', 'meal', 'dietary_restrictions')
+    fields = ('first_name', 'last_name', 'email', 'phone', 'is_attending', 'is_child', 'meal', 'dietary_restrictions')
     extra = 1
 
 
@@ -97,7 +98,8 @@ class PartyAdmin(admin.ModelAdmin):
     form = PartyForm
     list_display = ('name', 'type', 'category', 'side', 'status', 'has_email',
                     'save_the_date_sent', 'invitation_sent',
-                    'rehearsal_dinner', 'invitation_opened', 'is_attending', 'rsvp_responded_at', 'plus_one_allowed')
+                    'rehearsal_dinner', 'invitation_opened', 'is_attending', 'rsvp_responded_at',
+                    'plus_one_allowed', 'address_verified')
     list_filter = ('type', 'category', 'side', 'status', 'is_attending', 'rehearsal_dinner',
                    'invitation_opened', 'plus_one_allowed', SaveTheDateStatusFilter, InvitationStatusFilter)
     search_fields = ('name', 'address')
@@ -113,9 +115,41 @@ class PartyAdmin(admin.ModelAdmin):
 
 class GuestAdmin(admin.ModelAdmin):
     form = GuestForm
-    list_display = ('first_name', 'last_name', 'party', 'email', 'is_attending', 'is_child', 'meal', 'dietary_restrictions')
+    list_display = ('first_name', 'last_name', 'party', 'email', 'phone', 'is_attending', 'is_child', 'meal', 'dietary_restrictions')
     list_filter = ('is_attending', 'is_child', 'meal', 'party__status', 'party__category', 'party__rehearsal_dinner')
     search_fields = ('first_name', 'last_name', 'email', 'dietary_restrictions')
+
+
+@admin.register(ContactUpdate)
+class ContactUpdateAdmin(admin.ModelAdmin):
+    list_display = ('party', 'submitted_at', 'summary')
+    list_filter = ('submitted_at',)
+    search_fields = ('party__name',)
+    readonly_fields = ('party', 'submitted_at', 'changes_table')
+    exclude = ('changes',)
+    date_hierarchy = 'submitted_at'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description='What changed')
+    def summary(self, obj):
+        return ', '.join(
+            '{} {}'.format(c.get('label', ''), c.get('field', '')).strip()
+            for c in obj.changes
+        ) or '—'
+
+    @admin.display(description='Changes')
+    def changes_table(self, obj):
+        from django.utils.html import format_html, format_html_join
+        rows = format_html_join(
+            '', '<tr><td style="padding:2px 12px 2px 0">{} — {}</td><td style="padding:2px 12px 2px 0"><del>{}</del></td><td>{}</td></tr>',
+            ((c.get('label', ''), c.get('field', ''), c.get('old', ''), c.get('new', '')) for c in obj.changes),
+        )
+        return format_html('<table>{}</table>', rows)
 
 
 @admin.register(MealOption)

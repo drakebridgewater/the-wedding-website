@@ -40,7 +40,7 @@ class GuestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guest
         fields = [
-            'id', 'party_id', 'first_name', 'last_name', 'email',
+            'id', 'party_id', 'first_name', 'last_name', 'email', 'phone',
             'is_attending', 'meal', 'is_child', 'dietary_restrictions', 'label', 'is_plus_one',
         ]
 
@@ -53,7 +53,9 @@ class PartySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'type', 'category', 'status',
             'is_attending', 'rehearsal_dinner', 'comments', 'guests',
-            'address', 'wants_physical_card', 'side', 'plus_one_allowed', 'plus_one_count', 'rsvp_responded_at',
+            'address', 'address_street', 'address_city', 'address_state', 'address_zip',
+            'address_country', 'address_verified',
+            'wants_physical_card', 'side', 'plus_one_allowed', 'plus_one_count', 'rsvp_responded_at',
             'invitation_id', 'invitation_sent', 'invitation_opened',
             'save_the_date_sent',
         ]
