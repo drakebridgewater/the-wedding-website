@@ -121,12 +121,6 @@ def _apply_contact_details(party, params):
         party.address_country = params.get('address_country', '').strip()
         party.address_verified = params.get('address_verified') == '1'
 
-    wants_card = params.get('wants_physical_card') == 'on'
-    if wants_card != party.wants_physical_card:
-        _track(changes, 'party', party.name, 'wants_physical_card',
-               'yes' if party.wants_physical_card else 'no', 'yes' if wants_card else 'no')
-        party.wants_physical_card = wants_card
-
     party.save()
 
     for guest in party.guest_set.all():
