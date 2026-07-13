@@ -54,14 +54,14 @@
 
 {% block page_js %}{% endblock %}
 
-{% if user.is_authenticated %}
+<!-- {% if user.is_authenticated %}
 <div id="quick-add-root"></div>
 {% vite_asset 'src/todos/quick-add-main.tsx' %}
-{% endif %}
+{% endif %} -->
 
 <!-- Upper-left peony (top-left quadrant of image) -->
 <div class="fixed pointer-events-none" aria-hidden="true"
-     style="top:0;left:0;width:620px;height:780px;z-index:-1;
+     style="top:0;left:0;width:620px;height:780px;z-index:0;
             background-image:url('{% static 'bigday/images/beautiful-wedding-floral-sketch-background.png' %}');
             background-size:115%;background-position:0% 0%;background-repeat:no-repeat;
             filter:invert(1) hue-rotate(180deg);mix-blend-mode:multiply;opacity:0.28;
@@ -71,7 +71,7 @@
 
 <!-- Bottom-right peony (bottom-right quadrant of image) -->
 <div class="fixed pointer-events-none" aria-hidden="true"
-     style="bottom:0;right:0;width:340px;height:340px;z-index:-1;
+     style="bottom:0;right:0;width:340px;height:340px;z-index:0;
             background-image:url('{% static 'bigday/images/beautiful-wedding-floral-sketch-background.png' %}');
             background-size:200%;background-position:100% 100%;background-repeat:no-repeat;
             filter:invert(1) hue-rotate(180deg);mix-blend-mode:multiply;opacity:0.28">

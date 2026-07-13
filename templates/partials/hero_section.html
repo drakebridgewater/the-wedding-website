@@ -42,7 +42,7 @@
   </div>
 
   <!-- Right: hero photo -->
-  <div class="md:w-1/2 min-h-72 md:min-h-0 relative order-1 md:order-2 group/hero">
+  <div class="md:w-1/2 min-h-72 md:min-h-0 relative z-10 order-1 md:order-2 group/hero">
     <img id="hero-img"
           src="{% if hero_photo_url %}{{ hero_photo_url }}{% else %}{% static 'bigday/images/selfie.jpg' %}{% endif %}"
           class="absolute inset-0 w-full h-full object-cover"

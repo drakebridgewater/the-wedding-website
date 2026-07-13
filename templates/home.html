@@ -18,20 +18,20 @@
   {% include 'partials/event.html' %}
 </section>
 
-<section id="location" class="py-20 px-4 bg-accent-light">
+<section id="location" class="py-20 px-4 bg-white border-t border-stone-100">
   {% include 'partials/location.html' %}
 </section>
 
-<section id="other-stuff" class="py-20 px-4 bg-white border-t border-stone-100">
+<section id="other-stuff" class="py-20 px-4 bg-accent-light">
   {% include 'partials/misc.html' %}
 </section>
 
-<section id="gifts" class="py-20 px-4 bg-accent-light border-t">
+<section id="gifts" class="py-20 px-4 bg-white border-t border-stone-100">
   {% include 'partials/gifts.html' %}
 </section>
 
 <!-- Photo divider -->
-<div class="relative h-64 sm:h-80 overflow-hidden border-t border-stone-100">
+<div class="relative z-10 h-64 sm:h-80 overflow-hidden border-t border-stone-100">
   <img src="{% if wedding.proposal_divider_photo %}{{ wedding.proposal_divider_photo.url }}{% else %}{% static 'bigday/images/scenic_view.jpg' %}{% endif %}"
        class="absolute inset-0 w-full h-full object-cover"
        alt="Scenic view">
@@ -51,7 +51,7 @@
 </section>
 {% endif %}
 
-<section id="contact" class="py-20 px-4 bg-accent-light border-t border-stone-100">
+<section id="contact" class="py-20 px-4 bg-white border-t border-stone-100">
   {% include 'partials/contact.html' %}
 </section>
 

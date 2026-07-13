@@ -5,7 +5,7 @@
 <div class="text-center w-28 sm:w-36 shrink-0" data-member-id="{{ member.id }}">
 
   {# Photo area #}
-  <div class="relative inline-block mb-3 group">
+  <div class="relative z-10 inline-block mb-3 group">
     {% if member.photo %}
       <img src="{{ member.photo.url }}" alt="{{ member.name }}"
         class="{{ photo_cls }} rounded-full object-cover mx-auto border-2 border-stone-100 shadow-sm member-photo">
