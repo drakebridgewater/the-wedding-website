@@ -43,8 +43,10 @@ def invitation(request, invite_id):
         party.save()
     if request.method == 'POST':
         for response in _parse_invite_params(request.POST):
-            guest = Guest.objects.get(pk=response.guest_pk)
-            assert guest.party == party
+            guest = Guest.objects.filter(pk=response.guest_pk, party=party).first()
+            if guest is None:
+                # Malformed or foreign guest_pk — ignore rather than 500.
+                continue
             guest.is_attending = response.is_attending
             guest.meal = response.meal
             guest.dietary_restrictions = response.dietary_restrictions
@@ -203,26 +205,42 @@ def _apply_contact_details(party, params):
 InviteResponse = namedtuple('InviteResponse', ['guest_pk', 'is_attending', 'meal', 'dietary_restrictions'])
 
 
+def _parse_guest_pk(param):
+    try:
+        return int(param.split('-')[-1])
+    except (ValueError, IndexError):
+        return None
+
+
 def _parse_invite_params(params):
     responses = {}
     for param, value in params.items():
         if param.startswith('attending'):
-            pk = int(param.split('-')[-1])
+            pk = _parse_guest_pk(param)
+            if pk is None:
+                continue
             response = responses.get(pk, {})
             response['attending'] = True if value == 'yes' else False
             responses[pk] = response
         elif param.startswith('meal'):
-            pk = int(param.split('-')[-1])
+            pk = _parse_guest_pk(param)
+            if pk is None:
+                continue
             response = responses.get(pk, {})
             response['meal'] = value
             responses[pk] = response
         elif param.startswith('dietary'):
-            pk = int(param.split('-')[-1])
+            pk = _parse_guest_pk(param)
+            if pk is None:
+                continue
             response = responses.get(pk, {})
             response['dietary_restrictions'] = value
             responses[pk] = response
 
     for pk, response in responses.items():
+        if 'attending' not in response:
+            # No radio button submitted for this guest — nothing to apply.
+            continue
         yield InviteResponse(pk, response['attending'], response.get('meal', None), response.get('dietary_restrictions', ''))
 
 

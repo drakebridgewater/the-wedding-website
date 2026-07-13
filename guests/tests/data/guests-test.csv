@@ -1,4 +1,4 @@
-Party,First Name,Last Name,Type,Is Child?,Category,Invite Now?,Email
+party_name,first_name,last_name,party_type,is_child,category,is_invited,email
 The Starks,Ned,Stark,formal,,starks,y,ned@winterfell.gov
 The Starks,Catelyn,Stark,formal,,starks,y,cat@winterfell.gov
 The Starks,Arya,Stark,formal,y,starks,y,needle@winterfell.gov
