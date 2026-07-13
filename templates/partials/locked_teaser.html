@@ -1,0 +1,40 @@
+{% comment %}
+Locked-section teaser with inline guest unlock form.
+Include params: title, teaser_text (optional), anchor (section id to return
+to), next_path (defaults to current path).
+{% endcomment %}
+<div class="max-w-2xl mx-auto">
+  <h2 class="font-script text-5xl text-stone-700 text-center mb-4">{{ title }}</h2>
+  <div class="w-12 h-px bg-accent mx-auto mb-8"></div>
+
+  <div class="rounded-2xl border border-stone-200 bg-white shadow-sm px-6 py-8 text-center">
+    <svg class="w-8 h-8 text-stone-300 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+    </svg>
+    <p class="text-stone-500 text-sm mb-6">
+      {{ teaser_text|default:"This part of our website is reserved for our wedding guests. Enter your name as it appears on your invitation to see the details." }}
+    </p>
+
+    {% if request.GET.unlock_error %}
+    <p class="text-sm text-red-600 mb-4">
+      Hmm, we couldn't find that name — try it exactly as it appears on your invitation, or use the link from your email.
+    </p>
+    {% endif %}
+
+    <form method="post" action="{% url 'guest-unlock' %}"
+          class="flex flex-col sm:flex-row gap-3 justify-center items-center">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next_path|default:request.path }}">
+      <input type="hidden" name="anchor" value="{{ anchor|default:'' }}">
+      <label class="sr-only" for="unlock-name-{{ anchor|default:'section' }}">Your name</label>
+      <input id="unlock-name-{{ anchor|default:'section' }}" type="text" name="name" required
+             maxlength="200" autocomplete="name" placeholder="Your name"
+             class="w-full sm:w-64 rounded-xl border border-stone-200 px-4 py-2.5 text-stone-700 placeholder-stone-300 input-focus text-sm">
+      <button type="submit"
+              class="px-6 py-2.5 rounded-full bg-accent hover:bg-accent-hover text-white text-sm tracking-wide transition-colors whitespace-nowrap">
+        Unlock
+      </button>
+    </form>
+  </div>
+</div>

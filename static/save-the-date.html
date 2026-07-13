@@ -346,6 +346,30 @@ body {
 .replay.show { opacity: 0.75; pointer-events: auto; }
 .replay:hover { background: rgba(217,191,143,0.08); }
 
+/* ---------- Skip / fast-forward (during the animation) ---------- */
+.skip {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: 14px;
+  z-index: 16;
+  border: 1px solid rgba(217,191,143,0.4);
+  background: rgba(14,21,38,0.55);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s, background 0.3s;
+}
+.skip.show { opacity: 0.85; pointer-events: auto; }
+.skip:hover { background: rgba(14,21,38,0.85); }
+.skip:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
 /* ---------- Start overlay ---------- */
 .start {
   position: fixed;
@@ -482,6 +506,8 @@ body {
   <span class="ring" id="startRing">Loading</span>
 </button>
 
+<button class="skip" id="skip" aria-label="Skip the animation">Skip &raquo;</button>
+
 <div id="fit">
   <main class="scene" id="scene">
     <h1 class="names" id="names"></h1>
@@ -525,7 +551,7 @@ body {
   const $ = id => document.getElementById(id);
   const chute = $("chute"), printer = $("printer"), fit = $("fit"),
         scene = $("scene"), dateBlock = $("dateBlock"), flash = $("flash"),
-        startBtn = $("start"), replayBtn = $("replay"),
+        startBtn = $("start"), replayBtn = $("replay"), skipBtn = $("skip"),
         lightbox = $("lightbox"), lbPhoto = $("lbPhoto"),
         lbMissing = $("lbMissing"), lbCaption = $("lbCaption");
 
@@ -606,6 +632,7 @@ body {
   const stripOrder = [];      // most-recently-fronted first (excl. front)
   const gallery = [];         // {src, ok, label}
   let lbIndex = 0;
+  let epoch = 0;              // bumped by skip/reset to abort any in-flight print run
 
   /* Behind-offset table, cycled for 3+ strips.
      bx magnitudes are generous so the peeking strip is an easy tap target
@@ -714,6 +741,7 @@ body {
   async function printPage() {
     if (printing || pageIndex >= CONFIG.pages.length) return;
     printing = true;
+    const myEpoch = epoch;                       // a skip/reset bumps epoch to abort us
     replayBtn.classList.remove("show");
 
     /* demote current front to the stack — freeze height first to prevent jump */
@@ -727,6 +755,7 @@ body {
       // so chute height stays from the pinned value above
       layoutStack();
       if (!reduced) await sleep(700);          // let it glide to behind position
+      if (epoch !== myEpoch) return;
       // Release the pinned height; the NEW front strip will define it
       chute.style.height = "";
     }
@@ -747,19 +776,23 @@ body {
     }
 
     await sleep(pageIndex === 0 ? 500 : 200);
+    if (epoch !== myEpoch) return;
     if (pageIndex === 0) {
       flash.classList.remove("fire");
       void flash.offsetWidth;
       flash.classList.add("fire");
       await sleep(650);
+      if (epoch !== myEpoch) return;
     }
 
     printer.classList.add("printing");
     const n = frames.length;
     for (let i = 0; i < n; i++) {
       await segment(strip, i / n, (i + 1) / n, CONFIG.printSegmentMs);
+      if (epoch !== myEpoch) return;
       develop(frames[i]);
       if (i < n - 1) await sleep(CONFIG.segmentPauseMs);
+      if (epoch !== myEpoch) return;
     }
     strip.style.transform = "";
     strip.classList.remove("printing-now");
@@ -767,6 +800,7 @@ body {
     chute.classList.remove("clipping");
     strip.classList.add("settled");
     await sleep(400);
+    if (epoch !== myEpoch) return;
     finishPage();
   }
 
@@ -786,7 +820,34 @@ body {
       printPage();                              // auto-print the next strip
     } else {
       replayBtn.classList.add("show");
+      skipBtn.classList.remove("show");
     }
+  }
+
+  /* Jump straight to the finished state, aborting any in-flight print run. */
+  function renderFinalState() {
+    epoch++;                     // supersede the running print loop
+    chute.innerHTML = "";
+    gallery.length = 0;
+    stripOrder.length = 0;
+    frontStrip = null;
+    printing = false;
+    printer.classList.remove("printing");
+    chute.classList.remove("clipping");
+    chute.style.height = "";
+    const last = CONFIG.pages.length - 1;
+    CONFIG.pages.forEach((page, i) => {
+      const { strip, frames } = buildStrip(page, i);
+      chute.appendChild(strip);
+      frames.forEach(develop);
+      if (i === last) frontStrip = strip;
+      else stripOrder.unshift(strip);
+    });
+    layoutStack();
+    pageIndex = CONFIG.pages.length;
+    dateBlock.classList.add("show");
+    replayBtn.classList.add("show");
+    skipBtn.classList.remove("show");
   }
 
   /* ---------------- lightbox ---------------- */
@@ -829,6 +890,7 @@ body {
 
   /* ---------------- controls ---------------- */
   function resetAll() {
+    epoch++;                     // supersede any in-flight run before restarting
     chute.innerHTML = "";
     gallery.length = 0;
     stripOrder.length = 0;
@@ -837,28 +899,35 @@ body {
     printing = false;
     dateBlock.classList.remove("show");
     replayBtn.classList.remove("show");
+    skipBtn.classList.add("show");
     rescale();
     printPage();
   }
   replayBtn.addEventListener("click", resetAll);
+  skipBtn.addEventListener("click", renderFinalState);
 
   startBtn.addEventListener("click", () => {
     startBtn.classList.add("hidden");
+    skipBtn.classList.add("show");
     printPage();
   }, { once: true });
 
   /* ---------------- preload photos, then enable Open ---------------- */
-  /* Photos otherwise only start downloading when a strip is built, so on
-     a cold cache the frames print blank. Load them all first; onerror
-     also resolves so a missing photo (placeholder frame) can't block. */
+  /* Photos otherwise only start downloading when a strip is built, so on a cold
+     cache the first frames print blank. Only the FIRST strip has to be ready to
+     press Open — every photo starts downloading now, but the later strips have
+     seconds before they print, so we don't block on them. onerror also resolves
+     so a missing photo (placeholder frame) can't hang the button. */
   const preload = src => new Promise(res => {
     const img = new Image();
     img.onload = img.onerror = () => res();
     img.src = src;
   });
+  const firstStripReady = (CONFIG.pages[0] || []).map(preload);
+  CONFIG.pages.slice(1).flat().forEach(preload);   // keep loading in the background
   Promise.race([
-    Promise.all([...new Set(CONFIG.pages.flat())].map(preload)),
-    sleep(15000)   // safety net: never leave the button stuck on a hung request
+    Promise.all(firstStripReady),
+    sleep(8000)   // safety net: never leave the button stuck on a hung request
   ]).then(() => {
     startBtn.disabled = false;
     $("startRing").textContent = "Open";

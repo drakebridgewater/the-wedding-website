@@ -65,6 +65,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'wedding.context_processors.wedding_settings',
+                'guests.context_processors.guest_access',
                 'config.context_processors.google_places_key',
             ],
         },

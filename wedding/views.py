@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from guests.access import is_guest_verified
 from guests.models import WeddingPartyMember
 from .models import FundMessage, PageSectionItem, Question, WeddingSettings
 
@@ -44,12 +45,16 @@ GROOMS_SIDE_ROLES = ['groom', 'best_man', 'groomsman']
 
 def home(request):
     ws = WeddingSettings.get()
+    verified = is_guest_verified(request)
     sections = {}
     for item in PageSectionItem.objects.filter(is_published=True).order_by('order', 'id'):
         sections.setdefault(item.section, []).append(item)
+    if not verified:
+        # Guest-only content must not reach the HTML at all.
+        sections.pop('getting_there', None)
     return render(request, 'home.html', context={
-        'approved_questions': Question.objects.filter(is_approved=True),
-        'weddingshare_url': getattr(settings, 'WEDDINGSHARE_URL', ''),
+        'approved_questions': Question.objects.filter(is_approved=True) if verified else Question.objects.none(),
+        'weddingshare_url': getattr(settings, 'WEDDINGSHARE_URL', '') if verified else '',
         'hero_photo_url': ws.hero_photo.url if ws.hero_photo else None,
         'page_sections': sections,
     })
@@ -113,6 +118,8 @@ def upload_hero_photo(request):
 
 @require_POST
 def submit_question(request):
+    if not is_guest_verified(request):
+        return redirect('/#questions')
     question_text = request.POST.get('question_text', '').strip()
     if question_text:
         name = request.POST.get('name', '').strip()
@@ -128,6 +135,10 @@ def submit_question(request):
 
 
 def honeymoon_fund(request):
+    if not is_guest_verified(request):
+        # Payment handles and guestbook stay out of the context entirely;
+        # the template renders the unlock teaser instead.
+        return render(request, 'honeymoon.html', {})
     ws = WeddingSettings.get()
     messages = FundMessage.objects.filter(is_approved=True)
     submitted = request.GET.get('submitted') == '1'
@@ -140,6 +151,8 @@ def honeymoon_fund(request):
 
 @require_POST
 def submit_fund_message(request):
+    if not is_guest_verified(request):
+        return redirect('/honeymoon/')
     message = request.POST.get('message', '').strip()
     if message:
         name = request.POST.get('name', '').strip()

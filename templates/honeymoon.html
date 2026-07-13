@@ -3,6 +3,14 @@
 
 {% block page_content %}
 
+{% if not guest_verified %}
+<section class="py-20 px-4 bg-accent-light min-h-[60vh] flex items-center">
+  <div class="w-full">
+    {% include 'partials/locked_teaser.html' with title="Honeymoon Fund" next_path="/honeymoon/" %}
+  </div>
+</section>
+{% else %}
+
 <!-- Hero / Intro -->
 <section class="py-20 px-4 bg-accent-light">
   <div class="max-w-2xl mx-auto text-center">
@@ -274,5 +282,7 @@ function copyHandle(elementId, btn) {
   });
 }
 </script>
+
+{% endif %}
 
 {% endblock %}

@@ -5,12 +5,16 @@ from datetime import datetime, timezone
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q, TextField, Value
+from django.db.models.functions import Concat
 from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 from guests import csv_import
+from guests.access import grant_generic_access, grant_party_access
 from guests.invitation import get_invitation_context, INVITATION_TEMPLATE, guess_party_by_invite_id_or_404, \
     send_invitation_email
 from guests.models import ContactUpdate, Guest, MealOption, Party
@@ -32,6 +36,7 @@ def export_guests(request):
 
 def invitation(request, invite_id):
     party = guess_party_by_invite_id_or_404(invite_id)
+    grant_party_access(request, party)
     if party.invitation_opened is None:
         # update if this is the first time the invitation was opened
         party.invitation_opened = datetime.now(timezone.utc)
@@ -75,6 +80,7 @@ def contact_details(request, invite_id):
     Changes apply directly to the Party/Guest records and are logged as a
     ContactUpdate for review in the admin."""
     party = guess_party_by_invite_id_or_404(invite_id)
+    grant_party_access(request, party)
     if party.save_the_date_sent and party.save_the_date_opened is None:
         # The details link travels in the save-the-date email, so a first
         # visit doubles as an open receipt.
@@ -124,6 +130,7 @@ def save_the_date_card(request, invite_id):
     details' button links to this party's form. A first visit doubles as an open
     receipt, mirroring contact_details()."""
     party = guess_party_by_invite_id_or_404(invite_id)
+    grant_party_access(request, party)
     if party.save_the_date_sent and party.save_the_date_opened is None:
         party.save_the_date_opened = datetime.now(timezone.utc)
         party.save(update_fields=['save_the_date_opened'])
@@ -221,12 +228,54 @@ def _parse_invite_params(params):
 
 def rsvp_confirm(request, invite_id=None):
     party = guess_party_by_invite_id_or_404(invite_id)
+    grant_party_access(request, party)
     return render(request, template_name='guests/rsvp_confirmation.html', context={
         'party': party,
         'support_email': settings.DEFAULT_WEDDING_REPLY_EMAIL,
         'couple_name' : settings.BRIDE_AND_GROOM,
-        'website_url': settings.WEDDING_WEBSITE_URL,                
+        'website_url': settings.WEDDING_WEBSITE_URL,
     })
+
+
+@require_POST
+def unlock_access(request):
+    """Unlock guest-only content by name (guest 'First Last' or party name).
+
+    Exactly one matching party grants full access (party-specific links);
+    several matches grant view-only access; none redirects back with an error
+    flag. This only gates cosmetic wedding info, so name matching is an
+    acceptable bar.
+    """
+    name = ' '.join(request.POST.get('name', '').split())
+    matched = set()
+    if name:
+        matched.update(Party.objects.filter(name__iexact=name))
+        full_name_guests = Guest.objects.annotate(
+            full_name=Concat('first_name', Value(' '), 'last_name', output_field=TextField()),
+        ).filter(full_name__iexact=name, last_name__isnull=False, party__isnull=False).select_related('party')
+        matched.update(g.party for g in full_name_guests)
+        if ' ' not in name:
+            # Single-word entry: match guests recorded without a last name.
+            first_only = Guest.objects.filter(
+                first_name__iexact=name, party__isnull=False,
+            ).filter(Q(last_name__isnull=True) | Q(last_name='')).select_related('party')
+            matched.update(g.party for g in first_only)
+
+    next_url = request.POST.get('next', '')
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/'
+    anchor = request.POST.get('anchor', '').strip()
+
+    if len(matched) == 1:
+        grant_party_access(request, matched.pop())
+    elif matched:
+        grant_generic_access(request)
+    else:
+        sep = '&' if '?' in next_url else '?'
+        next_url = '{}{}unlock_error=1'.format(next_url, sep)
+    if anchor:
+        next_url = '{}#{}'.format(next_url, anchor)
+    return HttpResponseRedirect(next_url)
 
 
 @login_required
