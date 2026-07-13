@@ -41,9 +41,9 @@
   --paper:   #f4f0e6;
   /* --------------------------- */
   --ink: rgba(14, 21, 38, 1);
-  --strip-w: min(210px, 56vw);
+  --strip-w: min(220px, 60vw);
   --frame-gap: 9px;
-  --chute-pad-x: 30px;   /* room for the behind strip to peek */
+  --chute-pad-x: 52px;   /* room for the behind strip to peek (bigger = easier to tap on mobile) */
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; width: 100%; }
@@ -79,7 +79,7 @@ body {
 /* ---------- Names ---------- */
 .names {
   font-family: "Pinyon Script", cursive;
-  font-size: clamp(2.2rem, 8vw, 3.4rem);
+  font-size: clamp(2.8rem, 11vw, 3.8rem);
   line-height: 1.15;
   text-align: center;
   text-shadow: 0 0 24px rgba(217, 191, 143, 0.25);
@@ -233,10 +233,10 @@ body {
 .strip-caption {
   text-align: center;
   color: var(--ink);
-  font-size: 0.78rem;
-  letter-spacing: 0.22em;
+  font-size: 0.95rem;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  padding-top: 2px;
+  padding-top: 3px;
 }
 
 /* ---------- Flash ---------- */
@@ -260,10 +260,10 @@ body {
 }
 .date-label {
   font-family: "Pinyon Script", cursive;
-  font-size: clamp(1.5rem, 5.5vw, 2rem);
+  font-size: clamp(1.85rem, 7vw, 2.2rem);
 }
 .date-value {
-  font-size: clamp(1.05rem, 4vw, 1.35rem);
+  font-size: clamp(1.2rem, 5vw, 1.45rem);
   letter-spacing: 0.28em;
   margin-top: 2px;
 }
@@ -287,16 +287,16 @@ body {
   min-width: 3.2ch;
 }
 .unit .num {
-  font-size: clamp(1.5rem, 6vw, 2rem);
+  font-size: clamp(1.85rem, 7.5vw, 2.3rem);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
 .unit .lbl {
-  font-size: 0.62rem;
-  letter-spacing: 0.24em;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  opacity: 0.6;
-  margin-top: 2px;
+  opacity: 0.65;
+  margin-top: 3px;
 }
 .countdown .after-message {
   font-family: "Pinyon Script", cursive;
@@ -304,9 +304,9 @@ body {
 }
 .date-sub {
   font-style: italic;
-  font-size: 0.95rem;
-  opacity: 0.65;
-  margin-top: 8px;
+  font-size: 1.1rem;
+  opacity: 0.7;
+  margin-top: 10px;
 }
 
 /* ---------- Replay ---------- */
@@ -342,6 +342,12 @@ body {
   transition: opacity 0.6s;
 }
 .start.hidden { opacity: 0; pointer-events: none; }
+.start:disabled { cursor: wait; }
+.start:disabled .ring {
+  opacity: 0.45;
+  animation: none;
+  border-color: rgba(217,191,143,0.4);
+}
 .start .ring {
   width: 84px; height: 84px;
   border-radius: 50%;
@@ -454,8 +460,8 @@ body {
 
 <div class="flash" id="flash"></div>
 
-<button class="start" id="start" aria-label="Play the save the date reveal">
-  <span class="ring">Open</span>
+<button class="start" id="start" aria-label="Play the save the date reveal" disabled>
+  <span class="ring" id="startRing">Loading</span>
 </button>
 
 <div id="fit">
@@ -583,12 +589,14 @@ body {
   const gallery = [];         // {src, ok, label}
   let lbIndex = 0;
 
-  /* Behind-offset table, cycled for 3+ strips */
+  /* Behind-offset table, cycled for 3+ strips.
+     bx magnitudes are generous so the peeking strip is an easy tap target
+     on phones (there's no hover on touch, so the resting peek is all you get). */
   const OFFSETS = [
-    { bx: "-20px", by: "8px",  br: "-2.6deg" },
-    { bx: "22px",  by: "10px", br: "2.2deg"  },
-    { bx: "-34px", by: "14px", br: "-4deg"   },
-    { bx: "36px",  by: "16px", br: "3.6deg"  }
+    { bx: "-46px", by: "9px",  br: "-3deg"   },
+    { bx: "48px",  by: "11px", br: "2.6deg"  },
+    { bx: "-62px", by: "15px", br: "-4.4deg" },
+    { bx: "64px",  by: "17px", br: "4deg"    }
   ];
 
   function layoutStack() {
@@ -820,6 +828,23 @@ body {
     startBtn.classList.add("hidden");
     printPage();
   }, { once: true });
+
+  /* ---------------- preload photos, then enable Open ---------------- */
+  /* Photos otherwise only start downloading when a strip is built, so on
+     a cold cache the frames print blank. Load them all first; onerror
+     also resolves so a missing photo (placeholder frame) can't block. */
+  const preload = src => new Promise(res => {
+    const img = new Image();
+    img.onload = img.onerror = () => res();
+    img.src = src;
+  });
+  Promise.race([
+    Promise.all([...new Set(CONFIG.pages.flat())].map(preload)),
+    sleep(15000)   // safety net: never leave the button stuck on a hung request
+  ]).then(() => {
+    startBtn.disabled = false;
+    $("startRing").textContent = "Open";
+  });
 })();
 </script>
 </body>
