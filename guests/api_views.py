@@ -343,6 +343,8 @@ def email_template_upload_image(request, pk):
 _TEMPLATE_DRAFT_FIELDS = [
     'subject', 'body_html', 'footer_html',
     'show_rsvp_button', 'rsvp_button_text', 'rsvp_button_color',
+    'main_image_link',
+    'secondary_button_text', 'secondary_button_link', 'secondary_button_color',
     'background_color', 'font_color',
 ]
 

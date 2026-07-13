@@ -75,6 +75,9 @@ export interface Party {
 
 export type EmailTemplatePurpose = 'save_the_date' | 'invitation' | 'other'
 
+/** Where an image link / secondary button points. '' means "no link". */
+export type EmailLinkTarget = '' | 'save_the_date' | 'rsvp' | 'details' | 'site'
+
 export interface EmailTemplate {
   id: number
   name: string
@@ -86,6 +89,10 @@ export interface EmailTemplate {
   show_rsvp_button: boolean
   rsvp_button_text: string
   rsvp_button_color: string
+  main_image_link: EmailLinkTarget
+  secondary_button_text: string
+  secondary_button_link: EmailLinkTarget
+  secondary_button_color: string
   background_color: string
   font_color: string
   created_at: string
@@ -96,6 +103,7 @@ export type EmailTemplateFormData = Pick<
   EmailTemplate,
   'name' | 'purpose' | 'subject' | 'body_html' | 'footer_html'
   | 'show_rsvp_button' | 'rsvp_button_text' | 'rsvp_button_color'
+  | 'main_image_link' | 'secondary_button_text' | 'secondary_button_link' | 'secondary_button_color'
   | 'background_color' | 'font_color'
 >
 

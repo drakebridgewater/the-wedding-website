@@ -24,13 +24,38 @@
 {% endblock %}
 {% block main_image %}
     {% if main_image_filename %}
+    {% if main_image_href %}<a href="{{ main_image_href }}" target="_blank" style="text-decoration: none;">{% endif %}
     <img src="{% if email_mode %}cid:{{ main_image_filename }}{% else %}{{ main_image_url }}{% endif %}"
          alt="{{ couple }}"
          style="display: block; padding: 0; color: #666666; max-width: 100%;"
          class="img-max" border="0">
+    {% if main_image_href %}</a>{% endif %}
     {% endif %}
 {% endblock %}
 {% block main_copy %}
+    {% if secondary_button_text %}
+    {% firstof secondary_button_color '#b08d57' as secondary_color %}
+    <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center">
+        <tbody>
+        <tr>
+            <td style="padding: 22px 0 0 0;" align="center">
+                <table border="0" cellpadding="0" cellspacing="0" align="center">
+                    <tbody>
+                    <tr>
+                        <td>
+                            <a href="{{ secondary_button_href }}" target="_blank"
+                               style="font-size: 18px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 3px; background-color: {{ secondary_color }}; border-top: 11px solid {{ secondary_color }}; border-bottom: 11px solid {{ secondary_color }}; border-right: 17px solid {{ secondary_color }}; border-left: 17px solid {{ secondary_color }}; display: inline-block;">
+                                {{ secondary_button_text }}
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    {% endif %}
     <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center">
         <tbody>
         <tr>

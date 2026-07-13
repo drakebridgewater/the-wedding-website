@@ -93,6 +93,48 @@ def contact_details(request, invite_id):
     })
 
 
+# Photo strips shown on the served Save-the-Date card, one inner list per
+# printed strip (paths are relative to STATIC_ROOT / the static dirs). This is
+# the single place to curate what guests see; keep it in sync with the design
+# copy in static/save-the-date.html when you settle on a final set.
+SAVE_THE_DATE_CARD_STRIPS = [
+      [
+        "bigday/images/bw_ds_bench.JPG",
+        "bigday/images/cake_pond.JPG",
+        "bigday/images/bw_ds_bench_01.JPG",
+        "bigday/images/des_bench.JPG"
+      ],
+      [
+        "bigday/images/des_bench_01.JPG",
+        "bigday/images/ds_kiss.JPG",
+        "bigday/images/des_bench_champagne_01.JPG",
+        "bigday/images/ds_bench_bridge.JPG"
+      ],
+      [
+        "bigday/images/ethan_glasses.JPG",
+        "bigday/images/bw_cake.JPG",
+        "bigday/images/the_stare.JPG",
+        "bigday/images/ds_walk.JPG",
+      ],
+]
+
+
+def save_the_date_card(request, invite_id):
+    """The animated Save-the-Date card, served per guest so its 'update contact
+    details' button links to this party's form. A first visit doubles as an open
+    receipt, mirroring contact_details()."""
+    party = guess_party_by_invite_id_or_404(invite_id)
+    if party.save_the_date_sent and party.save_the_date_opened is None:
+        party.save_the_date_opened = datetime.now(timezone.utc)
+        party.save(update_fields=['save_the_date_opened'])
+    return render(request, template_name='guests/save_the_date_card.html', context={
+        'party': party,
+        'details_url': reverse('guest-details', args=[invite_id]),
+        'couple_name': settings.BRIDE_AND_GROOM,
+        'photo_strips': SAVE_THE_DATE_CARD_STRIPS,
+    })
+
+
 def _track(changes, target, label, field, old, new):
     old, new = (old or '').strip(), (new or '').strip()
     if old != new:

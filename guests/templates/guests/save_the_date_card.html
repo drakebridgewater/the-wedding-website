@@ -1,45 +1,27 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Save the Date</title>
+<title>{{ couple_name }} — Save the Date</title>
 
 <!-- ============================================================
-     CONFIG — pages is an array of strips; each strip is an array
-     of photo paths. Strips print automatically, one after another,
-     and stack behind each other. Theme: :root CSS variables below.
+     Per-guest Save-the-Date card. This is the SERVED version of
+     static/save-the-date.html: the photo strips come from the view
+     (SAVE_THE_DATE_CARD_STRIPS) and the "Update contact details"
+     button links to this guest's form ({{ details_url }}).
      ============================================================ -->
 <script>
   const CONFIG = {
-    names: "Drake & Shawna",
+    names: "{{ couple_name|escapejs }}",
     dateLabel: "Save the Date",
     dateValue: "05 . 29 . 2027",
     targetDate: "2027-05-29T16:00:00",   // local time — drives the countdown
     afterMessage: "Just married",         // shown once the date has passed
     subtext: "Formal invitation to follow",
     pages: [
-      [
-        "bigday/images/bw_ds_bench.JPG",
-        "bigday/images/cake_pond.JPG",
-        "bigday/images/bw_ds_bench_01.JPG",
-        "bigday/images/des_bench.JPG"
-      ],
-      [
-        "bigday/images/des_bench_01.JPG",
-        "bigday/images/ds_kiss.JPG",
-        "bigday/images/des_bench_champagne_01.JPG",
-        "bigday/images/ds_bench_bridge.JPG"
-      ],
-      [
-        "bigday/images/ethan_glasses.JPG",
-        "bigday/images/bw_cake.JPG",
-        "bigday/images/the_stare.JPG",
-        "bigday/images/ds_walk.JPG",
-      ]
-
-
-    ],
+{% for strip in photo_strips %}      [{% for p in strip %}"{% static p %}"{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+{% endfor %}    ],
     printSegmentMs: 800,   // ms per photo-frame print segment
     segmentPauseMs: 250,    // motor rest between segments
     betweenPagesMs: 300    // pause before the next strip auto-prints
@@ -346,6 +328,36 @@ body {
 .replay.show { opacity: 0.75; pointer-events: auto; }
 .replay:hover { background: rgba(217,191,143,0.08); }
 
+/* ---------- Contact-details CTA (fixed at the bottom of the card) ---------- */
+.details-cta {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(12px);
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--bg);
+  background: var(--accent);
+  padding: 13px 28px;
+  border-radius: 999px;
+  max-width: calc(100vw - 28px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.6s ease, filter 0.3s ease;
+}
+.details-cta.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+.details-cta:hover { filter: brightness(1.06); }
+.details-cta:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+
 /* ---------- Start overlay ---------- */
 .start {
   position: fixed;
@@ -509,6 +521,8 @@ body {
   </main>
 </div>
 
+<a class="details-cta" id="detailsCta" href="{{ details_url }}">Update contact details</a>
+
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
   <div class="lb-stage">
     <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
@@ -525,7 +539,7 @@ body {
   const $ = id => document.getElementById(id);
   const chute = $("chute"), printer = $("printer"), fit = $("fit"),
         scene = $("scene"), dateBlock = $("dateBlock"), flash = $("flash"),
-        startBtn = $("start"), replayBtn = $("replay"),
+        startBtn = $("start"), replayBtn = $("replay"), detailsCta = $("detailsCta"),
         lightbox = $("lightbox"), lbPhoto = $("lbPhoto"),
         lbMissing = $("lbMissing"), lbCaption = $("lbCaption");
 
@@ -844,6 +858,7 @@ body {
 
   startBtn.addEventListener("click", () => {
     startBtn.classList.add("hidden");
+    detailsCta.classList.add("show");   // reveal the contact-details button
     printPage();
   }, { once: true });
 

@@ -70,6 +70,8 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'purpose', 'subject', 'body_html', 'footer_html', 'image_url',
             'show_rsvp_button', 'rsvp_button_text', 'rsvp_button_color',
+            'main_image_link',
+            'secondary_button_text', 'secondary_button_link', 'secondary_button_color',
             'background_color', 'font_color',
             'created_at', 'updated_at',
         ]

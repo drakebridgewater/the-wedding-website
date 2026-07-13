@@ -11,13 +11,30 @@ from guests.models import Party, MealOption
 INVITATION_TEMPLATE = 'guests/email_templates/invitation.html'
 
 
+def resolve_link_target(key, party, site_url):
+    """Map an EmailTemplate link-target key to an absolute URL for this party.
+
+    Keys come from guests.models.EMAIL_LINK_TARGETS. Returns '' for a blank or
+    unknown key so callers can treat it as "no link".
+    """
+    base = site_url.rstrip('/')
+    if key == 'save_the_date':
+        return base + reverse('save-the-date-card', args=[party.invitation_id])
+    if key == 'rsvp':
+        return base + reverse('invitation', args=[party.invitation_id])
+    if key == 'details':
+        return base + reverse('guest-details', args=[party.invitation_id])
+    if key == 'site':
+        return site_url
+    return ''
+
+
 def render_template(body_html, subject, party, site_url):
     """Resolve {{merge_fields}} in subject and body_html for a given party."""
     from guests.save_the_date import _get_wedding_date, _get_wedding_location
-    rsvp_path = reverse('invitation', args=[party.invitation_id])
-    rsvp_link = site_url.rstrip('/') + rsvp_path
-    details_path = reverse('guest-details', args=[party.invitation_id])
-    details_link = site_url.rstrip('/') + details_path
+    rsvp_link = resolve_link_target('rsvp', party, site_url)
+    details_link = resolve_link_target('details', party, site_url)
+    save_the_date_link = resolve_link_target('save_the_date', party, site_url)
     first_guest = party.guest_set.first()
     first_name = first_guest.first_name if first_guest else party.name
     replacements = {
@@ -25,6 +42,7 @@ def render_template(body_html, subject, party, site_url):
         '{{first_name}}': first_name,
         '{{rsvp_link}}': rsvp_link,
         '{{details_link}}': details_link,
+        '{{save_the_date_link}}': save_the_date_link,
         '{{couple}}': getattr(settings, 'BRIDE_AND_GROOM', ''),
         '{{date}}': _get_wedding_date(),
         '{{location}}': _get_wedding_location(),
@@ -61,6 +79,13 @@ def render_template_email(template, party, site_url, email_mode=True):
     context['rsvp_button_color'] = template.rsvp_button_color
     context['main_color'] = template.background_color or context['main_color']
     context['font_color'] = template.font_color or context['font_color']
+
+    # Optional image link + "See more" secondary button (absolute URLs so they
+    # work both in the real email and in the browser preview).
+    context['main_image_href'] = resolve_link_target(template.main_image_link, party, site_url)
+    context['secondary_button_text'] = template.secondary_button_text
+    context['secondary_button_href'] = resolve_link_target(template.secondary_button_link, party, site_url)
+    context['secondary_button_color'] = template.secondary_button_color
 
     if template.main_image:
         context['main_image_filename'] = os.path.basename(template.main_image.name)

@@ -202,12 +202,23 @@ DEFAULT_INVITE_BODY = (
 )
 
 
+EMAIL_LINK_TARGETS = [
+    ('', '— no link —'),
+    ('save_the_date', 'Save the Date page'),
+    ('rsvp', 'RSVP / invitation'),
+    ('details', 'Contact details form'),
+    ('site', 'Wedding website'),
+]
+
+
 class EmailTemplate(models.Model):
     PURPOSES = [
         ('save_the_date', 'Save the Date'),
         ('invitation', 'Invitation'),
         ('other', 'Other'),
     ]
+
+    LINK_TARGETS = EMAIL_LINK_TARGETS
 
     name = models.CharField(max_length=100)
     purpose = models.CharField(
@@ -222,6 +233,16 @@ class EmailTemplate(models.Model):
     show_rsvp_button = models.BooleanField(default=True)
     rsvp_button_text = models.CharField(max_length=100, default='View Invitation')
     rsvp_button_color = models.CharField(max_length=7, default='#337ab7')
+    # Optional link wrapped around the main image (blank = image isn't a link).
+    main_image_link = models.CharField(
+        max_length=20, choices=EMAIL_LINK_TARGETS, blank=True, default='',
+    )
+    # Secondary "See more" button below the image. Blank text hides it.
+    secondary_button_text = models.CharField(max_length=100, blank=True, default='')
+    secondary_button_link = models.CharField(
+        max_length=20, choices=EMAIL_LINK_TARGETS, blank=True, default='save_the_date',
+    )
+    secondary_button_color = models.CharField(max_length=7, default='#b08d57')
     background_color = models.CharField(max_length=7, default='#fff3e8')
     font_color = models.CharField(max_length=7, default='#666666')
     created_at = models.DateTimeField(auto_now_add=True)

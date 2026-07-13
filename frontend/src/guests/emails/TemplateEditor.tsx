@@ -4,7 +4,7 @@ import {
   useCreateEmailTemplate, useDeleteEmailTemplate, useParties, usePreviewEmailTemplate,
   useRemoveEmailTemplateImage, useTestSendEmailTemplate, useUpdateEmailTemplate, useUploadEmailTemplateImage,
 } from '../api'
-import type { EmailPreview, EmailTemplate, EmailTemplateDraft, EmailTemplateFormData, EmailTemplatePurpose, Party } from '../types'
+import type { EmailLinkTarget, EmailPreview, EmailTemplate, EmailTemplateDraft, EmailTemplateFormData, EmailTemplatePurpose, Party } from '../types'
 import { Modal } from '../components/Modal'
 import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
@@ -15,6 +15,16 @@ const PURPOSE_OPTIONS: [EmailTemplatePurpose, string][] = [
   ['save_the_date', 'Save the Date'],
   ['invitation', 'Invitation'],
   ['other', 'Something else (thank-you, reminder…)'],
+]
+
+// Destinations an image link / "See more" button can point at, resolved per
+// guest at send time (guests/invitation.py resolve_link_target).
+const LINK_TARGET_OPTIONS: [EmailLinkTarget, string][] = [
+  ['', '— no link —'],
+  ['save_the_date', 'Save the Date page'],
+  ['rsvp', 'RSVP / invitation'],
+  ['details', 'Contact details form'],
+  ['site', 'Wedding website'],
 ]
 
 const TEST_EMAIL_STORAGE_KEY = 'emailTestAddress'
@@ -173,6 +183,10 @@ export function TemplateEditor({
   const [showRsvpButton, setShowRsvpButton] = useState(template?.show_rsvp_button ?? true)
   const [rsvpButtonText, setRsvpButtonText] = useState(template?.rsvp_button_text ?? 'View Invitation')
   const [rsvpButtonColor, setRsvpButtonColor] = useState(template?.rsvp_button_color ?? '#337ab7')
+  const [mainImageLink, setMainImageLink] = useState<EmailLinkTarget>(template?.main_image_link ?? '')
+  const [secondaryButtonText, setSecondaryButtonText] = useState(template?.secondary_button_text ?? '')
+  const [secondaryButtonLink, setSecondaryButtonLink] = useState<EmailLinkTarget>(template?.secondary_button_link ?? 'save_the_date')
+  const [secondaryButtonColor, setSecondaryButtonColor] = useState(template?.secondary_button_color ?? '#b08d57')
   const [backgroundColor, setBackgroundColor] = useState(template?.background_color ?? '#fff3e8')
   const [fontColor, setFontColor] = useState(template?.font_color ?? '#666666')
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -200,6 +214,10 @@ export function TemplateEditor({
     setShowRsvpButton(template?.show_rsvp_button ?? true)
     setRsvpButtonText(template?.rsvp_button_text ?? 'View Invitation')
     setRsvpButtonColor(template?.rsvp_button_color ?? '#337ab7')
+    setMainImageLink(template?.main_image_link ?? '')
+    setSecondaryButtonText(template?.secondary_button_text ?? '')
+    setSecondaryButtonLink(template?.secondary_button_link ?? 'save_the_date')
+    setSecondaryButtonColor(template?.secondary_button_color ?? '#b08d57')
     setBackgroundColor(template?.background_color ?? '#fff3e8')
     setFontColor(template?.font_color ?? '#666666')
   }, [template?.id]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -211,6 +229,10 @@ export function TemplateEditor({
     show_rsvp_button: showRsvpButton,
     rsvp_button_text: rsvpButtonText,
     rsvp_button_color: rsvpButtonColor,
+    main_image_link: mainImageLink,
+    secondary_button_text: secondaryButtonText,
+    secondary_button_link: secondaryButtonLink,
+    secondary_button_color: secondaryButtonColor,
     background_color: backgroundColor,
     font_color: fontColor,
   }
@@ -349,6 +371,14 @@ export function TemplateEditor({
         </Field>
         <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
 
+        <SelectField
+          label="Make the photo a link"
+          hint="Wrap the header image in a link so tapping the photo opens the page you choose."
+          value={mainImageLink}
+          onChange={(e) => setMainImageLink(e.target.value as EmailLinkTarget)}
+          options={LINK_TARGET_OPTIONS}
+        />
+
         <div className="border border-stone-200 rounded-lg p-3 space-y-3">
           <CheckboxField
             label="Show RSVP button at the top"
@@ -372,6 +402,30 @@ export function TemplateEditor({
             <ColorField label="Background" value={backgroundColor} onChange={setBackgroundColor} />
             <ColorField label="Text color" value={fontColor} onChange={setFontColor} />
           </div>
+        </div>
+
+        <div className="border border-stone-200 rounded-lg p-3 space-y-3">
+          <div className="text-sm font-medium text-stone-600">“See more” button <span className="font-normal text-stone-400">(below the photo)</span></div>
+          <div className="flex items-end gap-4 flex-wrap">
+            <div className="flex-1 min-w-[180px]">
+              <TextField
+                label="Button text"
+                hint="Leave blank to hide this button."
+                value={secondaryButtonText}
+                onChange={(e) => setSecondaryButtonText(e.target.value)}
+                placeholder="See more"
+              />
+            </div>
+            <ColorField label="Button color" value={secondaryButtonColor} onChange={setSecondaryButtonColor} />
+          </div>
+          {secondaryButtonText.trim() && (
+            <SelectField
+              label="Button links to"
+              value={secondaryButtonLink}
+              onChange={(e) => setSecondaryButtonLink(e.target.value as EmailLinkTarget)}
+              options={LINK_TARGET_OPTIONS}
+            />
+          )}
         </div>
 
         <Field
