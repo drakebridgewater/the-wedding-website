@@ -1,0 +1,82 @@
+{% load static wedding_extras %}
+<!-- Hero: split layout -->
+<section class="flex flex-col md:flex-row" style="min-height: calc(100vh - 56px);">
+
+  <!-- Left: text panel -->
+  <div class="md:w-1/2 flex items-center justify-center bg-white py-20 px-8 md:px-16 order-2 md:order-1">
+    <div class="max-w-sm w-full text-center">
+
+      <h1 class="font-script text-6xl sm:text-7xl text-stone-800 leading-none mb-6">{{ couple_name }}</h1>
+
+      <div class="flex items-center gap-4 justify-center mb-6">
+        <div class="flex-1 h-px bg-stone-200"></div>
+        <span class="font-display text-stone-500 tracking-[0.25em] uppercase text-xs">{{ wedding_date }}</span>
+        <div class="flex-1 h-px bg-stone-200"></div>
+      </div>
+
+      <p class="font-display italic text-stone-500 text-lg leading-relaxed mb-8">
+        {{ wedding_location }}
+      </p>
+
+      <p class="text-stone-400 text-sm leading-snug mb-10">
+        A celebration is only as good as the people in it
+        <span class="flex justify-center my-1.5">
+          <svg width="24" height="10" viewBox="0 0 24 10" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-stone-300">
+            <line x1="0" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="0.75"/>
+            <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+            <line x1="16" y1="5" x2="24" y2="5" stroke="currentColor" stroke-width="0.75"/>
+          </svg>
+        </span>
+        and we're so glad you're one of them.
+      </p>
+
+      <a href="#event"
+          class="relative inline-flex items-center justify-center px-8 py-3 rounded-full border border-stone-300 text-stone-600 hover:border-accent hover:text-accent transition-colors text-xs tracking-widest uppercase overflow-hidden group/btn">
+        <svg class="absolute inset-0 w-full h-full opacity-[0.07] group-hover/btn:opacity-[0.13] transition-opacity" viewBox="0 0 80 36" fill="none" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <path d="M40 4 L40 28 M28 20 L40 32 L52 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="relative">Wedding Details</span>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Right: hero photo -->
+  <div class="md:w-1/2 min-h-72 md:min-h-0 relative order-1 md:order-2 group/hero">
+    <img id="hero-img"
+          src="{% if hero_photo_url %}{{ hero_photo_url }}{% else %}{% static 'bigday/images/selfie.jpg' %}{% endif %}"
+          class="absolute inset-0 w-full h-full object-cover"
+          alt="{{ couple_name }}">
+    {% if user.is_authenticated %}
+    <label class="absolute inset-0 flex items-center justify-center
+                  bg-black/0 group-hover/hero:bg-black/30 cursor-pointer transition-colors"
+            title="Click to upload a new hero photo">
+      <span class="opacity-0 group-hover/hero:opacity-100 transition-opacity
+                    bg-black/50 text-white rounded-full p-3">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </span>
+      <input type="file" accept="image/*" class="hidden" id="hero-photo-input">
+    </label>
+    <script>
+    (function() {
+      document.getElementById('hero-photo-input').addEventListener('change', function() {
+        var file = this.files[0];
+        if (!file) return;
+        var form = new FormData();
+        form.append('image', file);
+        var csrf = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+        fetch('/upload/hero/', { method: 'POST', headers: { 'X-CSRFToken': csrf }, body: form })
+          .then(function(r) { return r.json(); })
+          .then(function(d) { if (d.url) document.getElementById('hero-img').src = d.url; })
+          .catch(function() { alert('Failed to upload photo.'); });
+      });
+    })();
+    </script>
+    {% endif %}
+  </div>
+
+</section>

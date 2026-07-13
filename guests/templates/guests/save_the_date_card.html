@@ -16,7 +16,7 @@
     names: "{{ couple_name|escapejs }}",
     dateLabel: "Save the Date",
     dateValue: "05 . 29 . 2027",
-    targetDate: "2027-05-29T16:00:00",   // local time — drives the countdown
+    targetDate: "{{ wedding_datetime|date:'Y-m-d\\TH:i:s'|default:'' }}",   // local time — drives the countdown
     afterMessage: "Just married",         // shown once the date has passed
     subtext: "Formal invitation to follow",
     pages: [

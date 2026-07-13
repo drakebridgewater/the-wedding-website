@@ -97,7 +97,7 @@ class WeddingSettingsAdmin(admin.ModelAdmin):
             'fields': ('couple_name', 'bride_name', 'groom_name', 'hero_title'),
         }),
         ('Event Details', {
-            'fields': ('wedding_date_display', 'wedding_location'),
+            'fields': ('wedding_date_display', 'wedding_datetime', 'wedding_location'),
         }),
         ('Contact & Links', {
             'fields': ('support_email', 'website_url'),

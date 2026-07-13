@@ -1,0 +1,58 @@
+  <div class="max-w-2xl mx-auto text-center">
+    <h2 class="font-script text-4xl sm:text-5xl text-stone-700 mb-2">Counting Down</h2>
+    <div class="w-12 h-px bg-accent mx-auto mb-10"></div>
+
+    {% if wedding_datetime %}
+    <div id="home-countdown"
+         class="flex justify-center gap-6 sm:gap-10"
+         role="timer" aria-label="Countdown to the wedding"
+         data-target="{{ wedding_datetime|date:'Y-m-d\TH:i:s' }}">
+      <div class="flex flex-col items-center min-w-[3.5rem]">
+        <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="days">0</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Days</span>
+      </div>
+      <div class="flex flex-col items-center min-w-[3.5rem]">
+        <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="hours">00</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Hours</span>
+      </div>
+      <div class="flex flex-col items-center min-w-[3.5rem]">
+        <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="minutes">00</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Minutes</span>
+      </div>
+      <div class="flex flex-col items-center min-w-[3.5rem]">
+        <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="seconds">00</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Seconds</span>
+      </div>
+    </div>
+    <script>
+    (function() {
+      var root = document.getElementById('home-countdown');
+      var target = new Date(root.dataset.target).getTime();
+      var days = root.querySelector('[data-unit="days"]');
+      var hours = root.querySelector('[data-unit="hours"]');
+      var minutes = root.querySelector('[data-unit="minutes"]');
+      var seconds = root.querySelector('[data-unit="seconds"]');
+
+      if (Number.isNaN(target)) return;
+
+      function tick() {
+        var diff = target - Date.now();
+        if (diff <= 0) {
+          root.innerHTML = '<span class="font-script text-4xl sm:text-5xl text-stone-700">Just married!</span>';
+          clearInterval(timer);
+          return;
+        }
+        var s = Math.floor(diff / 1000);
+        days.textContent = String(Math.floor(s / 86400));
+        hours.textContent = String(Math.floor(s / 3600) % 24).padStart(2, '0');
+        minutes.textContent = String(Math.floor(s / 60) % 60).padStart(2, '0');
+        seconds.textContent = String(s % 60).padStart(2, '0');
+      }
+      var timer = setInterval(tick, 1000);
+      tick();
+    })();
+    </script>
+    {% else %}
+    <p class="font-display italic text-stone-400 text-lg">Details coming soon.</p>
+    {% endif %}
+  </div>

@@ -1,7 +1,4 @@
-<section id="questions" class="py-20 px-4 bg-accent-light border-t border-stone-100">
-  {% if not guest_verified %}
-  {% include 'partials/locked_teaser.html' with title="Ask Us Anything" anchor="questions" next_path="/" %}
-  {% else %}
+
   {% url 'submit-question' as submit_url %}
   <div class="max-w-2xl mx-auto">
 
@@ -66,5 +63,3 @@
     </div>
 
   </div>
-  {% endif %}
-</section>

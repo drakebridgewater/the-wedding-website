@@ -85,6 +85,12 @@ class WeddingSettings(models.Model):
         max_length=100, blank=True,
         help_text='Human-readable date shown on the site, e.g. "June 14, 2026"',
     )
+    wedding_datetime = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Exact ceremony date & time, used to drive the countdown timers. '
+                   "Enter the venue's local wall-clock time — treated as literal "
+                   'local time in each visitor\'s browser (not converted between timezones).',
+    )
     wedding_location = models.CharField(max_length=200, blank=True)
     support_email = models.EmailField(blank=True)
     website_url = models.URLField(blank=True)
