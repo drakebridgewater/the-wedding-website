@@ -5,7 +5,8 @@ from django.views.generic import RedirectView
 from guests import api_views
 from guests.views import test_email, save_the_date_preview, save_the_date_random, export_guests, \
     invitation, invitation_email_preview, invitation_email_test, rsvp_confirm, \
-    invitations_list, send_party_invitation, manage_page, contact_details, save_the_date_card
+    invitations_list, send_party_invitation, manage_page, contact_details, save_the_date_card, \
+    unlock_access
 
 
 urlpatterns = [
@@ -38,6 +39,8 @@ urlpatterns = [
     path('guests/api/save-the-date/settings/upload-image/', api_views.save_the_date_upload_image, name='api-std-upload-image'),
     path('guests/api/save-the-date/send/', api_views.save_the_date_send, name='api-std-send'),
     path('guests/api/save-the-date/sent/', api_views.save_the_date_sent_list, name='api-std-sent-list'),
+
+    path('access/unlock/', unlock_access, name='guest-unlock'),
 
     re_path(r'^guests/$', login_required(RedirectView.as_view(url='/guests/manage/', permanent=True)), name='guest-list'),
     re_path(r'^guests/export$', export_guests, name='export-guest-list'),

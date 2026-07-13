@@ -1,4 +1,7 @@
 {% load wedding_extras %}
+{% if not guest_verified %}
+{% include 'partials/locked_teaser.html' with title="Getting There & Where to Stay" anchor="location" next_path="/" %}
+{% else %}
 <div class="max-w-3xl mx-auto">
   <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Getting There &amp; Where to Stay</h2>
   <div class="w-12 h-px bg-accent mx-auto mb-12"></div>
@@ -28,3 +31,4 @@
   {% endif %}
   {% endwith %}
 </div>
+{% endif %}
