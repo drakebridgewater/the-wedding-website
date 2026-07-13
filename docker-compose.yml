@@ -50,11 +50,25 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
+
+      # ── Main HTTPS router ──
       - "traefik.http.routers.wedding.rule=Host(`wedding.bridgewater.digital`) || Host(`wedding.drakebridgewater.com`)"
       - "traefik.http.routers.wedding.entryPoints=https"
       - "traefik.http.routers.wedding.tls=true"
-      - "traefik.http.routers.wedding.middlewares=default-no-auth@file"
+      - "traefik.http.routers.wedding.middlewares=default-no-auth@file,wedding-canonical"
       - "traefik.http.services.wedding.loadbalancer.server.port=8080"
+
+      # Match the entrypoint name to your static config (often "http" or "web").
+      - "traefik.http.routers.wedding-http.rule=Host(`wedding.bridgewater.digital`) || Host(`wedding.drakebridgewater.com`)"
+      - "traefik.http.routers.wedding-http.entryPoints=http"
+      - "traefik.http.routers.wedding-http.middlewares=wedding-https-redirect"
+      - "traefik.http.middlewares.wedding-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.wedding-https-redirect.redirectscheme.permanent=true"
+
+      # Canonicalize both domains onto one 
+      - "traefik.http.middlewares.wedding-canonical.redirectregex.regex=^https?://wedding\\.drakebridgewater\\.com/(.*)"
+      - "traefik.http.middlewares.wedding-canonical.redirectregex.replacement=https://wedding.bridgewater.digital/$${1}"
+      - "traefik.http.middlewares.wedding-canonical.redirectregex.permanent=false"
     networks:
       proxy:
         ipv4_address: 10.20.0.70

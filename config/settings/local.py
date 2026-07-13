@@ -28,6 +28,8 @@ else:
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+GOOGLE_PLACES_API_KEY = os.environ.get('GOOGLE_PLACES_API_KEY', GOOGLE_PLACES_API_KEY)
+
 DJANGO_VITE = {
     'default': {
         'dev_mode': True,
