@@ -87,14 +87,14 @@
         </div>
 
         <!-- Mailing address -->
-        <div class="mb-6">
+        <div class="mb-6 relative" id="address-wrap">
           <label for="address" class="block text-sm font-medium text-stone-700 mb-1">
             Mailing address <span class="text-stone-400 font-normal">(optional — for cards or updates)</span>
           </label>
           <input type="text" id="address" name="address"
                  value="{{ party.address }}"
                  placeholder="Start typing your address…"
-                 autocomplete="street-address"
+                 autocomplete="off"
                  class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base">
           <p id="address-verified-note" class="mt-1 text-xs text-emerald-600 {% if not party.address_verified %}hidden{% endif %}">✓ Verified address</p>
           <input type="hidden" name="address_street" id="address_street" value="{{ party.address_street }}">
@@ -154,53 +154,5 @@
 })();
 </script>
 
-{% if GOOGLE_PLACES_API_KEY %}
-<script>
-(function() {
-  var s = document.createElement('script');
-  s.src = 'https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_PLACES_API_KEY }}&libraries=places&callback=initAddrAC';
-  s.async = true; s.defer = true;
-  document.head.appendChild(s);
-})();
-window.initAddrAC = function() {
-  var el = document.getElementById('address');
-  if (!el || !window.google) return;
-
-  function setField(id, value) {
-    document.getElementById(id).value = value;
-  }
-  function setVerified(on) {
-    setField('address_verified', on ? '1' : '0');
-    document.getElementById('address-verified-note').classList.toggle('hidden', !on);
-  }
-  function component(place, type, useShort) {
-    var match = (place.address_components || []).find(function (c) {
-      return c.types.indexOf(type) !== -1;
-    });
-    return match ? (useShort ? match.short_name : match.long_name) : '';
-  }
-
-  var ac = new google.maps.places.Autocomplete(el, { types: ['address'] });
-  ac.addListener('place_changed', function() {
-    var p = ac.getPlace();
-    if (!p.formatted_address) return;
-    el.value = p.formatted_address;
-    setField('address_street', (component(p, 'street_number') + ' ' + component(p, 'route')).trim());
-    setField('address_city', component(p, 'locality') || component(p, 'sublocality') || component(p, 'postal_town'));
-    setField('address_state', component(p, 'administrative_area_level_1', true));
-    setField('address_zip', component(p, 'postal_code'));
-    setField('address_country', component(p, 'country'));
-    setVerified(true);
-  });
-
-  // Hand-typed edits invalidate the verified components. (place_changed sets
-  // el.value programmatically, which doesn't fire 'input'.)
-  el.addEventListener('input', function() {
-    ['address_street', 'address_city', 'address_state', 'address_zip', 'address_country']
-      .forEach(function (id) { setField(id, ''); });
-    setVerified(false);
-  });
-};
-</script>
-{% endif %}
+{% include "guests/partials/address_autocomplete.html" %}
 {% endblock %}

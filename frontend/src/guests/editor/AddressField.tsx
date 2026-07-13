@@ -12,15 +12,25 @@ export interface AddressPatch {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function component(place: any, type: string, useShort = false): string {
+function component(components: any[], type: string, useShort = false): string {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const match = (place.address_components || []).find((c: any) => c.types.includes(type))
-  return match ? (useShort ? match.short_name : match.long_name) : ''
+  const match = (components || []).find((c: any) => c.types.includes(type))
+  return match ? (useShort ? match.shortText : match.longText) : ''
+}
+
+interface Suggestion {
+  text: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prediction: any
 }
 
 /** Auto-saving address input with Google Places autocomplete when a key is configured.
  *  A Places pick saves the structured components with address_verified=true;
- *  a hand-typed edit clears them. */
+ *  a hand-typed edit clears them.
+ *  Renders its own dropdown on top of google.maps.places.AutocompleteSuggestion
+ *  rather than the legacy google.maps.places.Autocomplete widget — Google
+ *  stopped fixing bugs in that widget for keys/projects created after March
+ *  2025 (predictions silently stalling after the first keystroke is one of them). */
 export function AddressField({ value, verified, onSave }: {
   value: string
   verified: boolean
@@ -29,6 +39,7 @@ export function AddressField({ value, verified, onSave }: {
   const ref = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState(value)
   const [saving, setSaving] = useState(false)
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const onSaveRef = useRef(onSave)
   onSaveRef.current = onSave
   useEffect(() => setDraft(value), [value])
@@ -42,45 +53,89 @@ export function AddressField({ value, verified, onSave }: {
   const saveRef = useRef(save)
   saveRef.current = save
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const placesRef = useRef<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sessionTokenRef = useRef<any>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+
   useEffect(() => {
     const key = document.querySelector<HTMLMetaElement>('meta[name="google-places-key"]')?.content
-    if (!key || !ref.current) return
-    function init() {
+    if (!key) return
+    let cancelled = false
+    async function init() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (!ref.current || !(window as any).google?.maps?.places) return
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ac = new (window as any).google.maps.places.Autocomplete(ref.current, { types: ['address'] })
-      ac.addListener('place_changed', () => {
-        const place = ac.getPlace()
-        if (!place.formatted_address) return
-        setDraft(place.formatted_address)
-        saveRef.current({
-          address: place.formatted_address,
-          address_street: `${component(place, 'street_number')} ${component(place, 'route')}`.trim(),
-          address_city: component(place, 'locality') || component(place, 'sublocality') || component(place, 'postal_town'),
-          address_state: component(place, 'administrative_area_level_1', true),
-          address_zip: component(place, 'postal_code'),
-          address_country: component(place, 'country'),
-          address_verified: true,
-        })
-      })
+      const places = await (window as any).google.maps.importLibrary('places')
+      if (cancelled) return
+      placesRef.current = places
+      sessionTokenRef.current = new places.AutocompleteSessionToken()
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).google?.maps?.places) { init() }
+    if ((window as any).google?.maps?.importLibrary) { void init() }
     else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(window as any).__gplacesReady = init
+      ;(window as any).__gplacesReady = () => { void init() }
       const scriptId = '__gplaces_loader__'
       if (!document.getElementById(scriptId)) {
         const s = document.createElement('script')
         s.id = scriptId
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=__gplacesReady`
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&callback=__gplacesReady&loading=async`
         s.async = true
         document.head.appendChild(s)
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { cancelled = true }
   }, [])
+
+  function handleChange(next: string) {
+    setDraft(next)
+    setSuggestions([])
+    clearTimeout(debounceRef.current)
+    const query = next.trim()
+    if (!query || !placesRef.current) return
+    debounceRef.current = setTimeout(() => {
+      const { AutocompleteSuggestion } = placesRef.current
+      AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: query,
+        includedPrimaryTypes: ['street_address', 'premise', 'subpremise'],
+        sessionToken: sessionTokenRef.current,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }).then((res: any) => {
+        // Drop stale responses from a query that's since been edited/cleared.
+        if (ref.current?.value.trim() !== query) return
+        setSuggestions(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (res.suggestions || []).flatMap((s: any) => (s.placePrediction ? [{
+            text: s.placePrediction.text?.text ?? '',
+            prediction: s.placePrediction,
+          }] : []))
+        )
+      }).catch(() => setSuggestions([]))
+    }, 200)
+  }
+
+  async function selectSuggestion(suggestion: Suggestion) {
+    setSuggestions([])
+    try {
+      const place = suggestion.prediction.toPlace()
+      await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] })
+      const comps = place.addressComponents || []
+      const address = place.formattedAddress || suggestion.text
+      setDraft(address)
+      await saveRef.current({
+        address,
+        address_street: `${component(comps, 'street_number')} ${component(comps, 'route')}`.trim(),
+        address_city: component(comps, 'locality') || component(comps, 'sublocality') || component(comps, 'postal_town'),
+        address_state: component(comps, 'administrative_area_level_1', true),
+        address_zip: component(comps, 'postal_code'),
+        address_country: component(comps, 'country'),
+        address_verified: true,
+      })
+    } finally {
+      // A place was resolved, so start a fresh billing session for the next lookup.
+      if (placesRef.current) sessionTokenRef.current = new placesRef.current.AutocompleteSessionToken()
+    }
+  }
 
   function commit() {
     if (draft === value) return
@@ -94,7 +149,7 @@ export function AddressField({ value, verified, onSave }: {
   }
 
   return (
-    <div>
+    <div className="relative">
       <label className="block text-xs font-medium text-stone-500 mb-1">
         Address
         {verified && draft === value && (
@@ -105,11 +160,28 @@ export function AddressField({ value, verified, onSave }: {
         ref={ref}
         type="text"
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
+        onChange={(e) => handleChange(e.target.value)}
+        onBlur={() => { setTimeout(() => setSuggestions([]), 150); commit() }}
         placeholder="123 Main St…"
+        autoComplete="off"
         className={`w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-400 ${saving ? 'opacity-60' : ''}`}
       />
+      {suggestions.length > 0 && (
+        <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+          {suggestions.map((s, i) => (
+            <li
+              key={i}
+              // mousedown (not click) fires before the input's blur handler,
+              // so preventDefault here keeps focus and the selection lands
+              // before commit() would otherwise fire on blur.
+              onMouseDown={(e) => { e.preventDefault(); void selectSuggestion(s) }}
+              className="px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 cursor-pointer"
+            >
+              {s.text}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

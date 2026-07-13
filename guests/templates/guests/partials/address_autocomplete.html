@@ -1,0 +1,137 @@
+{% comment %}
+Address autocomplete for the #address field, shared by contact_details.html and
+invitation.html. Expects the surrounding markup to provide:
+  #address-wrap (position: relative wrapper), #address (text input),
+  #address-verified-note, and hidden inputs #address_street/_city/_state/_zip/_country/_verified.
+
+Uses the current Places API (google.maps.places.AutocompleteSuggestion /
+Place), not the legacy google.maps.places.Autocomplete widget — Google
+deprecated Autocomplete for API keys/projects created after March 2025 and
+will not fix bugs in it (predictions silently stop after the first
+keystroke being one such bug). We build our own small dropdown so we keep
+full control of styling instead of fighting the new widget's shadow DOM.
+{% endcomment %}
+{% if GOOGLE_PLACES_API_KEY %}
+<script>
+(function() {
+  var s = document.createElement('script');
+  s.src = 'https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_PLACES_API_KEY }}&libraries=places&callback=initAddrAC&loading=async';
+  s.async = true;
+  document.head.appendChild(s);
+})();
+
+window.initAddrAC = async function() {
+  var input = document.getElementById('address');
+  var wrap = document.getElementById('address-wrap');
+  if (!input || !wrap || !window.google) return;
+
+  var places;
+  try {
+    places = await google.maps.importLibrary('places');
+  } catch (e) {
+    return;
+  }
+  var AutocompleteSuggestion = places.AutocompleteSuggestion;
+  var AutocompleteSessionToken = places.AutocompleteSessionToken;
+  if (!AutocompleteSuggestion || !AutocompleteSessionToken) return;
+
+  function setField(id, value) {
+    document.getElementById(id).value = value;
+  }
+  function setVerified(on) {
+    setField('address_verified', on ? '1' : '0');
+    document.getElementById('address-verified-note').classList.toggle('hidden', !on);
+  }
+  function clearVerified() {
+    ['address_street', 'address_city', 'address_state', 'address_zip', 'address_country']
+      .forEach(function (id) { setField(id, ''); });
+    setVerified(false);
+  }
+  function component(components, type, useShort) {
+    var match = (components || []).find(function (c) {
+      return c.types.indexOf(type) !== -1;
+    });
+    return match ? (useShort ? match.shortText : match.longText) : '';
+  }
+
+  var sessionToken = new AutocompleteSessionToken();
+
+  var list = document.createElement('ul');
+  list.className = 'absolute z-10 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden hidden max-h-64 overflow-y-auto';
+  wrap.appendChild(list);
+
+  function closeList() {
+    list.classList.add('hidden');
+    list.innerHTML = '';
+  }
+
+  function renderSuggestions(suggestions) {
+    list.innerHTML = '';
+    if (!suggestions || !suggestions.length) { closeList(); return; }
+    suggestions.forEach(function (suggestion) {
+      var prediction = suggestion.placePrediction;
+      if (!prediction) return;
+      var item = document.createElement('li');
+      item.textContent = prediction.text ? prediction.text.text : '';
+      item.className = 'px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 cursor-pointer';
+      // mousedown (not click) fires before the input's blur handler, so the
+      // selection registers before we'd otherwise close the dropdown on blur.
+      item.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        selectPrediction(prediction);
+      });
+      list.appendChild(item);
+    });
+    list.classList.toggle('hidden', list.children.length === 0);
+  }
+
+  async function selectPrediction(prediction) {
+    closeList();
+    try {
+      var place = prediction.toPlace();
+      await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] });
+      var comps = place.addressComponents || [];
+      input.value = place.formattedAddress || input.value;
+      setField('address_street', (component(comps, 'street_number') + ' ' + component(comps, 'route')).trim());
+      setField('address_city', component(comps, 'locality') || component(comps, 'sublocality') || component(comps, 'postal_town'));
+      setField('address_state', component(comps, 'administrative_area_level_1', true));
+      setField('address_zip', component(comps, 'postal_code'));
+      setField('address_country', component(comps, 'country'));
+      setVerified(true);
+    } catch (e) {
+      setVerified(false);
+    }
+    // A place was resolved, so start a fresh billing session for the next lookup.
+    sessionToken = new AutocompleteSessionToken();
+  }
+
+  var debounceTimer;
+  input.addEventListener('input', function () {
+    clearVerified();
+    closeList();
+    clearTimeout(debounceTimer);
+    var query = input.value.trim();
+    if (!query) return;
+    debounceTimer = setTimeout(function () {
+      AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: query,
+        includedPrimaryTypes: ['street_address', 'premise', 'subpremise'],
+        sessionToken: sessionToken,
+      }).then(function (res) {
+        // Drop stale responses from a query that's since been edited/cleared.
+        if (input.value.trim() !== query) return;
+        renderSuggestions(res.suggestions);
+      }).catch(function () { closeList(); });
+    }, 200);
+  });
+
+  input.addEventListener('blur', function () {
+    // Delay so a mousedown on a suggestion can still register first.
+    setTimeout(closeList, 150);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeList();
+  });
+};
+</script>
+{% endif %}
