@@ -41,7 +41,7 @@ class Party(models.Model):
     """
     name = models.TextField()
     type = models.CharField(max_length=10, choices=ALLOWED_TYPES, blank=True, default='')
-    category = models.CharField(max_length=20, null=True, blank=True)
+    category = models.CharField(max_length=20, blank=True)
     save_the_date_sent = models.DateTimeField(null=True, blank=True, default=None)
     save_the_date_opened = models.DateTimeField(null=True, blank=True, default=None)
     invitation_id = models.CharField(max_length=32, db_index=True, default=_random_uuid, unique=True)
@@ -51,7 +51,7 @@ class Party(models.Model):
     rehearsal_dinner = models.BooleanField(default=False)
     is_attending = models.BooleanField(default=None, null=True)
     rsvp_responded_at = models.DateTimeField(null=True, blank=True, default=None)
-    comments = models.TextField(null=True, blank=True)
+    comments = models.TextField(blank=True)
     address = models.TextField(blank=True)
     # Structured components, filled when the guest picks a Google Places
     # suggestion on the RSVP form. address_verified means the address came
@@ -139,11 +139,11 @@ class Guest(models.Model):
     """
     party = models.ForeignKey('Party', on_delete=models.SET_NULL, null=True, blank=True)
     first_name = models.TextField()
-    last_name = models.TextField(null=True, blank=True)
-    email = models.TextField(null=True, blank=True)
+    last_name = models.TextField(blank=True)
+    email = models.TextField(blank=True)
     phone = models.CharField(max_length=30, blank=True, default='')
     is_attending = models.BooleanField(default=None, null=True)
-    meal = models.CharField(max_length=20, null=True, blank=True)
+    meal = models.CharField(max_length=20, blank=True)
     is_child = models.BooleanField(default=False)
     dietary_restrictions = models.TextField(blank=True)
     label = models.CharField(max_length=100, blank=True)

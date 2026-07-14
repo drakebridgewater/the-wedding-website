@@ -26,29 +26,29 @@
     </div>
     <script>
     (function() {
-      var root = document.getElementById('home-countdown');
-      var target = new Date(root.dataset.target).getTime();
-      var days = root.querySelector('[data-unit="days"]');
-      var hours = root.querySelector('[data-unit="hours"]');
-      var minutes = root.querySelector('[data-unit="minutes"]');
-      var seconds = root.querySelector('[data-unit="seconds"]');
+      const root = document.getElementById('home-countdown');
+      const target = new Date(root.dataset.target).getTime();
+      const days = root.querySelector('[data-unit="days"]');
+      const hours = root.querySelector('[data-unit="hours"]');
+      const minutes = root.querySelector('[data-unit="minutes"]');
+      const seconds = root.querySelector("[data-unit=\"seconds\"]");
 
       if (Number.isNaN(target)) return;
 
       function tick() {
-        var diff = target - Date.now();
+        const diff = target - Date.now();
         if (diff <= 0) {
           root.innerHTML = '<span class="font-script text-4xl sm:text-5xl text-stone-700">Just married!</span>';
           clearInterval(timer);
           return;
         }
-        var s = Math.floor(diff / 1000);
+        const s = Math.floor(diff / 1000);
         days.textContent = String(Math.floor(s / 86400));
         hours.textContent = String(Math.floor(s / 3600) % 24).padStart(2, '0');
         minutes.textContent = String(Math.floor(s / 60) % 60).padStart(2, '0');
         seconds.textContent = String(s % 60).padStart(2, '0');
       }
-      var timer = setInterval(tick, 1000);
+      const timer = setInterval(tick, 1000);
       tick();
     })();
     </script>
