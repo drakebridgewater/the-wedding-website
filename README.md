@@ -260,7 +260,7 @@ To override the spreadsheet name:
 python manage.py sync_to_drive --spreadsheet "My Wedding"
 ```
 
-To change the default spreadsheet title, set `GOOGLE_SPREADSHEET_TITLE` in `config/settings/base.py` or `local.py`.
+To change the default spreadsheet title, set `GOOGLE_SPREADSHEET_TITLE` in `config/settings/base.py` or `local.py`, or via the `GOOGLE_SPREADSHEET_TITLE` environment variable in production.
 
 The sync writes these tabs: `Summary`, `Guests`, `Parties`, `Wedding Party`, `Budget`, `Expenses`, `Schedule`, `Seating Tables`, `Music — Playlist`, `Music — Do Not Play`, `Venues`, `Caterers`, `Cakes`, `Florists`, `Entertainment`.
 
