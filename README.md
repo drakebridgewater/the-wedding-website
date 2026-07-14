@@ -422,9 +422,7 @@ python manage.py send_save_the_dates --send --mark-sent
 python manage.py send_invitations    --send --mark-sent
 ```
 
-Use `-h` on either command for all options (dry-run by default).
-
-### Save-the-date card photos
+To change the default spreadsheet title, set `GOOGLE_SPREADSHEET_TITLE` in `config/settings/base.py` or `local.py`, or via the `GOOGLE_SPREADSHEET_TITLE` environment variable in production.
 
 The animated card at `/std/<id>/` shows curated photo strips. Camera originals live in `photo_masters/` (outside the static tree, never shipped); the strips to display are defined in `SAVE_THE_DATE_CARD_STRIPS` in `guests/views.py`. After changing photos, regenerate the resized derivatives and commit them:
 
