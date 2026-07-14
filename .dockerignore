@@ -7,3 +7,9 @@ photo_masters/
 .venv/
 frontend/node_modules/
 db.sqlite3
+
+# Secrets — must never enter an image layer
+.env
+.token-oauth
+.pinterest-token
+.google-credentials.json
