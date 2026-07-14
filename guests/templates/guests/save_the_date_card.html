@@ -1,4 +1,4 @@
-{% load static %}<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -6,10 +6,10 @@
 <title>{{ couple_name }} — Save the Date</title>
 
 <!-- ============================================================
-     Per-guest Save-the-Date card. This is the SERVED version of
-     static/save-the-date.html: the photo strips come from the view
-     (SAVE_THE_DATE_CARD_STRIPS) and the "Update contact details"
-     button links to this guest's form ({{ details_url }}).
+     Per-guest Save-the-Date card. The photo strips come from the view
+     (SAVE_THE_DATE_CARD_STRIPS, resized by manage.py build_std_photos)
+     and the "Update contact details" button links to this guest's
+     form ({{ details_url }}).
      ============================================================ -->
 <script>
   const CONFIG = {
@@ -19,8 +19,10 @@
     targetDate: "{{ wedding_datetime|date:'Y-m-d\\TH:i:s'|default:'' }}",   // local time — drives the countdown
     afterMessage: "Just married",         // shown once the date has passed
     subtext: "Formal invitation to follow",
+    /* Each photo: t = small thumb printed in the strip, f = mid-size version
+       swapped in by the lightbox (built by manage.py build_std_photos). */
     pages: [
-{% for strip in photo_strips %}      [{% for p in strip %}"{% static p %}"{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+{% for strip in photo_strips %}      [{% for p in strip %}{ t: "{{ p.thumb|escapejs }}", f: "{{ p.full|escapejs }}" }{% if not forloop.last %}, {% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
 {% endfor %}    ],
     printSegmentMs: 800,   // ms per photo-frame print segment
     segmentPauseMs: 250,    // motor rest between segments
@@ -698,18 +700,18 @@ body {
     const strip = document.createElement("div");
     strip.className = "strip";
     strip.dataset.pageNo = String(pageNo + 1);
-    const frames = page.map((src, i) => {
+    const frames = page.map((photo, i) => {
       const f = document.createElement("button");
       f.className = "frame";
       f.type = "button";
       f.disabled = true;
-      const entry = { src, ok: true, label: `Strip ${pageNo + 1} · Photo ${i + 1}` };
+      const entry = { thumb: photo.t, full: photo.f, ok: true, label: `Strip ${pageNo + 1} · Photo ${i + 1}` };
       f.dataset.galleryIndex = String(gallery.length);
       gallery.push(entry);
 
       const img = new Image();
       img.alt = entry.label;
-      img.src = src;
+      img.src = photo.t;
       img.onerror = () => { f.classList.add("missing"); entry.ok = false; };
       const ph = document.createElement("div");
       ph.className = "placeholder";
@@ -876,10 +878,20 @@ body {
     const entry = gallery[lbIndex];
     lbCaption.textContent = entry.label;
     if (entry.ok) {
-      lbPhoto.src = entry.src;
+      /* The thumb is already in cache, so it shows instantly; the sharper
+         full version replaces it as soon as its download finishes (it is
+         usually preloaded by then). */
+      lbPhoto.src = fullReady.has(entry.full) ? entry.full : entry.thumb;
       lbPhoto.alt = entry.label;
       lbPhoto.style.display = "";
       lbMissing.style.display = "none";
+      if (!fullReady.has(entry.full)) {
+        loadFull(entry.full).then(ok => {
+          if (ok && gallery[lbIndex] === entry && lightbox.classList.contains("open")) {
+            lbPhoto.src = entry.full;
+          }
+        });
+      }
     } else {
       lbPhoto.style.display = "none";
       lbMissing.style.display = "grid";
@@ -931,17 +943,29 @@ body {
 
   /* ---------------- preload photos, then enable Open ---------------- */
   /* Photos otherwise only start downloading when a strip is built, so on a cold
-     cache the first frames print blank. Only the FIRST strip has to be ready to
-     press Open — every photo starts downloading now, but the later strips have
-     seconds before they print, so we don't block on them. onerror also resolves
+     cache the first frames print blank. Only the FIRST strip's thumbs have to
+     be ready to press Open — the other thumbs start downloading now too, but
+     the later strips have seconds before they print, so we don't block on
+     them. The mid-size lightbox versions wait until every thumb is done so
+     they never compete with the animation for bandwidth. onerror also resolves
      so a missing photo (placeholder frame) can't hang the button. */
   const preload = src => new Promise(res => {
     const img = new Image();
     img.onload = img.onerror = () => res();
     img.src = src;
   });
-  const firstStripReady = (CONFIG.pages[0] || []).map(preload);
-  CONFIG.pages.slice(1).flat().forEach(preload);   // keep loading in the background
+  const fullReady = new Set();
+  const loadFull = src => new Promise(res => {
+    const img = new Image();
+    img.onload = () => { fullReady.add(src); res(true); };
+    img.onerror = () => res(false);
+    img.src = src;
+  });
+  const firstStripReady = (CONFIG.pages[0] || []).map(p => preload(p.t));
+  const laterThumbs = CONFIG.pages.slice(1).flat().map(p => preload(p.t));
+  Promise.all(firstStripReady.concat(laterThumbs)).then(() => {
+    CONFIG.pages.flat().forEach(p => loadFull(p.f));
+  });
   Promise.race([
     Promise.all(firstStripReady),
     sleep(8000)   // safety net: never leave the button stuck on a hung request

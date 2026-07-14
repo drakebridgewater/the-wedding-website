@@ -1,5 +1,6 @@
 import base64
 from collections import namedtuple
+import os
 import random
 from datetime import datetime, timezone
 from django.conf import settings
@@ -10,6 +11,7 @@ from django.db.models.functions import Concat
 from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.templatetags.static import static
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
@@ -102,29 +104,44 @@ def contact_details(request, invite_id):
 
 
 # Photo strips shown on the served Save-the-Date card, one inner list per
-# printed strip (paths are relative to STATIC_ROOT / the static dirs). This is
-# the single place to curate what guests see; keep it in sync with the design
-# copy in static/save-the-date.html when you settle on a final set.
+# printed strip (filenames of camera originals in photo_masters/). This is
+# the single place to curate what guests see. The card never loads these
+# originals — it serves the thumb/full derivatives under
+# static/bigday/images/std/, so run `manage.py build_std_photos` after
+# changing this list.
 SAVE_THE_DATE_CARD_STRIPS = [
       [
-        "bigday/images/bw_ds_bench.JPG",
-        "bigday/images/cake_pond.JPG",
-        "bigday/images/bw_ds_bench_01.JPG",
-        "bigday/images/des_bench.JPG"
+        "bw_ds_bench.JPG",
+        "cake_pond.JPG",
+        "bw_ds_bench_01.JPG",
+        "des_bench.JPG"
       ],
       [
-        "bigday/images/des_bench_01.JPG",
-        "bigday/images/ds_kiss.JPG",
-        "bigday/images/des_bench_champagne_01.JPG",
-        "bigday/images/ds_bench_bridge.JPG"
+        "des_bench_01.JPG",
+        "ds_kiss.JPG",
+        "des_bench_champagne_01.JPG",
+        "ds_bench_bridge.JPG"
       ],
       [
-        "bigday/images/ethan_glasses.JPG",
-        "bigday/images/bw_cake.JPG",
-        "bigday/images/the_stare.JPG",
-        "bigday/images/ds_walk.JPG",
+        "ethan_glasses.JPG",
+        "bw_cake.JPG",
+        "the_stare.JPG",
+        "ds_walk.JPG",
       ],
 ]
+
+
+def _std_card_strips():
+    """Map each curated photo to its resized derivatives (built by
+    `manage.py build_std_photos`): a small thumb shown in the strips and a
+    mid-size full for the lightbox."""
+    def variants(filename):
+        base = os.path.splitext(filename)[0]
+        return {
+            'thumb': static(f'bigday/images/std/thumb/{base}.jpg'),
+            'full': static(f'bigday/images/std/full/{base}.jpg'),
+        }
+    return [[variants(p) for p in strip] for strip in SAVE_THE_DATE_CARD_STRIPS]
 
 
 def save_the_date_card(request, invite_id):
@@ -140,7 +157,7 @@ def save_the_date_card(request, invite_id):
         'party': party,
         'details_url': reverse('guest-details', args=[invite_id]),
         'couple_name': settings.BRIDE_AND_GROOM,
-        'photo_strips': SAVE_THE_DATE_CARD_STRIPS,
+        'photo_strips': _std_card_strips(),
     })
 
 

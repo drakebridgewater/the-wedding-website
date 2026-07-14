@@ -1,0 +1,9 @@
+# Camera originals — source material for `manage.py build_std_photos` only;
+# the site serves the derived files in static/bigday/images/std/.
+photo_masters/
+
+# Never needed inside the image
+.git/
+.venv/
+frontend/node_modules/
+db.sqlite3
