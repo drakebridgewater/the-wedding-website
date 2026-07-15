@@ -441,6 +441,85 @@ body::before {
   animation: pulse 2.4s ease-in-out infinite;
 }
 
+/* ---------- Contact-details prompt (after the reveal) ---------- */
+/* The bar button is easy to skip past and this is the one thing we actually
+   need back from a guest, so when their address or names are missing we gate
+   the finished card the same way `.start` gates the unopened one. */
+.nudge {
+  position: fixed;
+  inset: 0;
+  z-index: 25;                  /* over the bar (15), under the lightbox (30) */
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 12, 22, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.nudge.show { opacity: 1; pointer-events: auto; }
+
+.nudge-card {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  padding: 30px 26px 22px;
+  border: 1px solid rgba(217,191,143,0.28);
+  border-radius: 20px;
+  background: rgba(14, 21, 38, 0.92);
+  box-shadow: 0 24px 70px rgba(0,0,0,0.6);
+  opacity: 0;
+  transform: translateY(10px);
+}
+.nudge.show .nudge-card { animation: rise 0.7s 0.15s ease-out forwards; }
+
+.nudge-title {
+  font-family: "Pinyon Script", cursive;
+  font-size: clamp(1.9rem, 8vw, 2.4rem);
+  line-height: 1.2;
+  font-weight: 400;
+}
+.nudge-body {
+  margin-top: 10px;
+  font-size: 1.05rem;
+  line-height: 1.45;
+  opacity: 0.8;
+}
+.nudge-cta {
+  display: block;
+  margin-top: 22px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  text-decoration: none;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: filter 0.3s;
+}
+.nudge-cta:hover { filter: brightness(1.07); }
+.nudge-cta:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+
+.nudge-later {
+  margin-top: 6px;
+  padding: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 0.25s;
+}
+.nudge-later:hover { opacity: 0.85; }
+.nudge-later:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* ---------- Lightbox ---------- */
 .lightbox {
   position: fixed;
@@ -530,7 +609,7 @@ body::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .names, .date-block.show { animation-duration: 0.01s; }
+  .names, .date-block.show, .nudge.show .nudge-card { animation-duration: 0.01s; }
   .strip { transition: none; }
   .strip.settled,
   .printer.printing .chute { animation: none; }
@@ -601,6 +680,28 @@ body::before {
     <span id="playbackLabel">Skip</span>
   </button>
 </nav>
+
+{% if missing_details %}
+<div class="nudge" id="nudge" role="dialog" aria-modal="true" aria-labelledby="nudgeTitle">
+  <div class="nudge-card">
+    <h2 class="nudge-title" id="nudgeTitle">One more thing</h2>
+    <p class="nudge-body">
+      {% if 'address' in missing_details and 'names' in missing_details %}
+        We don't have your address or everyone's full name yet — and we need both
+        to get your invitation to you.
+      {% elif 'address' in missing_details %}
+        We don't have your mailing address yet, and we need it to send your
+        invitation.
+      {% else %}
+        We're missing a full name for your party, and we'd hate to spell it wrong
+        on your invitation.
+      {% endif %}
+    </p>
+    <a class="nudge-cta" id="nudgeCta" href="{{ details_url }}">Update contact details</a>
+    <button class="nudge-later" id="nudgeLater" type="button">Maybe later</button>
+  </div>
+</div>
+{% endif %}
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
   <div class="lb-stage">
@@ -922,6 +1023,10 @@ body::before {
       printPage();                              // auto-print the next strip
     } else {
       setPlayback("replay");
+      // Let the countdown land before asking; bail if they hit Replay meanwhile.
+      const myEpoch = epoch;
+      await sleep(reduced ? 250 : 1100);
+      if (epoch === myEpoch) showNudge();
     }
   }
 
@@ -949,6 +1054,30 @@ body::before {
     dateBlock.classList.add("show");
     bar.classList.add("show");
     setPlayback("replay");
+    showNudge();          // skipping still counts as reaching the end
+  }
+
+  /* ---------------- contact-details prompt ---------------- */
+  /* Only rendered when the party still owes us an address or names, so a guest
+     who has already filled it in never sees this. Asked once per visit: it's
+     important, but nagging on every replay would just train people to dismiss
+     it. The bar keeps the button either way. */
+  const nudge = $("nudge");        // absent when we have everything already
+  let nudgeAsked = false;
+
+  function showNudge() {
+    if (!nudge || nudgeAsked) return;
+    nudgeAsked = true;
+    nudge.classList.add("show");
+    $("nudgeCta").focus({ preventScroll: true });
+  }
+  if (nudge) {
+    $("nudgeLater").addEventListener("click", () => nudge.classList.remove("show"));
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && nudge.classList.contains("show")) {
+        nudge.classList.remove("show");
+      }
+    });
   }
 
   /* ---------------- lightbox ---------------- */

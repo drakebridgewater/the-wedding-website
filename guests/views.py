@@ -144,6 +144,21 @@ def _std_card_strips():
     return [[variants(p) for p in strip] for strip in SAVE_THE_DATE_CARD_STRIPS]
 
 
+def _missing_contact_details(party):
+    """Which of the things contact_details() asks for this party still hasn't
+    given us, as a list of 'address' / 'names'. Drives the prompt at the end of
+    the Save-the-Date card: we can't post an invitation without an address, or
+    address it properly without everyone's full name."""
+    missing = []
+    if not (party.address or '').strip():
+        missing.append('address')
+    guests = list(party.guest_set.all())
+    if not guests or any(not (g.first_name or '').strip() or not (g.last_name or '').strip()
+                         for g in guests):
+        missing.append('names')
+    return missing
+
+
 def save_the_date_card(request, invite_id):
     """The animated Save-the-Date card, served per guest so its 'update contact
     details' button links to this party's form. A first visit doubles as an open
@@ -158,6 +173,7 @@ def save_the_date_card(request, invite_id):
         'details_url': reverse('guest-details', args=[invite_id]),
         'couple_name': settings.BRIDE_AND_GROOM,
         'photo_strips': _std_card_strips(),
+        'missing_details': _missing_contact_details(party),
     })
 
 
