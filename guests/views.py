@@ -111,21 +111,21 @@ def contact_details(request, invite_id):
 # changing this list.
 SAVE_THE_DATE_CARD_STRIPS = [
       [
+        "ds_champagne.JPG",
         "bw_ds_bench.JPG",
-        "cake_pond.JPG",
-        "bw_ds_bench_01.JPG",
-        "des_bench.JPG"
+        "des_bench.JPG",
+        "ds_kiss.JPG",
       ],
       [
         "des_bench_01.JPG",
-        "ds_kiss.JPG",
+        "ds_bench_01.JPG",
         "des_bench_champagne_01.JPG",
         "ds_bench_bridge.JPG"
       ],
       [
         "ethan_glasses.JPG",
-        "bw_cake.JPG",
         "the_stare.JPG",
+        "bw_cake.JPG",
         "ds_walk.JPG",
       ],
 ]

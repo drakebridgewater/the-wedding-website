@@ -26,7 +26,8 @@
 {% endfor %}    ],
     printSegmentMs: 800,   // ms per photo-frame print segment
     segmentPauseMs: 250,    // motor rest between segments
-    betweenPagesMs: 300    // pause before the next strip auto-prints
+    betweenPagesMs: 300,   // pause before the next strip auto-prints
+    fadeStepMs: 450        // reduced-motion: gap between photo cross-fades
   };
 </script>
 
@@ -43,45 +44,53 @@
   --paper:   #f4f0e6;
   /* --------------------------- */
   --ink: rgba(14, 21, 38, 1);
-  --strip-w: min(220px, 60vw);
+  --strip-w: min(300px, 70vw);
   --frame-gap: 9px;
-  --chute-pad-x: 52px;   /* room for the behind strip to peek (bigger = easier to tap on mobile) */
+  /* Room either side of the strip for the behind ones to peek. The JS behind
+     offsets are multiples of this, so the two scale together. Keep
+     strip-w + 2x this under (100vw - 32px) or the chute clips on a phone. */
+  --chute-pad-x: clamp(32px, 10vw, 56px);
+  --bar-h: 76px;         /* measured from the real bar on load; this is the fallback */
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; width: 100%; }
+html { height: 100%; }
 
 body {
-  background:
-    radial-gradient(ellipse 90% 60% at 50% 34%, var(--bg-glow) 0%, var(--bg) 68%);
+  min-height: 100%;
+  background: var(--bg);
   color: var(--accent);
   font-family: "Cormorant Garamond", Georgia, serif;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
 }
-
-#fit {
-  transform-origin: center center;
-  will-change: transform;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Fixed so the glow stays put instead of stretching over the scroll height. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 34%, var(--bg-glow) 0%, var(--bg) 68%);
 }
 
+/* Centred when it fits, scrolls when it doesn't (min-height, not height, so the
+   flex container grows past the viewport rather than clipping). */
 .scene {
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: clamp(10px, 2vh, 22px);
-  padding: 20px 16px;
+  padding: 24px 16px calc(var(--bar-h) + 24px);
 }
 
 /* ---------- Names ---------- */
 .names {
   font-family: "Pinyon Script", cursive;
-  font-size: clamp(2.8rem, 11vw, 3.8rem);
+  font-size: clamp(2.4rem, 10vw, 3.8rem);
   line-height: 1.15;
   text-align: center;
   text-shadow: 0 0 24px rgba(217, 191, 143, 0.25);
@@ -264,11 +273,6 @@ body {
   font-family: "Pinyon Script", cursive;
   font-size: clamp(1.85rem, 7vw, 2.2rem);
 }
-.date-value {
-  font-size: clamp(1.2rem, 5vw, 1.45rem);
-  letter-spacing: 0.28em;
-  margin-top: 2px;
-}
 
 /* ---------- Countdown (bottom, revealed after first print) ---------- */
 .date-block {
@@ -308,81 +312,92 @@ body {
   font-style: italic;
   font-size: 1.1rem;
   opacity: 0.7;
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
-/* ---------- Replay ---------- */
-.replay {
-  border: 1px solid rgba(217,191,143,0.35);
+/* ---------- Bottom action bar ---------- */
+.bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  background: rgba(10, 15, 28, 0.86);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border-top: 1px solid rgba(217,191,143,0.22);
+  box-shadow: 0 -12px 34px rgba(0,0,0,0.5);
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.bar.show { opacity: 1; transform: none; pointer-events: auto; }
+
+.bar-item {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 190px;   /* share the width on a phone, cluster centrally on desktop */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 9px 4px;
+  border: 0;
+  border-radius: 14px;
   background: transparent;
   color: var(--accent);
+  opacity: 0.6;
   font-family: inherit;
-  font-size: 0.78rem;
-  letter-spacing: 0.2em;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding: 7px 18px;
-  border-radius: 999px;
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s, background 0.3s;
-}
-.replay.show { opacity: 0.75; pointer-events: auto; }
-.replay:hover { background: rgba(217,191,143,0.08); }
-
-/* ---------- Skip / fast-forward (during the animation) ---------- */
-.skip {
-  position: fixed;
-  top: max(14px, env(safe-area-inset-top));
-  right: 14px;
-  z-index: 16;
-  border: 1px solid rgba(217,191,143,0.4);
-  background: rgba(14,21,38,0.55);
-  color: var(--accent);
-  font-family: inherit;
-  font-size: 0.8rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  padding: 8px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s, background 0.3s;
-}
-.skip.show { opacity: 0.85; pointer-events: auto; }
-.skip:hover { background: rgba(14,21,38,0.85); }
-.skip:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-
-/* ---------- Contact-details CTA (fixed at the bottom of the card) ---------- */
-.details-cta {
-  position: fixed;
-  left: 50%;
-  bottom: max(18px, env(safe-area-inset-bottom));
-  transform: translateX(-50%) translateY(12px);
-  z-index: 15;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 1.05rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
   text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.25s, background 0.25s, filter 0.25s;
+}
+.bar-item svg {
+  width: 21px; height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bar-item span {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar-item:hover, .bar-item:focus-visible { opacity: 1; background: rgba(217,191,143,0.1); }
+.bar-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The one thing we actually want them to do */
+.bar-item.primary {
+  opacity: 1;
   color: var(--bg);
   background: var(--accent);
-  padding: 13px 28px;
-  border-radius: 999px;
-  max-width: calc(100vw - 28px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.55);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.6s ease, transform 0.6s ease, filter 0.3s ease;
 }
-.details-cta.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
-.details-cta:hover { filter: brightness(1.06); }
-.details-cta:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+.bar-item.primary:hover, .bar-item.primary:focus-visible {
+  background: var(--accent);
+  filter: brightness(1.07);
+}
+.bar-item.primary:focus-visible { outline-color: var(--paper); }
+
+/* "Contact Details" is the longest label and starts clipping around here */
+@media (max-width: 360px) {
+  .bar-item { font-size: 0.52rem; letter-spacing: 0.07em; }
+  .bar-item svg { width: 19px; height: 19px; }
+}
+
+/* Playback slot swaps Skip → Replay once the reveal has finished */
+#playback .ic-replay { display: none; }
+#playback[data-mode="replay"] .ic-skip { display: none; }
+#playback[data-mode="replay"] .ic-replay { display: block; }
 
 /* ---------- Start overlay ---------- */
 .start {
@@ -488,7 +503,8 @@ body {
 }
 
 /* ---------- Keyframes ---------- */
-@keyframes rise  { to { opacity: 1; transform: translateY(0); } }
+@keyframes rise    { to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes blink { 50% { opacity: 0.35; } }
 @keyframes flash { 0% { opacity: 0.9; } 100% { opacity: 0; } }
 @keyframes pulse { 50% { transform: scale(1.07); opacity: 0.8; } }
@@ -509,6 +525,14 @@ body {
   .strip { transition: none; }
   .strip.settled,
   .printer.printing .chute { animation: none; }
+
+  /* Reduce Motion asks us to drop movement, not the reveal itself. The strip
+     can't slide out of the printer and the frames can't be clipped into view,
+     so strip and photos cross-fade in on the same beat instead — opacity only,
+     no travel. Paired with the `reduced` branch in printPage(). */
+  .strip.reduced { animation: fade-in 0.45s ease-out both; }
+  .strip.reduced .frame { opacity: 0; }
+  .strip.reduced .frame.fade-in { animation: fade-in 0.5s ease-out forwards; }
 }
 </style>
 </head>
@@ -520,36 +544,52 @@ body {
   <span class="ring" id="startRing">Loading</span>
 </button>
 
-<button class="skip" id="skip" aria-label="Skip the animation">Skip &raquo;</button>
+<main class="scene" id="scene">
+  <h1 class="names" id="names"></h1>
+  <div class="header-date">
+    <div class="date-label" id="dateLabel"></div>
+  </div>
 
-<div id="fit">
-  <main class="scene" id="scene">
-    <h1 class="names" id="names"></h1>
-    <div class="header-date">
-      <div class="date-label" id="dateLabel"></div>
-      <div class="date-value" id="dateValue"></div>
+  <div class="printer" id="printer">
+    <div class="slot"><span class="status-light"></span></div>
+    <div class="chute" id="chute"></div>
+  </div>
+
+  <div class="date-block" id="dateBlock">
+    <div class="countdown" id="countdown" aria-label="Countdown to the wedding" role="timer">
+      <div class="unit"><span class="num" id="cdD">0</span><span class="lbl">Days</span></div>
+      <div class="unit"><span class="num" id="cdH">0</span><span class="lbl">Hours</span></div>
+      <div class="unit"><span class="num" id="cdM">0</span><span class="lbl">Minutes</span></div>
+      <div class="unit"><span class="num" id="cdS">0</span><span class="lbl">Seconds</span></div>
     </div>
+    <div class="date-sub" id="dateSub"></div>
+  </div>
+</main>
 
-    <div class="printer" id="printer">
-      <div class="slot"><span class="status-light"></span></div>
-      <div class="chute" id="chute"></div>
-    </div>
-
-    <div class="date-block" id="dateBlock">
-      <div class="countdown" id="countdown" aria-label="Countdown to the wedding" role="timer">
-        <div class="unit"><span class="num" id="cdD">0</span><span class="lbl">Days</span></div>
-        <div class="unit"><span class="num" id="cdH">0</span><span class="lbl">Hours</span></div>
-        <div class="unit"><span class="num" id="cdM">0</span><span class="lbl">Minutes</span></div>
-        <div class="unit"><span class="num" id="cdS">0</span><span class="lbl">Seconds</span></div>
-      </div>
-      <div class="date-sub" id="dateSub"></div>
-    </div>
-
-    <button class="replay" id="replay">Start over</button>
-  </main>
-</div>
-
-<a class="details-cta" id="detailsCta" href="{{ details_url }}">Update contact details</a>
+<nav class="bar" id="bar" aria-label="Card actions">
+  <a class="bar-item" href="{% url 'home' %}">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>
+    </svg>
+    <span>Wedding Site</span>
+  </a>
+  <a class="bar-item primary" href="{{ details_url }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M11 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/>
+      <path d="M18.4 2.6a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/>
+    </svg>
+    <span>Contact Details</span>
+  </a>
+  <button class="bar-item" id="playback" type="button" data-mode="skip" aria-label="Skip the animation">
+    <svg class="ic-skip" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>
+    </svg>
+    <svg class="ic-replay" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>
+    </svg>
+    <span id="playbackLabel">Skip</span>
+  </button>
+</nav>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
   <div class="lb-stage">
@@ -565,10 +605,10 @@ body {
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const chute = $("chute"), printer = $("printer"), fit = $("fit"),
+  const chute = $("chute"), printer = $("printer"),
         scene = $("scene"), dateBlock = $("dateBlock"), flash = $("flash"),
-        startBtn = $("start"), replayBtn = $("replay"), skipBtn = $("skip"),
-        detailsCta = $("detailsCta"),
+        startBtn = $("start"), bar = $("bar"),
+        playback = $("playback"), playbackLabel = $("playbackLabel"),
         lightbox = $("lightbox"), lbPhoto = $("lbPhoto"),
         lbMissing = $("lbMissing"), lbCaption = $("lbCaption");
 
@@ -576,7 +616,6 @@ body {
 
   $("names").textContent     = CONFIG.names;
   $("dateLabel").textContent = CONFIG.dateLabel;
-  $("dateValue").textContent = CONFIG.dateValue;
   $("dateSub").textContent   = CONFIG.subtext;
 
   /* ---------------- live countdown ---------------- */
@@ -605,7 +644,10 @@ body {
     tick();
   })();
 
-  /* ---------------- viewport-fit scaling ---------------- */
+  /* ---------------- layout ---------------- */
+  /* The card is rendered at full size and the page scrolls; on a phone the
+     strip runs past the fold and the bar's padding keeps the tail reachable. */
+
   /* Reserve the chute's final height up front so the layout never
      changes when a strip prints — measured with a hidden ghost strip. */
   function reserveChute() {
@@ -628,19 +670,21 @@ body {
     chute.style.minHeight = (h + 13 + 18) + "px";  // + chute's own padding
   }
 
-  function rescale() {
-    fit.style.transform = "none";
+  function relayout() {
     reserveChute();
-    const w = scene.offsetWidth;
-    const h = scene.offsetHeight;
-    if (!w || !h) return;
-    const s = Math.min(1, (innerWidth * 0.96) / w, (innerHeight * 0.95) / h);
-    fit.style.transform = `scale(${s})`;
+    // The bar is only as tall as its content; tell the scene how much to clear.
+    document.documentElement.style.setProperty("--bar-h", bar.offsetHeight + "px");
   }
-  addEventListener("resize", rescale);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rescale);
-  // Initial rescale after first paint
-  requestAnimationFrame(() => requestAnimationFrame(rescale));
+  addEventListener("resize", relayout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+  requestAnimationFrame(() => requestAnimationFrame(relayout));
+
+  /* Park the slot near the top so the strip prints into view rather than
+     below the fold. A no-op when the card already fits without scrolling. */
+  function focusPrinter() {
+    const top = scrollY + printer.getBoundingClientRect().top - innerHeight * 0.12;
+    scrollTo({ top: Math.max(0, top), behavior: reduced ? "auto" : "smooth" });
+  }
 
   /* ---------------- state ---------------- */
   let pageIndex = 0;
@@ -653,12 +697,14 @@ body {
 
   /* Behind-offset table, cycled for 3+ strips.
      bx magnitudes are generous so the peeking strip is an easy tap target
-     on phones (there's no hover on touch, so the resting peek is all you get). */
+     on phones (there's no hover on touch, so the resting peek is all you get),
+     but stay within --chute-pad-x so they aren't clipped mid-print. */
+  const peek = m => `calc(var(--chute-pad-x) * ${m})`;
   const OFFSETS = [
-    { bx: "-46px", by: "9px",  br: "-3deg"   },
-    { bx: "48px",  by: "11px", br: "2.6deg"  },
-    { bx: "-62px", by: "15px", br: "-4.4deg" },
-    { bx: "64px",  by: "17px", br: "4deg"    }
+    { bx: peek(-0.8), by: "9px",  br: "-3deg"   },
+    { bx: peek(0.85), by: "11px", br: "2.6deg"  },
+    { bx: peek(-1),   by: "15px", br: "-4.4deg" },
+    { bx: peek(1),    by: "17px", br: "4deg"    }
   ];
 
   function layoutStack() {
@@ -759,7 +805,7 @@ body {
     if (printing || pageIndex >= CONFIG.pages.length) return;
     printing = true;
     const myEpoch = epoch;                       // a skip/reset bumps epoch to abort us
-    replayBtn.classList.remove("show");
+    setPlayback("skip");
 
     /* demote current front to the stack — freeze height first to prevent jump */
     if (frontStrip) {
@@ -778,17 +824,27 @@ body {
     }
 
     const { strip, frames } = buildStrip(CONFIG.pages[pageIndex], pageIndex);
+    if (reduced) strip.classList.add("reduced");   // hides its frames for the fade
     strip.classList.add("front", "printing-now");
     strip.style.transform = "translateY(-100%)";
     chute.appendChild(strip);
     frontStrip = strip;
     chute.classList.add("clipping");
 
+    /* No slide, no jitter, no camera flash — but the photos still arrive one at
+       a time, cross-fading in, so the card unfolds rather than just appearing. */
     if (reduced) {
       strip.style.transform = "";
       strip.classList.remove("printing-now");
       chute.classList.remove("clipping");
-      frames.forEach(develop);
+      printer.classList.add("printing");        // status light only; jitter is off
+      for (const frame of frames) {
+        frame.classList.add("fade-in");
+        develop(frame);
+        await sleep(CONFIG.fadeStepMs);
+        if (epoch !== myEpoch) return;
+      }
+      printer.classList.remove("printing");
       return finishPage();
     }
 
@@ -833,11 +889,10 @@ body {
       dateBlock.classList.add("show");
     }
     if (pageIndex < CONFIG.pages.length) {
-      await sleep(reduced ? 50 : CONFIG.betweenPagesMs);
+      await sleep(CONFIG.betweenPagesMs);
       printPage();                              // auto-print the next strip
     } else {
-      replayBtn.classList.add("show");
-      skipBtn.classList.remove("show");
+      setPlayback("replay");
     }
   }
 
@@ -863,9 +918,8 @@ body {
     layoutStack();
     pageIndex = CONFIG.pages.length;
     dateBlock.classList.add("show");
-    replayBtn.classList.add("show");
-    detailsCta.classList.add("show");
-    skipBtn.classList.remove("show");
+    bar.classList.add("show");
+    setPlayback("replay");
   }
 
   /* ---------------- lightbox ---------------- */
@@ -917,6 +971,15 @@ body {
   });
 
   /* ---------------- controls ---------------- */
+  /* One slot in the bar covers both playback actions: it fast-forwards while
+     the strips are printing, then turns into Replay once they're all out. */
+  function setPlayback(mode) {
+    playback.dataset.mode = mode;
+    playbackLabel.textContent = mode === "skip" ? "Skip" : "Replay";
+    playback.setAttribute("aria-label",
+      mode === "skip" ? "Skip the animation" : "Play the reveal again");
+  }
+
   function resetAll() {
     epoch++;                     // supersede any in-flight run before restarting
     chute.innerHTML = "";
@@ -925,19 +988,23 @@ body {
     frontStrip = null;
     pageIndex = 0;
     printing = false;
+    printer.classList.remove("printing");   // an aborted run can leave this set
     dateBlock.classList.remove("show");
-    replayBtn.classList.remove("show");
-    skipBtn.classList.add("show");
-    rescale();
+    setPlayback("skip");
+    relayout();
+    focusPrinter();
     printPage();
   }
-  replayBtn.addEventListener("click", resetAll);
-  skipBtn.addEventListener("click", renderFinalState);
+
+  playback.addEventListener("click", () => {
+    playback.dataset.mode === "skip" ? renderFinalState() : resetAll();
+  });
 
   startBtn.addEventListener("click", () => {
     startBtn.classList.add("hidden");
-    detailsCta.classList.add("show");   // reveal the contact-details button
-    skipBtn.classList.add("show");
+    bar.classList.add("show");
+    relayout();
+    focusPrinter();
     printPage();
   }, { once: true });
 
