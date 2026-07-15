@@ -76,15 +76,24 @@ body::before {
 }
 
 /* Centred when it fits, scrolls when it doesn't (min-height, not height, so the
-   flex container grows past the viewport rather than clipping). */
-.scene {
+   box grows past the viewport rather than clipping its own top). The padding
+   lives here, outside the zoomed .scene, so it never shrinks with the card. */
+.fit {
   min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px calc(var(--bar-h) + 24px);
+}
+
+/* fitToViewport() may set `zoom` on this — zoom rather than transform because
+   only zoom shrinks the layout box, and a transform would scale the card
+   visually while leaving the page scrolling exactly as far as before. */
+.scene {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: clamp(10px, 2vh, 22px);
-  padding: 24px 16px calc(var(--bar-h) + 24px);
 }
 
 /* ---------- Names ---------- */
@@ -544,27 +553,29 @@ body::before {
   <span class="ring" id="startRing">Loading</span>
 </button>
 
-<main class="scene" id="scene">
-  <h1 class="names" id="names"></h1>
-  <div class="header-date">
-    <div class="date-label" id="dateLabel"></div>
-  </div>
-
-  <div class="printer" id="printer">
-    <div class="slot"><span class="status-light"></span></div>
-    <div class="chute" id="chute"></div>
-  </div>
-
-  <div class="date-block" id="dateBlock">
-    <div class="countdown" id="countdown" aria-label="Countdown to the wedding" role="timer">
-      <div class="unit"><span class="num" id="cdD">0</span><span class="lbl">Days</span></div>
-      <div class="unit"><span class="num" id="cdH">0</span><span class="lbl">Hours</span></div>
-      <div class="unit"><span class="num" id="cdM">0</span><span class="lbl">Minutes</span></div>
-      <div class="unit"><span class="num" id="cdS">0</span><span class="lbl">Seconds</span></div>
+<div class="fit" id="fit">
+  <main class="scene" id="scene">
+    <h1 class="names" id="names"></h1>
+    <div class="header-date">
+      <div class="date-label" id="dateLabel"></div>
     </div>
-    <div class="date-sub" id="dateSub"></div>
-  </div>
-</main>
+
+    <div class="printer" id="printer">
+      <div class="slot"><span class="status-light"></span></div>
+      <div class="chute" id="chute"></div>
+    </div>
+
+    <div class="date-block" id="dateBlock">
+      <div class="countdown" id="countdown" aria-label="Countdown to the wedding" role="timer">
+        <div class="unit"><span class="num" id="cdD">0</span><span class="lbl">Days</span></div>
+        <div class="unit"><span class="num" id="cdH">0</span><span class="lbl">Hours</span></div>
+        <div class="unit"><span class="num" id="cdM">0</span><span class="lbl">Minutes</span></div>
+        <div class="unit"><span class="num" id="cdS">0</span><span class="lbl">Seconds</span></div>
+      </div>
+      <div class="date-sub" id="dateSub"></div>
+    </div>
+  </main>
+</div>
 
 <nav class="bar" id="bar" aria-label="Card actions">
   <a class="bar-item" href="{% url 'home' %}">
@@ -605,7 +616,7 @@ body::before {
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const chute = $("chute"), printer = $("printer"),
+  const chute = $("chute"), printer = $("printer"), fitEl = $("fit"),
         scene = $("scene"), dateBlock = $("dateBlock"), flash = $("flash"),
         startBtn = $("start"), bar = $("bar"),
         playback = $("playback"), playbackLabel = $("playbackLabel"),
@@ -670,10 +681,28 @@ body::before {
     chute.style.minHeight = (h + 13 + 18) + "px";  // + chute's own padding
   }
 
+  /* Shrink-to-fit floor. Four 4:3 photos stacked are ~3.1x as tall as they are
+     wide, so a phone can't show the strip whole at any legible size and doesn't
+     try. A tall desktop can, and 0.8 is the least we can zoom while keeping the
+     strip at ~240px of its 300px cap — past that we're back to the unreadable
+     card. Anything needing more: stay full size and let the page scroll. */
+  const MIN_FIT_SCALE = 0.8;
+
+  function fitToViewport() {
+    const cs = getComputedStyle(fitEl);
+    const avail = innerHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const natural = scene.offsetHeight;          // caller resets zoom first
+    if (!natural || natural <= avail) return;    // already fits; leave it alone
+    const s = avail / natural;
+    if (s >= MIN_FIT_SCALE) scene.style.zoom = s;
+  }
+
   function relayout() {
-    reserveChute();
-    // The bar is only as tall as its content; tell the scene how much to clear.
+    scene.style.zoom = "";   // everything below measures at natural size
+    // The bar is only as tall as its content; tell .fit how much to clear.
     document.documentElement.style.setProperty("--bar-h", bar.offsetHeight + "px");
+    reserveChute();          // pins the chute so height is stable before we measure
+    fitToViewport();
   }
   addEventListener("resize", relayout);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
