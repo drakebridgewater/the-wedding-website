@@ -19,7 +19,7 @@
     <p class="font-display text-stone-600 text-xl leading-relaxed mb-4">
       Your presence at our wedding is the greatest gift of all.
     </p>
-    <p class="text-stone-500 leading-relaxed">
+    <p class="text-stone-600 leading-relaxed">
       If you'd like to give a little extra, we'd be so grateful for a contribution
       toward our honeymoon adventure. Every bit helps us create memories that will
       last a lifetime. Thank you from the bottom of our hearts.
@@ -40,7 +40,7 @@
       <div class="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm">
         <div class="px-6 py-4 border-b border-stone-100 bg-accent-light flex items-center gap-3">
           <!-- Venmo icon -->
-          <svg class="w-6 h-6 text-stone-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <svg class="w-6 h-6 text-stone-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19.5 2C20.2 3.5 20.5 5 20.5 6.7c0 5.3-4.5 12.2-8.2 17H5.6L2 2h6.6l1.8 14.7C12.2 13.7 14.4 8 14.4 4.5c0-1.8-.3-3-.8-4L19.5 2z"/>
           </svg>
           <h3 class="font-display text-lg text-stone-700">Venmo</h3>
@@ -50,11 +50,11 @@
                class="w-28 h-28 mx-auto rounded-xl overflow-hidden border border-stone-200"
                data-qr-url="https://venmo.com/u/{{ ws.venmo_handle|cut:'@' }}"></div>
           <div class="text-center">
-            <p class="text-xs text-stone-400 mb-1">Handle</p>
+            <p class="text-xs text-stone-600 mb-1">Handle</p>
             <p class="font-mono text-stone-700 font-medium text-sm" id="venmo-handle">{{ ws.venmo_handle }}</p>
           </div>
           <button onclick="copyHandle('venmo-handle', this)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-500 hover:border-accent hover:text-accent text-sm transition-colors">
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:border-accent hover:text-accent text-sm transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"/>
             </svg>
@@ -69,7 +69,7 @@
       <div class="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm">
         <div class="px-6 py-4 border-b border-stone-100 bg-accent-light flex items-center gap-3">
           <!-- Zelle Z icon -->
-          <svg class="w-6 h-6 text-stone-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <svg class="w-6 h-6 text-stone-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.5 14H7.5v-1.5l6.44-7H7.5V6h9v1.5l-6.44 7H16.5V16z"/>
           </svg>
           <h3 class="font-display text-lg text-stone-700">Zelle</h3>
@@ -79,11 +79,11 @@
                class="w-28 h-28 mx-auto rounded-xl overflow-hidden border border-stone-200"
                data-qr-url="{{ ws.zelle_handle }}"></div>
           <div class="text-center">
-            <p class="text-xs text-stone-400 mb-1">Email or Phone</p>
+            <p class="text-xs text-stone-600 mb-1">Email or Phone</p>
             <p class="font-mono text-stone-700 font-medium text-sm" id="zelle-handle">{{ ws.zelle_handle }}</p>
           </div>
           <button onclick="copyHandle('zelle-handle', this)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-500 hover:border-accent hover:text-accent text-sm transition-colors">
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:border-accent hover:text-accent text-sm transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"/>
             </svg>
@@ -98,7 +98,7 @@
       <div class="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm">
         <div class="px-6 py-4 border-b border-stone-100 bg-accent-light flex items-center gap-3">
           <!-- Cash App dollar icon -->
-          <svg class="w-6 h-6 text-stone-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-6 h-6 text-stone-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
           </svg>
           <h3 class="font-display text-lg text-stone-700">Cash App</h3>
@@ -108,11 +108,11 @@
                class="w-28 h-28 mx-auto rounded-xl overflow-hidden border border-stone-200"
                data-qr-url="https://cash.app/{{ ws.cashapp_handle }}"></div>
           <div class="text-center">
-            <p class="text-xs text-stone-400 mb-1">Cashtag</p>
+            <p class="text-xs text-stone-600 mb-1">Cashtag</p>
             <p class="font-mono text-stone-700 font-medium text-sm" id="cashapp-handle">{{ ws.cashapp_handle }}</p>
           </div>
           <button onclick="copyHandle('cashapp-handle', this)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-500 hover:border-accent hover:text-accent text-sm transition-colors">
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:border-accent hover:text-accent text-sm transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"/>
             </svg>
@@ -127,7 +127,7 @@
       <div class="rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm">
         <div class="px-6 py-4 border-b border-stone-100 bg-accent-light flex items-center gap-3">
           <!-- PayPal P icon -->
-          <svg class="w-6 h-6 text-stone-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <svg class="w-6 h-6 text-stone-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
             <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/>
           </svg>
           <h3 class="font-display text-lg text-stone-700">PayPal</h3>
@@ -137,11 +137,11 @@
                class="w-28 h-28 mx-auto rounded-xl overflow-hidden border border-stone-200"
                data-qr-url="https://paypal.me/{{ ws.paypal_handle }}"></div>
           <div class="text-center">
-            <p class="text-xs text-stone-400 mb-1">PayPal.me / Username</p>
+            <p class="text-xs text-stone-600 mb-1">PayPal.me / Username</p>
             <p class="font-mono text-stone-700 font-medium text-sm" id="paypal-handle">{{ ws.paypal_handle }}</p>
           </div>
           <button onclick="copyHandle('paypal-handle', this)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-500 hover:border-accent hover:text-accent text-sm transition-colors">
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full border border-stone-200 text-stone-600 hover:border-accent hover:text-accent text-sm transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"/>
             </svg>
@@ -154,7 +154,7 @@
       <!-- Placeholder when no handles are configured -->
       {% if not ws.venmo_handle and not ws.zelle_handle and not ws.cashapp_handle and not ws.paypal_handle %}
       <div class="sm:col-span-2 rounded-2xl border border-stone-200 overflow-hidden">
-        <div class="px-6 py-5 text-stone-400 text-sm italic bg-amber-50">
+        <div class="px-6 py-5 text-stone-600 text-sm italic bg-amber-50">
           Payment handles coming soon — set Venmo, Zelle, Cash App, and/or PayPal handles
           in <strong>Admin → Wedding Settings</strong>.
         </div>
@@ -170,7 +170,7 @@
   <div class="max-w-2xl mx-auto">
     <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Leave a Note</h2>
     <div class="w-12 h-px bg-accent mx-auto mb-4"></div>
-    <p class="text-stone-500 text-center text-sm mb-12">
+    <p class="text-stone-600 text-center text-sm mb-12">
       Contributed? We'd love to hear from you — leave your name and a message below.
     </p>
 
@@ -193,20 +193,20 @@
       </div>
       <div class="px-6 py-6 flex flex-col gap-4">
         <div>
-          <label class="block text-xs text-stone-400 mb-1.5 uppercase tracking-wide" for="fund-name">
+          <label class="block text-xs text-stone-600 mb-1.5 uppercase tracking-wide" for="fund-name">
             Your Name <span class="normal-case">(optional)</span>
           </label>
           <input type="text" id="fund-name" name="name" placeholder="Jane & John Smith"
                  maxlength="100"
-                 class="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-stone-700 text-sm placeholder:text-stone-300 focus:outline-none focus:border-accent transition-colors">
+                 class="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-stone-700 text-sm placeholder:text-stone-500 focus:outline-none focus:border-accent transition-colors">
         </div>
         <div>
-          <label class="block text-xs text-stone-400 mb-1.5 uppercase tracking-wide" for="fund-message">
+          <label class="block text-xs text-stone-600 mb-1.5 uppercase tracking-wide" for="fund-message">
             Message <span class="text-stone-300">*</span>
           </label>
           <textarea id="fund-message" name="message" rows="3" required
                     placeholder="Wishing you the most amazing honeymoon!"
-                    class="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-stone-700 text-sm placeholder:text-stone-300 focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+                    class="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-stone-700 text-sm placeholder:text-stone-500 focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
         </div>
         <div class="flex justify-end">
           <button type="submit"
@@ -233,14 +233,14 @@
             <p class="font-display text-stone-700 text-sm font-medium mb-1">
               {{ msg.name|default:"Anonymous" }}
             </p>
-            <p class="text-stone-500 text-sm leading-relaxed">{{ msg.message }}</p>
+            <p class="text-stone-600 text-sm leading-relaxed">{{ msg.message }}</p>
           </div>
         </div>
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="text-center text-stone-400 text-sm italic">
+    <p class="text-center text-stone-600 text-sm italic">
       No messages yet — be the first to leave one!
     </p>
     {% endif %}

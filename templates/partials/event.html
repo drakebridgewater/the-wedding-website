@@ -1,5 +1,5 @@
 {% load wedding_extras %}
-  <div class="max-w-3xl mx-auto">
+  <div class="relative z-10 max-w-3xl mx-auto">
     <h2 class="font-script text-5xl text-stone-700 text-center mb-2">The Event</h2>
     <div class="w-12 h-px bg-accent mx-auto mb-10"></div>
 
@@ -11,7 +11,7 @@
         <div class="px-6 py-4 border-b border-stone-200 bg-stone-50">
           <h3 class="font-display text-xl text-stone-700">{{ item.title }}</h3>
         </div>
-        <div class="px-6 py-5 text-stone-500 text-sm leading-relaxed prose prose-sm prose-stone max-w-none">{{ item.body|markdownify }}</div>
+        <div class="px-6 py-5 text-stone-600 text-sm leading-relaxed prose prose-sm prose-stone max-w-none">{{ item.body|markdownify }}</div>
       </div>
       {% endfor %}
     </div>
@@ -21,7 +21,7 @@
         <div class="px-6 py-4 border-b border-stone-200 bg-stone-50">
           <h3 class="font-display text-xl text-stone-700">Welcome Event</h3>
         </div>
-        <div class="px-6 py-5 text-stone-400 text-sm italic bg-amber-50">
+        <div class="px-6 py-5 text-stone-600 text-sm italic bg-amber-50">
           Welcome / rehearsal dinner details coming soon.
         </div>
       </div>
@@ -29,7 +29,7 @@
         <div class="px-6 py-4 border-b border-stone-200 bg-stone-50">
           <h3 class="font-display text-xl text-stone-700">Ceremony &amp; Reception</h3>
         </div>
-        <div class="px-6 py-5 text-stone-400 text-sm italic bg-amber-50">
+        <div class="px-6 py-5 text-stone-600 text-sm italic bg-amber-50">
           Date, time, venue, attire, parking, and transportation info coming soon.
         </div>
       </div>

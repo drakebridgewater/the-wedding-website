@@ -18,7 +18,7 @@
 
   <!-- Close button -->
   <button id="close-btn" aria-label="Close menu"
-          class="absolute top-5 right-5 z-10 flex items-center gap-2 bg-white border border-stone-200 shadow-md rounded-full px-4 py-2 text-stone-500 hover:text-stone-900 transition-all">
+          class="absolute top-5 right-5 z-10 flex items-center gap-2 bg-white border border-stone-200 shadow-md rounded-full px-4 py-2 text-stone-600 hover:text-stone-900 transition-all">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
     </svg>
@@ -26,7 +26,8 @@
   </button>
 
   <!-- Watermark -->
-  <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+  <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
+       aria-hidden="true">
     <span class="font-script text-9xl text-stone-300 leading-tight text-center">{{ couple_name }}</span>
   </div>
 
@@ -37,7 +38,7 @@
 
       <!-- Our Wedding column -->
       <div class="flex flex-col items-center gap-0 px-10 sm:px-16">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-5">Our Wedding</p>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-5">Our Wedding</p>
         <a href="{% url 'home' %}"             class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Home</a>
         <a href="/#event"                      class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">The Event</a>
         <a href="/#location"                    class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Location</a>
@@ -71,7 +72,7 @@
 
       <!-- Guest RSVP column -->
       <div class="flex flex-col items-center gap-0 px-10 sm:px-16">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-5">Your RSVP</p>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-5">Your RSVP</p>
         <a href="{% url 'invitation' guest_party.invitation_id %}"    class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Modify Reservation</a>
         <a href="{% url 'guest-details' guest_party.invitation_id %}" class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Update Contact Details</a>
       </div>
@@ -83,7 +84,7 @@
 
       <!-- Planning column -->
       <div class="flex flex-col items-center gap-0 px-10 sm:px-16">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-5">Planning</p>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-stone-600 mb-5">Planning</p>
         <a href="{% url 'dashboard' %}"         class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Dashboard</a>
         <a href="{% url 'manage' %}"            class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Guests</a>
         <a href="{% url 'budget:budget' %}"     class="theme-link text-lg font-light tracking-wide text-stone-700 py-1">Budget</a>
@@ -100,7 +101,7 @@
     </div>
 
     <!-- Auth row -->
-    <div class="mt-10 flex items-center gap-4 text-sm text-stone-500">
+    <div class="mt-10 flex items-center gap-4 text-sm text-stone-600">
       {% if user.is_authenticated %}
       <a href="/admin/"            class="theme-link hover:text-stone-700 transition-colors">Admin</a>
       <span class="text-stone-200">·</span>

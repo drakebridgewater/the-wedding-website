@@ -24,14 +24,18 @@
       --accent:       {{ theme.accent }};
       --accent-hover: {{ theme.accent_hover }};
       --accent-light: {{ theme.accent_light }};
+      /* Text-only accent. The plain accent is tuned to look right as a large
+         fill; at body-text size several themes fall under 4.5:1 on white, so
+         inline links use the darker shade instead. Fills keep var(--accent). */
+      --accent-text:  {{ theme.accent_hover }};
     }
     .theme-link                  { color: inherit; transition: color 0.15s; }
-    .theme-link:hover            { color: var(--accent); }
-    .text-accent                 { color: var(--accent); }
+    .theme-link:hover            { color: var(--accent-text); }
+    .text-accent                 { color: var(--accent-text); }
     .bg-accent                   { background-color: var(--accent); }
     .bg-accent-light             { background-color: var(--accent-light); }
     .border-accent               { border-color: var(--accent); }
-    .hover\:text-accent:hover    { color: var(--accent); }
+    .hover\:text-accent:hover    { color: var(--accent-text); }
     .hover\:border-accent:hover  { border-color: var(--accent); }
     .hover\:bg-accent-hover:hover{ background-color: var(--accent-hover); }
     .input-focus:focus           { outline: none; box-shadow: 0 0 0 2px var(--accent-light); border-color: var(--accent); }

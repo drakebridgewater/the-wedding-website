@@ -1,4 +1,4 @@
-  <div class="max-w-2xl mx-auto text-center">
+  <div class="relative z-10 max-w-2xl mx-auto text-center">
     <h2 class="font-script text-4xl sm:text-5xl text-stone-700 mb-2">Counting Down</h2>
     <div class="w-12 h-px bg-accent mx-auto mb-10"></div>
 
@@ -9,19 +9,19 @@
          data-target="{{ wedding_datetime|date:'Y-m-d\TH:i:s' }}">
       <div class="flex flex-col items-center min-w-[3.5rem]">
         <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="days">0</span>
-        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Days</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-600 mt-2">Days</span>
       </div>
       <div class="flex flex-col items-center min-w-[3.5rem]">
         <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="hours">00</span>
-        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Hours</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-600 mt-2">Hours</span>
       </div>
       <div class="flex flex-col items-center min-w-[3.5rem]">
         <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="minutes">00</span>
-        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Minutes</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-600 mt-2">Minutes</span>
       </div>
       <div class="flex flex-col items-center min-w-[3.5rem]">
         <span class="font-display text-4xl sm:text-5xl text-stone-800 tabular-nums" data-unit="seconds">00</span>
-        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-400 mt-2">Seconds</span>
+        <span class="text-[0.65rem] tracking-[0.2em] uppercase text-stone-600 mt-2">Seconds</span>
       </div>
     </div>
     <script>
@@ -53,6 +53,6 @@
     })();
     </script>
     {% else %}
-    <p class="font-display italic text-stone-400 text-lg">Details coming soon.</p>
+    <p class="font-display italic text-stone-600 text-lg">Details coming soon.</p>
     {% endif %}
   </div>

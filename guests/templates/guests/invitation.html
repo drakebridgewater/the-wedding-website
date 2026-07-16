@@ -3,12 +3,12 @@
 
 {% block page_content %}
 <div class="min-h-screen py-12 px-4 bg-stone-50">
-  <div class="max-w-xl mx-auto">
+  <div class="relative z-10 max-w-xl mx-auto">
 
     <!-- Wedding details header -->
     <div class="text-center mb-10">
       <h1 class="text-3xl font-light text-stone-800 mb-3">{{ wedding.couple_name }}</h1>
-      <p class="text-stone-500">
+      <p class="text-stone-600">
         {{ wedding.wedding_date_display }}<br>
         {{ wedding.wedding_location }}
       </p>
@@ -72,7 +72,7 @@
             <input type="text" name="{{ dietary_name }}"
                    value="{{ guest.dietary_restrictions }}"
                    placeholder="Dietary restrictions or allergies (optional)"
-                   class="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm text-stone-700 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400">
+                   class="w-full rounded-xl border border-stone-200 px-4 py-2.5 text-sm text-stone-700 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400">
             {% endwith %}
           </div>
         </div>
@@ -82,20 +82,20 @@
         <div class="mb-6">
           <label for="rsvp-comments" class="block text-sm font-medium text-stone-700 mb-1">Questions / comments / well wishes</label>
           <input type="text" id="rsvp-comments" name="comments"
-                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base"
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base"
                  placeholder="Optional">
         </div>
 
         <!-- Mailing address -->
         <div class="mb-6 relative" id="address-wrap">
           <label for="address" class="block text-sm font-medium text-stone-700 mb-1">
-            Mailing address <span class="text-stone-400 font-normal">(optional — for cards or updates)</span>
+            Mailing address <span class="text-stone-600 font-normal">(optional — for cards or updates)</span>
           </label>
           <input type="text" id="address" name="address"
                  value="{{ party.address }}"
                  placeholder="Start typing your address…"
                  autocomplete="off"
-                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base">
+                 class="w-full rounded-xl border border-stone-300 px-4 py-3 text-stone-800 placeholder-stone-500 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 text-base">
           <p id="address-verified-note" class="mt-1 text-xs text-emerald-600 {% if not party.address_verified %}hidden{% endif %}">✓ Verified address</p>
           <input type="hidden" name="address_street" id="address_street" value="{{ party.address_street }}">
           <input type="hidden" name="address_city" id="address_city" value="{{ party.address_city }}">

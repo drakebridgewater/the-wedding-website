@@ -30,13 +30,13 @@
 {% endblock %}
 
 {% block page_content %}
-<div class="pt-20 pb-24 px-4">
+<div class="relative z-10 pt-20 pb-24 px-4">
 
   <!-- Header -->
   <div class="text-center mb-16">
     <h1 class="font-script text-6xl text-stone-800 mb-3">Our Wedding Program</h1>
     <div class="w-12 h-px bg-stone-300 mx-auto mb-4"></div>
-    <p class="text-stone-500 text-sm tracking-wide">We can't wait to celebrate with you</p>
+    <p class="text-stone-600 text-sm tracking-wide">We can't wait to celebrate with you</p>
   </div>
 
   {% if public_days %}
@@ -44,7 +44,7 @@
     <!-- Day heading (only shown if multiple days) -->
     {% if public_days|length > 1 %}
     <div class="text-center mb-10">
-      <p class="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-1">
+      <p class="text-xs font-semibold uppercase tracking-widest text-stone-600 mb-1">
         {{ entry.day.date|date:"l, F j, Y" }}
       </p>
       <h2 class="font-display text-3xl text-stone-700">{{ entry.day.label }}</h2>
@@ -84,7 +84,7 @@
                       {% elif event.category == 'reception' %}text-blue-500
                       {% elif event.category == 'travel' %}text-amber-500
                       {% elif event.category == 'meal' %}text-orange-500
-                      {% else %}text-stone-400{% endif %}">
+                      {% else %}text-stone-600{% endif %}">
               {{ event.get_category_display }}
             </p>
 
@@ -94,13 +94,13 @@
             </h3>
 
             <!-- Time -->
-            <p class="text-xs text-stone-400 tracking-wide">
+            <p class="text-xs text-stone-600 tracking-wide">
               {{ event.start_time|time:"g:i A" }}
               {% if event.location %}&nbsp;·&nbsp;{{ event.location }}{% endif %}
             </p>
 
             {% if event.notes %}
-            <div class="text-xs text-stone-500 mt-2 leading-relaxed rich-content">{{ event.notes|safe }}</div>
+            <div class="text-xs text-stone-600 mt-2 leading-relaxed rich-content">{{ event.notes|safe }}</div>
             {% endif %}
 
           </div>
@@ -113,7 +113,7 @@
 
   {% else %}
   <!-- Empty state -->
-  <div class="text-center py-20 text-stone-400">
+  <div class="text-center py-20 text-stone-600">
     <p class="font-display text-2xl mb-2">Program coming soon</p>
     <p class="text-sm">Check back closer to the wedding date.</p>
   </div>

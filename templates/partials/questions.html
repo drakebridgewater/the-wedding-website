@@ -1,10 +1,10 @@
 
   {% url 'submit-question' as submit_url %}
-  <div class="max-w-2xl mx-auto">
+  <div class="relative z-10 max-w-2xl mx-auto">
 
     <h2 class="font-script text-5xl text-stone-700 text-center mb-4">Ask Us Anything</h2>
     <div class="w-12 h-px bg-accent mx-auto mb-4"></div>
-    <p class="text-stone-500 text-center text-sm mb-12">{{ wedding.questions_subtitle|default:"Have a question about the wedding? Ask below — we'll answer soon." }}</p>
+    <p class="text-stone-600 text-center text-sm mb-12">{{ wedding.questions_subtitle|default:"Have a question about the wedding? Ask below — we'll answer soon." }}</p>
 
     <!-- Approved Q&As -->
     {% if approved_questions %}
@@ -13,12 +13,12 @@
       <details class="group bg-white rounded-2xl border border-stone-200 shadow-sm">
         <summary class="flex justify-between items-center cursor-pointer px-5 py-4 text-stone-700 font-display text-lg select-none list-none">
           <span>{{ q.question_text }}</span>
-          <svg class="w-4 h-4 text-stone-400 shrink-0 ml-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-stone-600 shrink-0 ml-3 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
           </svg>
         </summary>
         {% if q.answer %}
-        <div class="px-5 pb-4 text-stone-500 border-t border-stone-100 pt-3 text-sm leading-relaxed">
+        <div class="px-5 pb-4 text-stone-600 border-t border-stone-100 pt-3 text-sm leading-relaxed">
           {{ q.answer }}
         </div>
         {% endif %}
@@ -40,19 +40,19 @@
       <form method="post" action="{{ submit_url }}">
         {% csrf_token %}
         <div class="mb-4">
-          <label for="q-name" class="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+          <label for="q-name" class="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-2">
             Your name <span class="font-normal normal-case tracking-normal">(optional)</span>
           </label>
           <input type="text" id="q-name" name="name" maxlength="100" autocomplete="name"
-                 class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-300 input-focus text-sm"
+                 class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-500 input-focus text-sm"
                  placeholder="Jane Smith">
         </div>
         <div class="mb-6">
-          <label for="q-text" class="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">
+          <label for="q-text" class="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-2">
             Your question <span class="text-accent">*</span>
           </label>
           <textarea id="q-text" name="question_text" rows="3" required
-                    class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-300 input-focus text-sm resize-none"
+                    class="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-700 placeholder-stone-500 input-focus text-sm resize-none"
                     placeholder="What time does the ceremony start?"></textarea>
         </div>
         <button type="submit"

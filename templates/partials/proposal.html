@@ -1,5 +1,5 @@
 {% load static wedding_extras %}
-<div class="max-w-3xl mx-auto">
+<div class="relative z-10 max-w-3xl mx-auto">
   <h2 class="font-script text-5xl text-stone-700 text-center mb-4">The Proposal</h2>
   <div class="w-12 h-px bg-accent mx-auto mb-12"></div>
 
@@ -11,7 +11,7 @@
       <div class="px-6 py-4 border-b border-stone-100 bg-accent-light">
         <h3 class="font-display text-xl text-stone-700">{{ item.title }}</h3>
       </div>
-      <div class="px-6 py-5 text-stone-500 text-sm leading-relaxed prose prose-sm prose-stone max-w-none">{{ item.body|markdownify }}</div>
+      <div class="px-6 py-5 text-stone-600 text-sm leading-relaxed prose prose-sm prose-stone max-w-none">{{ item.body|markdownify }}</div>
     </div>
     {% endfor %}
   </div>
@@ -21,9 +21,9 @@
           class="relative z-10 w-full sm:w-56 rounded-2xl shadow-md object-cover shrink-0" alt="The Proposal">
     <div>
       <p class="font-display text-stone-600 text-xl leading-relaxed italic">
-        "Upon receiving the keys to our home right where our future dining room table would go, Drake went down on a knee to start the rest of our lives together."
+        Upon receiving the keys to our home right where our future dining room table would go, Drake went down on a knee to start the rest of our lives together.
       </p>
-      <p class="mt-4 text-stone-400 text-sm">She said yes!</p>
+      <p class="mt-4 text-stone-600 text-sm">She said yes!</p>
     </div>
   </div>
   {% endif %}

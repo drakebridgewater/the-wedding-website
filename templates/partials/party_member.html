@@ -39,13 +39,13 @@
 
   {# Role label — for the couple and honor attendants #}
   {% if show_role %}
-    <p class="text-xs text-stone-400 italic mb-1">{{ member.get_role_display }}</p>
+    <p class="text-xs text-stone-600 italic mb-1">{{ member.get_role_display }}</p>
   {% endif %}
 
   {# Bio #}
   <div class="relative group/bio">
     {% if member.bio %}
-      <p class="text-xs text-stone-500 leading-relaxed member-bio">{{ member.bio }}</p>
+      <p class="text-xs text-stone-600 leading-relaxed member-bio">{{ member.bio }}</p>
     {% elif user.is_authenticated %}
       <p class="text-xs text-stone-300 italic member-bio">Add a bio…</p>
     {% endif %}
@@ -53,7 +53,7 @@
     {% if user.is_authenticated %}
     <button class="edit-bio-btn absolute -top-1 -right-1 opacity-0 group-hover/bio:opacity-100
                    transition-opacity p-1 rounded bg-white shadow-sm border border-stone-200
-                   hover:bg-stone-50 text-stone-400 hover:text-stone-600"
+                   hover:bg-stone-50 text-stone-600 hover:text-stone-600"
             data-member-id="{{ member.id }}"
             data-bio="{{ member.bio|escapejs }}"
             title="Edit bio">
