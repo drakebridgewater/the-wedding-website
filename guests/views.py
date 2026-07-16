@@ -39,8 +39,9 @@ def export_guests(request):
 def invitation(request, invite_id):
     party = guess_party_by_invite_id_or_404(invite_id)
     grant_party_access(request, party)
-    if party.invitation_opened is None:
-        # update if this is the first time the invitation was opened
+    if party.invitation_opened is None and not request.user.is_authenticated:
+        # First guest visit counts as the open receipt. Logged-in visits are
+        # the couple previewing links, not guests, so they don't count.
         party.invitation_opened = datetime.now(timezone.utc)
         party.save()
     if request.method == 'POST':
@@ -85,9 +86,9 @@ def contact_details(request, invite_id):
     ContactUpdate for review in the admin."""
     party = guess_party_by_invite_id_or_404(invite_id)
     grant_party_access(request, party)
-    if party.save_the_date_sent and party.save_the_date_opened is None:
+    if party.save_the_date_sent and party.save_the_date_opened is None and not request.user.is_authenticated:
         # The details link travels in the save-the-date email, so a first
-        # visit doubles as an open receipt.
+        # guest visit doubles as an open receipt (logged-in previews don't).
         party.save_the_date_opened = datetime.now(timezone.utc)
         party.save(update_fields=['save_the_date_opened'])
     if request.method == 'POST':
@@ -165,7 +166,7 @@ def save_the_date_card(request, invite_id):
     receipt, mirroring contact_details()."""
     party = guess_party_by_invite_id_or_404(invite_id)
     grant_party_access(request, party)
-    if party.save_the_date_sent and party.save_the_date_opened is None:
+    if party.save_the_date_sent and party.save_the_date_opened is None and not request.user.is_authenticated:
         party.save_the_date_opened = datetime.now(timezone.utc)
         party.save(update_fields=['save_the_date_opened'])
     return render(request, template_name='guests/save_the_date_card.html', context={
