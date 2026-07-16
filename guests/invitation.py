@@ -1,11 +1,11 @@
 from email.mime.image import MIMEImage
 import os
-from datetime import datetime
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.urls import reverse
 from django.http import Http404
 from django.template.loader import render_to_string
+from django.utils import timezone
 from guests.models import Party, MealOption
 
 INVITATION_TEMPLATE = 'guests/email_templates/invitation.html'
@@ -260,5 +260,5 @@ def send_all_invitations(test_only, mark_as_sent):
     for party in to_send_to:
         send_invitation_email(party, test_only=test_only)
         if mark_as_sent:
-            party.invitation_sent = datetime.now()
+            party.invitation_sent = timezone.now()
             party.save()

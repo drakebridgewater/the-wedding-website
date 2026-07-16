@@ -1,11 +1,11 @@
 from __future__ import unicode_literals, print_function
 from email.mime.image import MIMEImage
 import os
-from datetime import datetime
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils import timezone
 from guests.models import Party
 
 
@@ -73,7 +73,7 @@ def send_all_save_the_dates(test_only=False, mark_as_sent=False):
             continue
         send_save_the_date_email(context, recipients, test_only=test_only)
         if mark_as_sent:
-            party.save_the_date_sent = datetime.now()
+            party.save_the_date_sent = timezone.now()
             party.save()
 
 

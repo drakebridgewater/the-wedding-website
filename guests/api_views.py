@@ -430,7 +430,7 @@ def email_template_send(request, pk):
     Save-the-date / invitation sent dates are stamped automatically from the
     template's purpose.
     """
-    from datetime import datetime
+    from django.utils import timezone
     try:
         template = EmailTemplate.objects.get(pk=pk)
     except EmailTemplate.DoesNotExist:
@@ -450,10 +450,10 @@ def email_template_send(request, pk):
             if result:
                 sent_count += 1
                 if template.purpose == 'save_the_date':
-                    party.save_the_date_sent = datetime.now()
+                    party.save_the_date_sent = timezone.now()
                     party.save(update_fields=['save_the_date_sent'])
                 elif template.purpose == 'invitation':
-                    party.invitation_sent = datetime.now()
+                    party.invitation_sent = timezone.now()
                     party.save(update_fields=['invitation_sent'])
             else:
                 errors.append(f'{party.name}: no valid email addresses')
@@ -513,7 +513,7 @@ def save_the_date_upload_image(request):
 @permission_classes([IsAuthenticated])
 def save_the_date_send(request):
     """Send save-the-date to a list of party IDs. Body: { party_ids: [...] }"""
-    from datetime import datetime
+    from django.utils import timezone
     from .save_the_date import send_save_the_date_email, get_save_the_date_context_from_settings
 
     party_ids = request.data.get('party_ids', [])
@@ -531,7 +531,7 @@ def save_the_date_send(request):
             continue
         try:
             send_save_the_date_email(context, recipients)
-            party.save_the_date_sent = datetime.now()
+            party.save_the_date_sent = timezone.now()
             party.save(update_fields=['save_the_date_sent'])
             sent_count += 1
         except Exception as e:
