@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import { toast } from 'sonner'
+import { format } from 'date-fns'
 import { createColumnHelper, type VisibilityState } from '@tanstack/react-table'
 import { DataTable } from '../components/DataTable'
 import { Badge } from '../components/badges'
+import { CopyLinkMenu } from '../components/CopyLinkMenu'
 import { StatusSelect } from '../components/StatusSelect'
 import { TogglePill } from '../components/TogglePill'
 import type { useUpdateParty } from '../api'
@@ -13,15 +15,47 @@ const columnHelper = createColumnHelper<Party>()
 
 const DEFAULT_COLUMNS: VisibilityState = {
   name: true, guests: true, status: true,
-  rehearsal_dinner: true, wants_physical_card: true, plus_one_allowed: true,
-  side: true, type: false,
+  std_sent: true, std_opened: true, inv_sent: false, inv_opened: false,
+  address: true, address_verified: true,
+  rehearsal_dinner: true, wants_physical_card: true, plus_one_allowed: false,
+  side: false, type: false, links: true,
 }
 
 const COLUMN_LABELS: Record<string, string> = {
   name: 'Party', guests: 'Guests', status: 'Status',
+  std_sent: 'STD sent', std_opened: 'STD opened',
+  inv_sent: 'Invite sent', inv_opened: 'Invite opened',
+  address: 'Address', address_verified: 'Address ✓',
   rehearsal_dinner: 'RD', wants_physical_card: '✉',
   plus_one_allowed: '+1', side: 'Side', type: 'Type',
+  links: 'Copy link',
 }
+
+const Dash = () => <span className="text-stone-300 text-[10px]">—</span>
+
+/** A tracked timestamp, or a dash explaining why there isn't one. */
+function DateCell({ value, emptyTitle, tone = 'stone' }: {
+  value: string | null
+  emptyTitle: string
+  tone?: 'stone' | 'emerald'
+}) {
+  if (!value) return <span title={emptyTitle}><Dash /></span>
+  const date = new Date(value)
+  return (
+    <span
+      title={format(date, "EEEE d MMMM yyyy 'at' h:mm a")}
+      className={tone === 'emerald' ? 'text-emerald-600' : 'text-stone-500'}
+    >
+      {format(date, 'MMM d')}
+    </span>
+  )
+}
+
+/**
+ * Sort key for a nullable timestamp column. Empty string keeps un-sent /
+ * un-opened parties grouped together at one end rather than scattered.
+ */
+const dateKey = (value: string | null) => value ?? ''
 
 /** One-row-per-party table with inline flag toggles. */
 export function PartyTable({
@@ -60,6 +94,67 @@ export function PartyTable({
         cell: (info) => {
           const party = info.row.original
           return <StatusSelect value={party.status} onChange={(s) => patch(party, { status: s })} />
+        },
+      }),
+      columnHelper.accessor((row) => dateKey(row.save_the_date_sent), {
+        id: 'std_sent',
+        header: 'STD sent',
+        cell: (info) => (
+          <DateCell value={info.row.original.save_the_date_sent} emptyTitle="Save the Date not sent yet" />
+        ),
+      }),
+      columnHelper.accessor((row) => dateKey(row.save_the_date_opened), {
+        id: 'std_opened',
+        header: 'STD opened',
+        cell: (info) => (
+          <DateCell
+            value={info.row.original.save_the_date_opened}
+            tone="emerald"
+            emptyTitle={info.row.original.save_the_date_sent
+              ? 'Sent, but nobody has opened the link yet'
+              : 'Save the Date not sent yet'}
+          />
+        ),
+      }),
+      columnHelper.accessor((row) => dateKey(row.invitation_sent), {
+        id: 'inv_sent',
+        header: 'Invite sent',
+        cell: (info) => (
+          <DateCell value={info.row.original.invitation_sent} emptyTitle="Invitation not sent yet" />
+        ),
+      }),
+      columnHelper.accessor((row) => dateKey(row.invitation_opened), {
+        id: 'inv_opened',
+        header: 'Invite opened',
+        cell: (info) => (
+          <DateCell
+            value={info.row.original.invitation_opened}
+            tone="emerald"
+            emptyTitle={info.row.original.invitation_sent
+              ? 'Sent, but nobody has opened the link yet'
+              : 'Invitation not sent yet'}
+          />
+        ),
+      }),
+      columnHelper.accessor('address', {
+        header: 'Address',
+        cell: (info) => {
+          const address = (info.getValue() ?? '').trim()
+          return address
+            ? <span className="text-stone-500" title={address}>{address}</span>
+            : <Dash />
+        },
+      }),
+      columnHelper.accessor('address_verified', {
+        header: 'Address ✓',
+        cell: (info) => {
+          const party = info.row.original
+          if (!(party.address ?? '').trim()) {
+            return <span title="No address on file"><Dash /></span>
+          }
+          return party.address_verified
+            ? <Badge tone="emerald" title="Picked from a Google Places suggestion">✓ verified</Badge>
+            : <Badge tone="amber" title="Typed by hand — not confirmed against Google Places">unverified</Badge>
         },
       }),
       columnHelper.accessor('rehearsal_dinner', {
@@ -107,7 +202,7 @@ export function PartyTable({
           const side = info.getValue()
           return side
             ? <Badge tone="violet">{PARTY_SIDE_LABELS[side]}</Badge>
-            : <span className="text-stone-300 text-[10px]">—</span>
+            : <Dash />
         },
       }),
       columnHelper.accessor('type', {
@@ -116,7 +211,16 @@ export function PartyTable({
           const type = info.getValue()
           return type
             ? <Badge>{PARTY_TYPE_LABELS[type]}</Badge>
-            : <span className="text-stone-300 text-[10px]">—</span>
+            : <Dash />
+        },
+      }),
+      columnHelper.display({
+        id: 'links',
+        header: 'Copy link',
+        enableSorting: false,
+        cell: (info) => {
+          const party = info.row.original
+          return <CopyLinkMenu links={party.links} partyName={party.name} />
         },
       }),
     ]

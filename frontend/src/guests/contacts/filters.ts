@@ -1,17 +1,15 @@
 import type { Guest, Party } from '../types'
 
-export type FilterMode =
-  | 'all' | `label:${string}` | 'no_label' | 'rehearsal_dinner' | 'no_rehearsal_dinner'
+/**
+ * Guest-level filters — the ones that ask about an individual guest rather
+ * than the party as a unit. Everything party-shaped (comms, address, RSVP,
+ * rehearsal dinner) lives in ../partyFilters.
+ */
+export type FilterMode = 'all' | `label:${string}` | 'no_label'
 
-export function guestMatchesFilter(
-  guest: Guest,
-  filterMode: FilterMode,
-  rehearsalGuestIds: Set<number>,
-): boolean {
+export function guestMatchesFilter(guest: Guest, filterMode: FilterMode): boolean {
   if (filterMode === 'all') return true
   if (filterMode === 'no_label') return !guest.label
-  if (filterMode === 'rehearsal_dinner') return rehearsalGuestIds.has(guest.id)
-  if (filterMode === 'no_rehearsal_dinner') return !rehearsalGuestIds.has(guest.id)
   if (filterMode.startsWith('label:')) return guest.label === filterMode.slice(6)
   return false
 }
@@ -27,16 +25,9 @@ export function guestMatchesSearch(guest: Guest, party: Party, query: string): b
   )
 }
 
-export function visibleGuestsOf(
-  party: Party,
-  filterMode: FilterMode,
-  rehearsalGuestIds: Set<number>,
-  searchQuery: string,
-): Guest[] {
+export function visibleGuestsOf(party: Party, filterMode: FilterMode, searchQuery: string): Guest[] {
   if (filterMode === 'all' && !searchQuery) return party.guests
   return party.guests.filter(
-    (g) =>
-      guestMatchesFilter(g, filterMode, rehearsalGuestIds) &&
-      guestMatchesSearch(g, party, searchQuery),
+    (g) => guestMatchesFilter(g, filterMode) && guestMatchesSearch(g, party, searchQuery),
   )
 }

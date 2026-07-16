@@ -84,7 +84,7 @@ export function DataTable<T>({
               <tr key={hg.id} className="bg-stone-50 border-b border-stone-200">
                 {hg.headers.map((header) => (
                   <th key={header.id} className="text-left px-3 py-3 text-stone-500 font-medium whitespace-nowrap">
-                    {header.isPlaceholder ? null : (
+                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
                       <button
                         className="flex items-center gap-1 hover:text-stone-800 transition-colors"
                         onClick={header.column.getToggleSortingHandler()}
@@ -92,6 +92,8 @@ export function DataTable<T>({
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         <SortIcon sorted={header.column.getIsSorted()} />
                       </button>
+                    ) : (
+                      flexRender(header.column.columnDef.header, header.getContext())
                     )}
                   </th>
                 ))}

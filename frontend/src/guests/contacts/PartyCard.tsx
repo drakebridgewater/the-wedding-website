@@ -15,7 +15,7 @@ import { visibleGuestsOf, type FilterMode } from './filters'
 /** Expandable card for one party in the default "cards" view. */
 export function PartyCard({
   party, expanded, onToggle, onEdit, onDelete,
-  memberByGuestId, filterMode, rehearsalGuestIds, searchQuery,
+  memberByGuestId, filterMode, searchQuery,
   onOpenGuest, updateParty,
 }: {
   party: Party
@@ -25,7 +25,6 @@ export function PartyCard({
   onDelete: () => void
   memberByGuestId: Map<number, WeddingPartyMember>
   filterMode: FilterMode
-  rehearsalGuestIds: Set<number>
   searchQuery: string
   onOpenGuest: (partyId: number, guestId: number) => void
   updateParty: ReturnType<typeof useUpdateParty>
@@ -48,7 +47,7 @@ export function PartyCard({
     }
   }
 
-  const visibleGuests = visibleGuestsOf(party, filterMode, rehearsalGuestIds, searchQuery)
+  const visibleGuests = visibleGuestsOf(party, filterMode, searchQuery)
   const hiddenCount = party.guests.length - visibleGuests.length
 
   const attendingCount = party.guests.filter((g) => g.is_attending).length

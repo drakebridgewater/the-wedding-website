@@ -5,9 +5,12 @@ import {
   useCreateParty, useDeleteParty, useMembers, useParties, useUpdateParty,
 } from '../api'
 import { EMPTY_PARTY_FORM } from '../types'
-import { FilterChip } from '../components/FilterChip'
+import { FilterMenu, type FilterSection } from '../components/FilterMenu'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { EmptyState } from '../components/EmptyState'
+import {
+  buildPartyFilterSections, countActiveFilters, partyMatchesFilters, type PartyFilterState,
+} from '../partyFilters'
 import { guestMatchesFilter, guestMatchesSearch, type FilterMode } from './filters'
 import { PartyCard } from './PartyCard'
 import { GuestTable } from './GuestTable'
@@ -41,6 +44,7 @@ export function ContactsTab({
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
+  const [partyFilter, setPartyFilter] = useState<PartyFilterState>({})
   const [searchQuery, setSearchQuery] = useState('')
 
   // ── Derived maps ─────────────────────────────────────────────────────────────
@@ -49,14 +53,6 @@ export function ContactsTab({
     () => new Map(members.filter((m) => m.guest_id != null).map((m) => [m.guest_id!, m])),
     [members],
   )
-
-  const rehearsalGuestIds = useMemo(() => {
-    const ids = new Set<number>()
-    for (const p of parties) {
-      if (p.rehearsal_dinner) for (const g of p.guests) ids.add(g.id)
-    }
-    return ids
-  }, [parties])
 
   const { allLabels, labelCounts } = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -74,31 +70,50 @@ export function ContactsTab({
 
   // ── Filtered parties/rows ─────────────────────────────────────────────────────
 
+  // The party-level filters narrow the pool first; the label filter and search
+  // then run within it.
+  const partyScoped = useMemo(
+    () => parties.filter((p) => partyMatchesFilters(p, partyFilter)),
+    [parties, partyFilter],
+  )
+
   const filteredParties = useMemo(() => {
-    if (filterMode === 'all' && !searchQuery) return parties
-    return parties.filter((p) => {
+    if (filterMode === 'all' && !searchQuery) return partyScoped
+    return partyScoped.filter((p) => {
       if (filterMode === 'all' && searchQuery && p.name.toLowerCase().includes(searchQuery.toLowerCase())) return true
       return p.guests.some(
-        (g) =>
-          guestMatchesFilter(g, filterMode, rehearsalGuestIds) &&
-          guestMatchesSearch(g, p, searchQuery),
+        (g) => guestMatchesFilter(g, filterMode) && guestMatchesSearch(g, p, searchQuery),
       )
     })
-  }, [parties, filterMode, rehearsalGuestIds, searchQuery])
+  }, [partyScoped, filterMode, searchQuery])
 
   const filteredFlatRows = useMemo(
     () =>
-      parties.flatMap((p) =>
+      partyScoped.flatMap((p) =>
         p.guests
-          .filter(
-            (g) =>
-              guestMatchesFilter(g, filterMode, rehearsalGuestIds) &&
-              guestMatchesSearch(g, p, searchQuery),
-          )
+          .filter((g) => guestMatchesFilter(g, filterMode) && guestMatchesSearch(g, p, searchQuery))
           .map((g) => ({ guest: g, party: p })),
       ),
-    [parties, filterMode, rehearsalGuestIds, searchQuery],
+    [partyScoped, filterMode, searchQuery],
   )
+
+  // ── Filter menu ───────────────────────────────────────────────────────────────
+
+  const labelSection: FilterSection = {
+    id: 'label',
+    label: 'Label',
+    value: filterMode === 'all' ? null : filterMode,
+    options: [
+      ...allLabels.map((lbl) => ({ id: `label:${lbl}`, label: lbl, count: labelCounts[lbl] })),
+      { id: 'no_label', label: 'No label', count: noLabelCount },
+    ],
+    onChange: (id) => setFilterMode((id as FilterMode | null) ?? 'all'),
+  }
+
+  const filterSections = [
+    ...buildPartyFilterSections(parties, partyFilter, setPartyFilter),
+    labelSection,
+  ]
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
@@ -131,7 +146,13 @@ export function ContactsTab({
 
   if (isLoading) return <div className="text-sm text-stone-400">Loading…</div>
 
-  const isFiltered = filterMode !== 'all' || !!searchQuery
+  const isFiltered = filterMode !== 'all' || countActiveFilters(partyFilter) > 0 || !!searchQuery
+
+  function clearFilters() {
+    setFilterMode('all')
+    setPartyFilter({})
+    setSearchQuery('')
+  }
 
   return (
     <div>
@@ -147,43 +168,9 @@ export function ContactsTab({
         />
       </div>
 
-      {/* Filter chips */}
-      <div className="flex gap-1.5 flex-wrap items-center mb-4 pb-3 border-b border-stone-100">
-        <FilterChip label="All" count={totalGuests} active={filterMode === 'all'} onClick={() => setFilterMode('all')} />
-        {parties.length > 0 && (
-          <>
-            <FilterChip
-              label="RD Invited"
-              count={rehearsalGuestIds.size}
-              active={filterMode === 'rehearsal_dinner'}
-              onClick={() => setFilterMode('rehearsal_dinner')}
-            />
-            <FilterChip
-              label="RD Not Invited"
-              count={totalGuests - rehearsalGuestIds.size}
-              active={filterMode === 'no_rehearsal_dinner'}
-              onClick={() => setFilterMode('no_rehearsal_dinner')}
-            />
-          </>
-        )}
-        {allLabels.map((lbl) => (
-          <FilterChip
-            key={lbl}
-            label={lbl}
-            count={labelCounts[lbl]}
-            active={filterMode === `label:${lbl}`}
-            onClick={() => setFilterMode(`label:${lbl}` as FilterMode)}
-          />
-        ))}
-        {noLabelCount > 0 && (
-          <FilterChip
-            label="No label"
-            count={noLabelCount}
-            active={filterMode === 'no_label'}
-            onClick={() => setFilterMode('no_label')}
-          />
-        )}
-      </div>
+      {parties.length > 0 && (
+        <FilterMenu sections={filterSections} className="mb-4 pb-3 border-b border-stone-100" />
+      )}
 
       {/* Toolbar */}
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
@@ -235,7 +222,7 @@ export function ContactsTab({
         <EmptyState
           message="No contacts match this filter."
           actionLabel="Clear filters"
-          onAction={() => { setFilterMode('all'); setSearchQuery('') }}
+          onAction={clearFilters}
         />
       ) : viewMode === 'guests' ? (
         <GuestTable
@@ -261,7 +248,6 @@ export function ContactsTab({
               onDelete={() => setPendingDeletePartyId(party.id)}
               memberByGuestId={memberByGuestId}
               filterMode={filterMode}
-              rehearsalGuestIds={rehearsalGuestIds}
               searchQuery={searchQuery}
               onOpenGuest={onOpenGuest}
               updateParty={updateParty}

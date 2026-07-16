@@ -47,6 +47,7 @@ class GuestSerializer(serializers.ModelSerializer):
 
 class PartySerializer(serializers.ModelSerializer):
     guests = GuestSerializer(source='ordered_guests', many=True, read_only=True)
+    links = serializers.SerializerMethodField()
 
     class Meta:
         model = Party
@@ -57,9 +58,26 @@ class PartySerializer(serializers.ModelSerializer):
             'address_country', 'address_verified',
             'wants_physical_card', 'side', 'plus_one_allowed', 'plus_one_count', 'rsvp_responded_at',
             'invitation_id', 'invitation_sent', 'invitation_opened',
-            'save_the_date_sent',
+            'save_the_date_sent', 'save_the_date_opened', 'links',
         ]
-        read_only_fields = ['rsvp_responded_at', 'invitation_id', 'invitation_sent', 'invitation_opened', 'save_the_date_sent']
+        read_only_fields = [
+            'rsvp_responded_at', 'invitation_id', 'invitation_sent', 'invitation_opened',
+            'save_the_date_sent', 'save_the_date_opened', 'links',
+        ]
+
+    def get_links(self, obj):
+        """This party's personal links, absolute so they can be texted or pasted.
+
+        Built off WEDDING_WEBSITE_URL rather than the request host so a link
+        copied from a local or internal-hostname session still reaches guests.
+        """
+        from django.conf import settings
+        from .invitation import resolve_link_target
+        site_url = getattr(settings, 'WEDDING_WEBSITE_URL', '')
+        return {
+            key: resolve_link_target(key, obj, site_url)
+            for key in ('save_the_date', 'rsvp', 'details')
+        }
 
 
 class EmailTemplateSerializer(serializers.ModelSerializer):

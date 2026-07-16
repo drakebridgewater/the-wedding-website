@@ -1,18 +1,42 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { Pencil } from 'lucide-react'
+import { Pencil, Search } from 'lucide-react'
 import { useParties, useSendEmailTemplate, useSentEmails } from '../api'
 import type { EmailTemplate, Party } from '../types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { CopyLinkMenu } from '../components/CopyLinkMenu'
+import { FilterMenu } from '../components/FilterMenu'
+import {
+  buildPartyFilterSections, countActiveFilters, partyHasEmail, partyMatchesFilters,
+  partyMatchesSearch, type PartyFilterState,
+} from '../partyFilters'
 
 const PURPOSE_STAMP_NOTE: Record<string, string> = {
   save_the_date: 'Sending also marks each party’s Save the Date as sent.',
   invitation: 'Sending also marks each party’s Invitation as sent.',
 }
 
-function partyHasEmail(party: Party): boolean {
-  return party.guests.some((g) => (g.email ?? '').trim() !== '')
+/** Sent/opened receipts for one mailing, e.g. "STD Jul 2 · opened Jul 3". */
+function Receipt({ label, sent, opened, tone }: {
+  label: string
+  sent: string | null
+  opened: string | null
+  tone: string
+}) {
+  if (!sent) return null
+  return (
+    <span className={`ml-2 ${tone}`}>
+      {label} {format(new Date(sent), 'MMM d')}
+      {opened ? (
+        <span className="text-emerald-600" title={`Opened ${format(new Date(opened), "d MMM 'at' h:mm a")}`}>
+          {' '}· opened {format(new Date(opened), 'MMM d')}
+        </span>
+      ) : (
+        <span className="text-stone-400" title="Sent, but nobody has opened the link yet"> · not opened</span>
+      )}
+    </span>
+  )
 }
 
 function PartyCheckRow({
@@ -34,12 +58,8 @@ function PartyCheckRow({
         <span className="text-sm text-stone-800 truncate block">{party.name}</span>
         <span className="text-xs text-stone-400">
           {guestCount} {guestCount === 1 ? 'guest' : 'guests'}
-          {party.save_the_date_sent && (
-            <span className="ml-2 text-sky-600">STD {format(new Date(party.save_the_date_sent), 'MMM d')}</span>
-          )}
-          {party.invitation_sent && (
-            <span className="ml-2 text-emerald-600">inv {format(new Date(party.invitation_sent), 'MMM d')}</span>
-          )}
+          <Receipt label="STD" sent={party.save_the_date_sent} opened={party.save_the_date_opened} tone="text-sky-600" />
+          <Receipt label="inv" sent={party.invitation_sent} opened={party.invitation_opened} tone="text-emerald-600" />
         </span>
       </div>
       {!hasEmail && (
@@ -58,6 +78,9 @@ function PartyCheckRow({
         'bg-stone-100 text-stone-400'
       }`}>
         {party.status}
+      </span>
+      <span className="flex-shrink-0">
+        <CopyLinkMenu links={party.links} partyName={party.name} />
       </span>
       {onOpenGuest && (
         <button
@@ -85,6 +108,8 @@ export function SendPanel({
   const sendMutation = useSendEmailTemplate()
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [confirmSend, setConfirmSend] = useState(false)
+  const [partyFilter, setPartyFilter] = useState<PartyFilterState>({})
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Parties that already received the active template, from the send log
   const alreadySentIds = new Set(
@@ -93,10 +118,16 @@ export function SendPanel({
       .map((e) => e.party_id as number),
   )
 
+  const visibleParties = useMemo(
+    () => parties.filter((p) => partyMatchesFilters(p, partyFilter) && partyMatchesSearch(p, searchQuery)),
+    [parties, partyFilter, searchQuery],
+  )
+
   const needsIt = parties.filter(
     (p) => p.status === 'invited' && partyHasEmail(p) && !alreadySentIds.has(p.id),
   )
   const selectedAlreadySent = Array.from(selected).filter((id) => alreadySentIds.has(id))
+  const isFiltered = countActiveFilters(partyFilter) > 0 || !!searchQuery
 
   const toggle = (id: number) =>
     setSelected((prev) => {
@@ -147,21 +178,56 @@ export function SendPanel({
           </div>
         </div>
 
+        <div className="relative">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+          <input
+            type="search"
+            placeholder="Search parties, guests, addresses…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-3 py-2 text-xs border border-stone-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-stone-300 placeholder:text-stone-400"
+          />
+        </div>
+
+        {parties.length > 0 && (
+          <FilterMenu sections={buildPartyFilterSections(parties, partyFilter, setPartyFilter)} />
+        )}
+
         {/* Party checklist */}
         <div className="border border-stone-200 rounded-lg overflow-y-auto max-h-72 divide-y divide-stone-100">
-          {parties.length === 0 && (
+          {parties.length === 0 ? (
             <p className="text-sm text-stone-400 p-3">No parties yet.</p>
+          ) : visibleParties.length === 0 ? (
+            <p className="text-sm text-stone-400 p-3">No parties match this filter.</p>
+          ) : (
+            visibleParties.map((party) => (
+              <PartyCheckRow
+                key={party.id}
+                party={party}
+                checked={selected.has(party.id)}
+                alreadySent={alreadySentIds.has(party.id)}
+                onToggle={() => toggle(party.id)}
+                onOpenGuest={onOpenGuest}
+              />
+            ))
           )}
-          {parties.map((party) => (
-            <PartyCheckRow
-              key={party.id}
-              party={party}
-              checked={selected.has(party.id)}
-              alreadySent={alreadySentIds.has(party.id)}
-              onToggle={() => toggle(party.id)}
-              onOpenGuest={onOpenGuest}
-            />
-          ))}
+        </div>
+
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-xs text-stone-400">
+            {isFiltered
+              ? `Showing ${visibleParties.length} of ${parties.length} parties`
+              : `${parties.length} parties`}
+            {selected.size > 0 && <span className="text-stone-500"> · {selected.size} selected</span>}
+          </p>
+          {isFiltered && visibleParties.length > 0 && (
+            <button
+              onClick={() => setSelected((prev) => new Set([...prev, ...visibleParties.map((p) => p.id)]))}
+              className="text-xs text-indigo-600 hover:underline py-1"
+            >
+              Select these {visibleParties.length}
+            </button>
+          )}
         </div>
 
         {template && PURPOSE_STAMP_NOTE[template.purpose] && (

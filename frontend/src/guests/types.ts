@@ -45,6 +45,13 @@ export interface Guest {
   is_plus_one: boolean
 }
 
+/** A party's personal absolute links, resolved server-side. */
+export interface PartyLinks {
+  save_the_date: string
+  rsvp: string
+  details: string
+}
+
 export interface Party {
   id: number
   name: string
@@ -71,6 +78,8 @@ export interface Party {
   invitation_sent: string | null
   invitation_opened: string | null
   save_the_date_sent: string | null
+  save_the_date_opened: string | null
+  links: PartyLinks
 }
 
 export type EmailTemplatePurpose = 'save_the_date' | 'invitation' | 'other'
